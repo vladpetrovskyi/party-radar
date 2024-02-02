@@ -2,7 +2,7 @@ version: "3.8"
 services:
   db:
     image: postgres
-    container_name: party-radar_db_dev
+    container_name: party-radar_db
     restart: always
     ports:
       - "5432:5432"
@@ -21,7 +21,7 @@ services:
 
   api:
     image: party-radar/backend
-    container_name: party-radar_be_dev
+    container_name: party-radar_be
     build: ./
     env_file: local.env
     ports:
