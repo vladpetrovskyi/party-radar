@@ -1,1 +1,1 @@
-# partytime
+# Party Radar App

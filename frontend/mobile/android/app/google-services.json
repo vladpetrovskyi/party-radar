@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "185966042146",
+    "project_id": "partytime-bce04",
+    "storage_bucket": "partytime-bce04.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:185966042146:android:e79fc7e4519ac77495fe7b",
+        "android_client_info": {
+          "package_name": "com.example.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhU2pex5N9f8NuemLNKLE7l43nHADODIg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

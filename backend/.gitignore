@@ -17,8 +17,5 @@
 # Go workspace file
 go.work
 
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
+db/*.go
+serviceAccountKey.json

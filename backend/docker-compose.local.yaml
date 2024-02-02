@@ -1,0 +1,40 @@
+version: "3.8"
+services:
+  db:
+    image: postgres
+    container_name: party-radar_db_dev
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      PGUSER: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: party-radar
+    volumes:
+      - party-radar:/var/lib/postgresql/data
+    healthcheck:
+        test: [ "CMD-SHELL", "pg_isready", "-U", "postgres", "-d", "party-radar" ]
+        interval: 1s
+        timeout: 5s
+        retries: 10
+
+  api:
+    image: party-radar/backend
+    container_name: party-radar_be_dev
+    build: ./
+    env_file: local.env
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: "curl --fail http://localhost:8080 || exit 1"
+      start_period: 10s
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  party-radar:

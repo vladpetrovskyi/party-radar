@@ -1,0 +1,131 @@
+version: 2
+sql:
+  - engine: "postgresql"
+    queries: "db/scripts/query.sql"
+    schema: "db/scripts/schema.sql"
+    gen:
+      go:
+        package: "db"
+        out: "./db"
+        emit_json_tags: true
+        emit_empty_slices: true
+        json_tags_case_style: snake
+        overrides:
+          - db_type: "serial"
+            go_type:
+              type: "int64"
+          - column: "dialog_settings.image_id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "user.image_id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "user.username"
+            go_type:
+              type: "string"
+              pointer: true
+            nullable: true
+          - column: "user.uid"
+            go_type:
+              type: "string"
+              pointer: true
+            nullable: true
+          - column: "user.email"
+            go_type:
+              type: "string"
+              pointer: true
+            nullable: true
+          - column: "location.emoji"
+            go_type:
+              type: "string"
+              pointer: true
+            nullable: true
+          - column: "location.element_type_id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "location.dialog_settings_id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "location.on_click_action_id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "location.column_index"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "location.parent_id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "element_type.name"
+            go_type:
+              type: "string"
+              pointer: true
+            nullable: true
+          - column: "on_click_action.name"
+            go_type:
+              type: "string"
+              pointer: true
+            nullable: true
+          - column: "dialog_settings.name"
+            go_type:
+              type: "string"
+              pointer: true
+            nullable: true
+          - column: "dialog_settings.columns_number"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "position.location_id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "location.root_location_id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "user.current_root_location_id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "friendship.created_at"
+            go_type:
+              type: "time.Time"
+              pointer: true
+            nullable: true
+          - column: "friendship.updated_at"
+            go_type:
+              type: "time.Time"
+              pointer: true
+            nullable: true
+          - column: "location.name"
+            go_type:
+              type: "string"
+              pointer: true
+            nullable: false
+          - column: "user.current_location_id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "user.id"
+            go_type:
+              type: "int64"
+              pointer: false
+            nullable: false

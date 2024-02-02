@@ -1,4 +1,4 @@
-# mobile
+# Party Radar App (Frontend)
 
 A new Flutter project.
 
