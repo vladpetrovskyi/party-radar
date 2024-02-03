@@ -18,8 +18,8 @@ services:
         retries: 10
 
   api:
-    image: party-radar/backend
-    container_name: api-dev
+    image: ${IMAGE}
+    container_name: ${CONTAINER}
     build: ./
     restart: unless-stopped
     env_file: dev.env
@@ -30,22 +30,6 @@ services:
       timeout: 10s
     depends_on:
       db:
-        condition: service_healthy
-
-  proxy:
-    image: 'jc21/nginx-proxy-manager:latest'
-    container_name: proxy
-    restart: unless-stopped
-    ports:
-      - '80:80'
-      - '443:443'
-      - '81:81'
-      - '5432:5432'
-    volumes:
-      - ./.proxy/data:/data
-      - ./.proxy/letsencrypt:/etc/letsencrypt
-    depends_on:
-      api:
         condition: service_healthy
 
 volumes:
