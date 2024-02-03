@@ -23,7 +23,7 @@ services:
     image: party-radar/backend
     container_name: api
     build: ./
-    env_file: local.env
+    env_file: .env
     ports:
       - '8080:8080'
     healthcheck:

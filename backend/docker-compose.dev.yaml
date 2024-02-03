@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  db:
+  db-dev:
     image: postgres
     container_name: db-dev
     restart: always
@@ -10,14 +10,14 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: party-radar
     volumes:
-      - ./.db/:/var/lib/postgresql/data
+      - ./.db-dev/:/var/lib/postgresql/data
     healthcheck:
         test: [ 'CMD-SHELL', 'pg_isready', '-U', 'postgres', '-d', 'party-radar' ]
         interval: 1s
         timeout: 5s
         retries: 10
 
-  api:
+  api-dev:
     image: ${IMAGE}
     container_name: ${CONTAINER}
     build: ./
