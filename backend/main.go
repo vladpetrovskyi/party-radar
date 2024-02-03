@@ -278,7 +278,7 @@ func initDB() (db *sql.DB) {
 		port     = 5432
 		user     = getEnvVar("POSTGRES_USER", "postgres")
 		password = getEnvVar("POSTGRES_PASSWORD", "pass")
-		dbname   = "party-radar"
+		dbname   = getEnvVar("POSTGRES_DB", "party-radar")
 	)
 
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
