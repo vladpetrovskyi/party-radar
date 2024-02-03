@@ -8,6 +8,7 @@ jobs:
   deploy:
     runs-on: self-hosted
     env:
+      REGISTRY: ghcr.io
       CONTAINER_NAME: "party-radar_be_dev"
       IMAGE_NAME: "ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}"
     steps:
@@ -34,7 +35,6 @@ jobs:
           username: ${{ secrets.HOST_USERNAME }}
           password: ${{ secrets.HOST_PASSWORD }}
           envs: CONTAINER_NAME, {{ github.actor }}, {{ secrets.GITHUB_TOKEN }}, {{ env.REGISTRY }}, IMAGE_NAME
-          script-stop: true
           script: |
             docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
             docker pull $IMAGE_NAME
