@@ -24,3 +24,6 @@ WHERE id = $3;
 DELETE
 FROM image
 WHERE id = $1;
+
+-- name: ResetImageSequence :exec
+SELECT setval('image_id_seq', max(id)) FROM image;

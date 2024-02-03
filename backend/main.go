@@ -144,6 +144,11 @@ func populateImages(c context.Context, q *sqlc.Queries) error {
 		}
 	}
 
+	err = q.ResetImageSequence(c)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

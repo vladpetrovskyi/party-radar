@@ -6,10 +6,10 @@ WHERE (f.user_2_id = $1 OR f.user_1_id = $1)
 
 -- name: GetFriendshipsByUser :many
 SELECT t.id::bigint       AS id,
-        t.user_id::bigint  AS user_id,
-        t.username::text   AS username,
-        t.image_id::bigint AS image_id,
-        l.name             AS location
+       t.user_id::bigint  AS user_id,
+       t.username::text   AS username,
+       t.image_id::bigint AS image_id,
+       l.name             AS location
 FROM (SELECT f.id,
              CASE WHEN f.user_1_id != @userId::bigint then u1.id else u2.id END AS user_id,
              CASE
@@ -22,10 +22,10 @@ FROM (SELECT f.id,
                  WHEN f.user_1_id != @userId::bigint then u1.current_root_location_id
                  else u2.current_root_location_id END                           AS current_root_location_id
       FROM friendship f
-          LEFT JOIN "user" u1 ON f.user_1_id = u1.id
-          LEFT JOIN "user" u2 ON f.user_2_id = u2.id
+               LEFT JOIN "user" u1 ON f.user_1_id = u1.id
+               LEFT JOIN "user" u2 ON f.user_2_id = u2.id
       WHERE (f.user_1_id = @userId::bigint
-         OR f.user_2_id = @userId::bigint)
+          OR f.user_2_id = @userId::bigint)
         AND f.status_id = 2) t
          LEFT JOIN location l ON l.id = t.current_root_location_id;
 
