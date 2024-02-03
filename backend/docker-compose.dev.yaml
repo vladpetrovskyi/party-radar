@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  db-dev:
+  db:
     image: postgres
     container_name: db-dev
     restart: always
@@ -13,7 +13,7 @@ services:
         timeout: 5s
         retries: 10
 
-  api-dev:
+  api:
     image: ${IMAGE}
     container_name: ${CONTAINER}
     restart: unless-stopped
