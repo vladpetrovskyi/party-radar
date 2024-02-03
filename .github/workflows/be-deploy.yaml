@@ -1,0 +1,50 @@
+name: (BE) Deploy
+
+run-name: (BE) Deploy ${{ github.ref_name }}
+
+on: [workflow_call, workflow_dispatch]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    env:
+      CONTAINER_NAME: "party-radar_be_dev"
+      IMAGE_NAME: "ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}"
+    steps:
+      - name: Create .env file
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > backend/dev.env
+
+      - name: Create db_pass.txt file
+        run: |
+          echo "${{ secrets.PASS_FOR_DB }}" > backend/db_pass.txt
+
+      - name: Create db_root_pass.txt file
+        run: |
+          echo "${{ secrets.ROOT_PASS_FOR_DB }}" > backend/db_root_pass.txt
+
+      - name: Copy files via SCP
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          key: ${{ secrets.SSHKEY }}
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          overwrite: true
+          source: "backend/dev.env,backend/db_pass.txt,backend/db_root_pass.txt,backend/docker-compose.dev.yaml"
+          target: ~/
+
+      - name: Deploy to Hel server via SSH action
+        uses: appleboy/ssh-action@master
+        with:
+          key: ${{ secrets.SSHKEY }}
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          envs: CONTAINER_NAME, {{ github.actor }}, {{ secrets.GITHUB_TOKEN }}, {{ env.REGISTRY }}, IMAGE_NAME
+          script-stop: true
+          script: |
+            docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
+            docker pull $IMAGE_NAME
+            docker container rm -f $CONTAINER_NAME
+            docker compose -f backend/docker-compose.dev.yaml up -d
