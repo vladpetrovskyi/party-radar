@@ -32,6 +32,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+      - name: Create serviceAccountKey.json file
+        run: |
+          echo "${{ secrets.SERVICE_ACCOUNT_KEY }}" > backend/serviceAccountKey.json
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
