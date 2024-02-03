@@ -9,7 +9,7 @@ jobs:
     runs-on: self-hosted
     env:
       REGISTRY: ghcr.io
-      CONTAINER_NAME: "party-radar_be_dev"
+      CONTAINER_NAME: "api-dev"
       IMAGE_NAME: "ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}"
     steps:
       - name: Create .env file
