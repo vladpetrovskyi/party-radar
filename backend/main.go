@@ -276,8 +276,8 @@ func initDB() (db *sql.DB) {
 	var (
 		host     = getEnvVar("DATASOURCE_HOST", getDefaultHost())
 		port     = 5432
-		user     = getEnvVar("DATASOURCE_USERNAME", "postgres")
-		password = getEnvVar("DATASOURCE_PASSWORD", "pass")
+		user     = getEnvVar("POSTGRES_USER", "postgres")
+		password = getEnvVar("POSTGRES_PASSWORD", "pass")
 		dbname   = "party-radar"
 	)
 
