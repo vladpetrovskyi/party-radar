@@ -4,7 +4,11 @@ services:
     image: postgres
     container_name: db-dev
     restart: always
-    env_file: .env
+    environment:
+      PGUSER: ${POSTGRES_USER}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: party-radar
     volumes:
       - ./.db/:/var/lib/postgresql/data
     healthcheck:
