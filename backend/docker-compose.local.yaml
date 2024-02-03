@@ -26,12 +26,6 @@ services:
     env_file: local.env
     ports:
       - "8080:8080"
-    healthcheck:
-      test: "curl --fail http://localhost:8080 || exit 1"
-      start_period: 10s
-      interval: 1s
-      timeout: 5s
-      retries: 10
     depends_on:
       db:
         condition: service_healthy

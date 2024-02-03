@@ -18,7 +18,6 @@ class UserProfilePage extends StatefulWidget {
 class _UserProfilePageState extends State<UserProfilePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  int? _initialIndex = 0;
 
   @override
   void initState() {

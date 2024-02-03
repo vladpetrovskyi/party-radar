@@ -55,7 +55,6 @@ class AuthService {
       FirebaseAuth.instance.currentUser?.delete();
       return json.decode(response.body)['msg'];
     }
-    ;
 
     FirebaseAuth.instance.signOut();
     return null;

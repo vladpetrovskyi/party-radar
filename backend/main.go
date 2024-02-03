@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"errors"
 	firebase "firebase.google.com/go"
 	"fmt"
@@ -10,17 +11,32 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
+	"github.com/pressly/goose/v3"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/api/option"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/signal"
 	sqlc "party-time/db"
 	"party-time/internal"
 	"runtime"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
+)
+
+var (
+	//go:embed db/migrations/*.sql
+	embedMigrations embed.FS
+
+	//go:embed db/seeds/*.sql
+	embedSeeds embed.FS
+
+	//go:embed db/seeds/assets/*.png
+	embedImages embed.FS
 )
 
 func main() {
@@ -31,11 +47,20 @@ func main() {
 
 	var (
 		err      error
-		db       = initDB()
-		router   = gin.Default()
-		queries  = sqlc.New(db)
 		enforcer *casbin.Enforcer
 	)
+
+	db := initDB()
+	queries := sqlc.New(db)
+
+	applyMigrations(db)
+
+	err = populateImages(ctx, queries)
+	if err != nil {
+		panic(fmt.Errorf("failed to populate images into DB: %w", err))
+	}
+
+	populateSeeds(db)
 
 	if enforcer, err = initCasbin(db); err != nil {
 		panic(fmt.Errorf("failed to add policies to DB: %w", err))
@@ -47,6 +72,7 @@ func main() {
 		panic(fmt.Errorf("error initializing app: %v", err))
 	}
 
+	router := gin.Default()
 	setupRoutes(router, queries, db, ctx, enforcer, app)
 
 	srv := &http.Server{
@@ -74,8 +100,66 @@ func main() {
 	log.Info().Msg("Server exiting")
 }
 
+func applyMigrations(db *sql.DB) {
+	log.Info().Msg("Applying DB migrations...")
+	goose.SetBaseFS(embedMigrations)
+	if err := goose.SetDialect("postgres"); err != nil {
+		panic(err)
+	}
+	if err := goose.Up(db, "db/migrations"); err != nil {
+		panic(err)
+	}
+}
+
+func populateImages(c context.Context, q *sqlc.Queries) error {
+	dirName := "db/seeds/assets"
+	dirFiles, err := fs.ReadDir(embedImages, dirName)
+	if err != nil {
+		return err
+	}
+
+	for _, f := range dirFiles {
+		info, err := f.Info()
+		if err != nil {
+			return err
+		}
+		fileName := info.Name()
+		imageId, err := strconv.ParseInt(strings.Split(fileName, "_")[0], 10, 64)
+		if err != nil {
+			return err
+		}
+
+		file, err := fs.ReadFile(embedImages, dirName+"/"+fileName)
+		if err != nil {
+			return err
+		}
+
+		err = q.UpsertImage(c, sqlc.UpsertImageParams{
+			ID:       imageId,
+			FileName: fileName,
+			Content:  file,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func populateSeeds(db *sql.DB) {
+	log.Info().Msg("Populating seeds into DB...")
+	goose.SetBaseFS(embedSeeds)
+	if err := goose.SetDialect("postgres"); err != nil {
+		panic(err)
+	}
+	if err := goose.Up(db, "db/seeds"); err != nil {
+		panic(err)
+	}
+}
+
 func initCasbin(db *sql.DB) (enforcer *casbin.Enforcer, err error) {
-	log.Info().Msg("Setting up casbin...")
+	log.Info().Msg("Setting up Casbin auth...")
 
 	var adapter *sqladapter.Adapter
 	if adapter, err = sqladapter.NewAdapter(db, "postgres", ""); err != nil {
@@ -197,12 +281,12 @@ func initDB() (db *sql.DB) {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		log.Fatal().Err(err)
+		panic(fmt.Errorf("could not open DB connection: %w", err))
 	}
 
 	err = db.Ping()
 	if err != nil {
-		log.Fatal().Err(err)
+		panic(fmt.Errorf("could not ping DB: %w", err))
 	}
 
 	return
@@ -219,7 +303,7 @@ func getEnvVar(varName string, defaultVal string) string {
 }
 
 func getDefaultHost() string {
-	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
+	if (runtime.GOOS == "darwin" || runtime.GOOS == "linux") && getEnvVar("IS_DOCKER_CONTAINER", "false") == "true" {
 		return "docker.for.mac.localhost"
 	}
 	return "localhost"

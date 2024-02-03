@@ -1,3 +1,5 @@
+-- +goose Up
+-- +goose StatementBegin
 CREATE TABLE on_click_action
 (
     id   SERIAL PRIMARY KEY,
@@ -102,7 +104,7 @@ CREATE OR REPLACE FUNCTION update_changetimestamp_column()
 $$
 BEGIN
     NEW.updated_at = now();
-    RETURN NEW;
+RETURN NEW;
 END;
 $$ language 'plpgsql';
 
@@ -110,6 +112,22 @@ CREATE TRIGGER update_ab_changetimestamp
     BEFORE UPDATE
     ON friendship
     FOR EACH ROW
-EXECUTE PROCEDURE
-    update_changetimestamp_column();
+    EXECUTE PROCEDURE
+        update_changetimestamp_column();
+-- +goose StatementEnd
 
+-- +goose Down
+-- +goose StatementBegin
+DROP TRIGGER update_ab_changetimestamp ON friendship;
+DROP FUNCTION update_changetimestamp_column();
+DROP TABLE post;
+DROP TABLE post_type;
+DROP TABLE friendship;
+DROP TABLE friendship_status;
+DROP TABLE "user";
+DROP TABLE location;
+DROP TABLE dialog_settings;
+DROP TABLE image;
+DROP TABLE element_type;
+DROP TABLE on_click_action;
+-- +goose StatementEnd

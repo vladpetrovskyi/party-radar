@@ -59,8 +59,8 @@ class ImageService {
     var token = await FirebaseAuth.instance.currentUser?.getIdToken();
 
     return Image.network(
-      width: size ?? null,
-      height: size ?? null,
+      width: size,
+      height: size,
       fit: BoxFit.cover,
       'http://${ServerAddressExtension.serverAddress}:8080/api/v1/image/$id',
       headers: {HttpHeaders.authorizationHeader: 'Bearer $token'},
