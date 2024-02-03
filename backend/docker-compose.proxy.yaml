@@ -12,7 +12,14 @@ services:
     volumes:
       - ./.proxy/data:/data
       - ./.proxy/letsencrypt:/etc/letsencrypt
+    networks:
+      - dev
+      - prod
 
 networks:
-  party-radar_dev:
-  party-radar_prod:
+  dev:
+    name: party-radar_dev
+    external: true
+  prod:
+    name: party-radar_prod
+    external: true
