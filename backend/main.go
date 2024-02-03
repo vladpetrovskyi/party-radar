@@ -200,6 +200,9 @@ func setupRoutes(
 	log.Info().Msg("Setting up API routes...")
 
 	v1 := router.Group("/api/v1")
+	v1.GET("/health", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
 
 	authHandler := internal.AuthHandler{
 		Ctx:      ctx,
@@ -271,7 +274,7 @@ func initDB() (db *sql.DB) {
 	log.Info().Msg("Connecting to DB...")
 
 	var (
-		host     = getDefaultHost()
+		host     = getEnvVar("DATASOURCE_HOST", getDefaultHost())
 		port     = 5432
 		user     = getEnvVar("DATASOURCE_USERNAME", "postgres")
 		password = getEnvVar("DATASOURCE_PASSWORD", "pass")

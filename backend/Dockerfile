@@ -26,6 +26,4 @@ COPY ./db/seeds/ ./db/seeds/
 
 ENV IS_DOCKER_CONTAINER="true"
 
-EXPOSE 8080
-
 CMD ["./run"]
