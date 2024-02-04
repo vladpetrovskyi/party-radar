@@ -37,6 +37,11 @@ class _UserPostsTabState extends State<UserPostsTab> {
               title: item.location.name,
               subtitle: DateFormat("MMM d, HH:mm").format(item.timestamp),
               post: item,
+              isEditable: true,
+              onDelete: () {
+                _postPagingController.refresh();
+                widget.onUpdate?.call();
+              },
             );
           },
           noItemsFoundIndicatorBuilder: (_) => const NotFoundWidget(

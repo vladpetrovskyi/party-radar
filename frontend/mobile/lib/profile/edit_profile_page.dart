@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:party_radar/profile/dialogs/delete_account.dart';
 import 'package:party_radar/profile/widgets/profile_widget.dart';
 import 'package:party_radar/common/services/image_service.dart';
 import 'package:party_radar/common/services/user_service.dart';
@@ -18,8 +19,6 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  String? _usernameValidationMsg;
-  String? _emailValidationMsg;
   User? user = FirebaseAuth.instance.currentUser;
   String? imagePath;
 
@@ -98,35 +97,60 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: () async {
-                    if (_formKey.currentState?.validate() ?? false) {
-                      if (imagePath != null) {
-                        bool isImageUpdated = await _uploadImage();
-                        if (!isImageUpdated) {
-                          showErrorSnackBar('Could not update profile picture');
-                          return;
-                        }
-                      }
-                      if (_updatedEmail() || _updatedUsername()) {
-                        bool isUserUpdated = await UserService.updateUser(
-                            username: _usernameController.text,
-                            email: _emailController.text);
-                        if (!isUserUpdated) {
-                          showErrorSnackBar(null);
-                          return;
-                        }
-                      }
-                      _returnToUserPage();
-                    }
-                  },
-                  child: const Text('Update Profile'),
+                  onPressed: () => _updateUserData(),
+                  child: const Text('Update account'),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 6),
+                ElevatedButton(
+                  onPressed: () {
+                    showDialog(
+                        context: context,
+                        builder: (context) {
+                          return const DeleteAccountDialog();
+                        });
+                  },
+                  style: ButtonStyle(
+                      backgroundColor:
+                          MaterialStateProperty.all(Colors.red)),
+                  child: const Text(
+                    'Delete account',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                )
               ],
             ),
           ),
         ),
       );
+
+  void _updateUserData() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      if (imagePath != null) {
+        bool isImageUpdated = await _uploadImage();
+        if (!isImageUpdated) {
+          _showErrorSnackBar('Could not update profile picture');
+          return;
+        }
+      }
+      if (_updatedUsername()) {
+        bool isUserUpdated =
+            await UserService.updateUsername(_usernameController.text);
+        if (!isUserUpdated) {
+          _showErrorSnackBar(null);
+          return;
+        }
+      }
+      if (_updatedEmail()) {
+        bool isUserEmailUpdated =
+            await UserService.updateEmail(_emailController.text);
+        if (!isUserEmailUpdated) {
+          _showErrorSnackBar(null);
+          return;
+        }
+      }
+      _returnToUserPage();
+    }
+  }
 
   Future<bool> _uploadImage() async {
     var user = await UserService.getUser();
@@ -136,9 +160,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return await ImageService.addImage(File(imagePath!), user?.id);
   }
 
-  void showErrorSnackBar(String? message) {
+  void _showErrorSnackBar(String? message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message ?? 'Could not update user data')),
+      SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text(
+            message ?? 'Could not update user data',
+            style: const TextStyle(color: Colors.black),
+          )),
     );
   }
 
@@ -147,62 +176,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Changes have been saved')),
     );
-  }
-
-  Future<void> _validateUserName(String username) async {
-    setState(() {
-      _usernameValidationMsg = null;
-    });
-
-    if (username.isNotEmpty &&
-        username != FirebaseAuth.instance.currentUser?.displayName) {
-      _usernameValidationMsg = UsernameValidator.isValid(username)
-          ? null
-          : 'Allowed characters: a-z, 0-9, ._-';
-      if (_usernameValidationMsg != null) {
-        return;
-      }
-
-      bool isExist = await UserService.userExists(username);
-
-      if (isExist) {
-        setState(() {
-          _usernameValidationMsg = '$username is unavailable';
-        });
-      }
-    }
-  }
-
-  Future<void> _validateEmail(String email) async {
-    setState(() {
-      _emailValidationMsg = null;
-    });
-
-    if (email.isNotEmpty && email != FirebaseAuth.instance.currentUser?.email) {
-      _emailValidationMsg =
-          EmailValidator.isValid(email) ? null : 'Email address is invalid';
-
-      if (_emailValidationMsg != null) {
-        return;
-      }
-
-      try {
-        List<String> list =
-            await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
-
-        if (list.isNotEmpty) {
-          setState(() {
-            _emailValidationMsg = '$email is unavailable';
-          });
-        }
-      } on FirebaseAuthException catch (e) {
-        if (e.code == 'invalid-email') {
-          setState(() {
-            _emailValidationMsg = '$email is invalid';
-          });
-        }
-      }
-    }
   }
 
   bool _updatedEmail() {

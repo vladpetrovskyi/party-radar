@@ -63,11 +63,6 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1
   flutter_secure_storage: ^9.0.0
 
-flutter_launcher_icons:
-  android: "launcher_icon"
-  ios: true
-  image_path: "assets/logo_app_icon.png"
-  remove_alpha_ios: true
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -82,7 +77,6 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/logo_app_bar.png
-    - assets/logo_app_icon.png
     - assets/logo_login.png
 
   # An image asset can refer to one or more resolution-specific "variants", see

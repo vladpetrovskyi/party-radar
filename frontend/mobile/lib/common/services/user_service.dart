@@ -10,8 +10,7 @@ import 'package:party_radar/common/util/extensions.dart';
 class UserService {
   static Future<bool> userExists(String username) async {
     Response response = await head(
-      Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/user/$username'),
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/$username'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -25,11 +24,10 @@ class UserService {
     Response response;
     if (username != null && username.isNotEmpty) {
       response = await get(
-        Uri.parse(
-            '${FlavorConfig.instance.values.baseUrl}/user/$username'),
+        Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/$username'),
         headers: {
           HttpHeaders.authorizationHeader:
-          'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+              'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
         },
       );
     } else {
@@ -38,7 +36,7 @@ class UserService {
             '${FlavorConfig.instance.values.baseUrl}/user?userUID=${FirebaseAuth.instance.currentUser?.uid}'),
         headers: {
           HttpHeaders.authorizationHeader:
-          'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+              'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
         },
       );
     }
@@ -48,15 +46,13 @@ class UserService {
         : throw Exception("Couldn't get user: ${response.body}");
   }
 
-  static Future<bool> updateUser({String? username, String? email}) async {
+  static Future<bool> updateUsername(String username) async {
     var body = jsonEncode({
-      'username': username ?? FirebaseAuth.instance.currentUser?.displayName,
-      'email': email ?? FirebaseAuth.instance.currentUser?.email
+      'username': username,
     });
 
     Response response = await put(
-      Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/user'),
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/username'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -68,7 +64,19 @@ class UserService {
     }
 
     try {
-      if (FirebaseAuth.instance.currentUser?.displayName != username) FirebaseAuth.instance.currentUser?.updateDisplayName(username);
+      if (FirebaseAuth.instance.currentUser?.displayName != username) {
+        FirebaseAuth.instance.currentUser?.updateDisplayName(username);
+      }
+    } on FirebaseAuthException catch (_) {
+      return false;
+    }
+
+    FirebaseAuth.instance.currentUser?.reload();
+    return true;
+  }
+
+  static Future<bool> updateEmail(String? email) async {
+    try {
       if (FirebaseAuth.instance.currentUser?.email != email && email != null) {
         FirebaseAuth.instance.currentUser?.verifyBeforeUpdateEmail(email);
       }
@@ -94,13 +102,33 @@ class UserService {
 
   static Future<bool> deleteUserLocation() async {
     Response response = await delete(
-      Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/user/location'),
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/location'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
       },
     );
     return response.ok;
+  }
+
+  static Future<bool> deleteUser() async {
+    Response response = await delete(
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+      },
+    );
+    if (!response.ok) {
+      return false;
+    }
+
+    try {
+      FirebaseAuth.instance.currentUser?.delete();
+    } on FirebaseAuthException catch (_) {
+      return false;
+    }
+
+    return true;
   }
 }

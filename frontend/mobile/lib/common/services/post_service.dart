@@ -72,4 +72,17 @@ class PostService {
 
     return response.ok;
   }
+
+  static Future<bool> deletePost(int postId) async {
+    Response response = await delete(
+      Uri.parse(
+          '${FlavorConfig.instance.values.baseUrl}/post/$postId'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+        'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+      }
+    );
+
+    return response.ok;
+  }
 }

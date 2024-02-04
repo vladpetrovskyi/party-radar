@@ -17,7 +17,7 @@ void main() async {
     flavor: Flavor.local,
     color: Colors.deepPurpleAccent,
     values: FlavorValues(
-      baseUrl: "${Platform.isAndroid ? '10.0.2.2' : 'localhost'}:8080/api/v1",
+      baseUrl: "http://${Platform.isAndroid ? '10.0.2.2' : 'localhost'}:8080/api/v1",
     ),
   );
 

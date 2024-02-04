@@ -21,7 +21,9 @@ class LoginWidget extends StatelessWidget {
       ),
       child: FlutterLogin(
         userValidator: (value) {
-          if (value == null || value.isEmpty || !EmailValidator.isValid(value)) {
+          if (value == null ||
+              value.isEmpty ||
+              !EmailValidator.isValid(value)) {
             return 'Wrong email address';
           }
           return null;
@@ -40,20 +42,14 @@ class LoginWidget extends StatelessWidget {
             // fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
-          bodyStyle: const TextStyle(
-            color: Colors.white
-          ),
-          textFieldStyle: const TextStyle(
-            color: Colors.white
-          ),
+          bodyStyle: const TextStyle(color: Colors.white),
+          textFieldStyle: const TextStyle(color: Colors.white),
           primaryColor: const Color.fromRGBO(51, 216, 216, 1),
           pageColorLight: const Color.fromRGBO(24, 26, 26, 1),
           pageColorDark: const Color.fromRGBO(24, 26, 26, 1),
           inputTheme: const InputDecorationTheme(
             filled: true,
-            labelStyle: TextStyle(
-              color: Colors.white
-            ),
+            labelStyle: TextStyle(color: Colors.white),
           ),
           cardTheme: const CardTheme(color: Color.fromRGBO(26, 38, 38, 1)),
         ),
@@ -67,12 +63,19 @@ class LoginWidget extends StatelessWidget {
             ),
           );
         },
+        termsOfService: [
+          TermOfService(
+              id: "1",
+              mandatory: true,
+              text: "Accept privacy policy, terms and conditions",
+              linkUrl: "https://legal.party-radar.app")
+        ],
         onRecoverPassword: AuthService.recoverPassword,
         messages: LoginMessages(
-          recoverPasswordIntro: 'Reset password',
-          recoverPasswordDescription: 'A link to reset your password will be sent to the provided email address',
-          recoverPasswordButton: 'SEND LINK'
-        ),
+            recoverPasswordIntro: 'Reset password',
+            recoverPasswordDescription:
+                'A link to reset your password will be sent to the provided email address',
+            recoverPasswordButton: 'SEND LINK'),
       ),
     );
   }

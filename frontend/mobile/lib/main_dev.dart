@@ -12,7 +12,7 @@ void main() async {
   );
 
   FlavorConfig(
-    flavor: Flavor.local,
+    flavor: Flavor.dev,
     color: Colors.green,
     values: FlavorValues(
       baseUrl: "https://dev.party-radar.app/api/v1",
