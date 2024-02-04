@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyCgBxMfHD7sHvInd11p1KN5WIx5klN-8m4</string>
+	<string>AIzaSyBaim2dFzJMG-FoVo8uAXkZIgnRGT6KwSs</string>
 	<key>GCM_SENDER_ID</key>
-	<string>185966042146</string>
+	<string>458837589684</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>org.partytime</string>
+	<string>app.party-radar.dev.ios</string>
 	<key>PROJECT_ID</key>
-	<string>partytime-bce04</string>
+	<string>party-radar-dev</string>
 	<key>STORAGE_BUCKET</key>
-	<string>partytime-bce04.appspot.com</string>
+	<string>party-radar-dev.appspot.com</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:185966042146:ios:f65d4f9560503e3e95fe7b</string>
+	<string>1:458837589684:ios:048473fead7448eef8a1e1</string>
 </dict>
 </plist>
