@@ -52,7 +52,6 @@ CREATE TABLE "user"
     id                       SERIAL PRIMARY KEY,
     uid                      TEXT   NULL UNIQUE,
     username                 TEXT   NULL UNIQUE,
-    email                    TEXT   NULL UNIQUE,
     image_id                 BIGINT NULL,
     current_location_id      BIGINT NULL,
     current_root_location_id BIGINT NULL,
@@ -76,8 +75,8 @@ CREATE TABLE friendship
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP   NULL,
     CONSTRAINT fk_friendship_status FOREIGN KEY (status_id) REFERENCES friendship_status (id),
-    CONSTRAINT fk_user_1_friendship FOREIGN KEY (user_1_id) REFERENCES "user" (id),
-    CONSTRAINT fk_user_2_friendship FOREIGN KEY (user_2_id) REFERENCES "user" (id),
+    CONSTRAINT fk_user_1_friendship FOREIGN KEY (user_1_id) REFERENCES "user" (id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_2_friendship FOREIGN KEY (user_2_id) REFERENCES "user" (id) ON DELETE CASCADE,
     CONSTRAINT uk_friendship_user_1_user_2 UNIQUE (user_1_id, user_2_id)
 );
 
@@ -94,7 +93,7 @@ CREATE TABLE post
     location_id  BIGINT NOT NULL,
     post_type_id BIGINT NOT NULL,
     timestamp    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_post_user FOREIGN KEY (user_id) REFERENCES "user" (id),
+    CONSTRAINT fk_post_user FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE CASCADE,
     CONSTRAINT fk_post_location FOREIGN KEY (location_id) REFERENCES location (id),
     CONSTRAINT fk_post_type FOREIGN KEY (post_type_id) REFERENCES post_type (id)
 );

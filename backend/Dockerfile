@@ -14,7 +14,7 @@ RUN sqlc generate
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o ./run .
 
-FROM golang:alpine
+FROM golang:alpine AS package
 
 WORKDIR /root/
 

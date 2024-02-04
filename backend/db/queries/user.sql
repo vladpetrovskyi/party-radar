@@ -38,16 +38,13 @@ SET image_id = $1
 WHERE id = $2;
 
 -- name: CreateUser :exec
-INSERT INTO "user" (uid, email)
-VALUES ($1, $2);
-
--- name: UpdateUser :exec
-UPDATE "user"
-SET username = $1,
-    email    = $2
-WHERE uid = $3;
+INSERT INTO "user" (uid)
+VALUES ($1);
 
 -- name: UpdateUsername :exec
 UPDATE "user"
 SET username = $1
 WHERE uid = $2;
+
+-- name: DeleteUser :one
+DELETE FROM "user" WHERE uid = $1 RETURNING *;

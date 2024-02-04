@@ -72,12 +72,12 @@ func (h *PostHandler) GetPosts(c *gin.Context) {
 func (h *PostHandler) GetFeed(c *gin.Context) {
 	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
 	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Offset value must be numeric"})
 		return
 	}
 	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Limit value must be numeric"})
 		return
 	}
 	username := "%" + strings.ToLower(c.Query("username")) + "%"
@@ -85,7 +85,7 @@ func (h *PostHandler) GetFeed(c *gin.Context) {
 	uid := c.GetString("tokenUID")
 	user, err := h.Queries.GetUserByUID(c, &uid)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "No user found"})
 		return
 	}
 
@@ -169,6 +169,31 @@ func (h *PostHandler) GetUserPostsCount(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"count": userPostsCount})
+}
+
+func (h *PostHandler) DeletePost(c *gin.Context) {
+	postStringId := c.Param("id")
+	if len(postStringId) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Cannot delete post without ID"})
+		return
+	}
+
+	var (
+		postId int64
+		err    error
+	)
+	if postId, err = strconv.ParseInt(c.Param("id"), 10, 64); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Friendship ID must be numeric"})
+		return
+	}
+
+	err = h.Queries.DeletePost(c, postId)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
 
 func (h *PostHandler) CreatePost(c *gin.Context) {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"party-time/db"
 	"strconv"
@@ -21,8 +22,7 @@ type UserHandler struct {
 func (h *UserHandler) Register(c *gin.Context) {
 	var (
 		user = struct {
-			UID   *string `json:"uid"`
-			Email *string `json:"email"`
+			UID *string `json:"uid"`
 		}{}
 		err error
 	)
@@ -37,10 +37,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	if err = h.Queries.CreateUser(h.Ctx, db.CreateUserParams{
-		Uid:   user.UID,
-		Email: user.Email,
-	}); err != nil {
+	if err = h.Queries.CreateUser(h.Ctx, user.UID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
@@ -51,33 +48,6 @@ func (h *UserHandler) Register(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"msg": "new user has been created"})
-}
-
-func (h *UserHandler) UpdateUser(c *gin.Context) {
-	var (
-		user = struct {
-			Username *string `json:"username"`
-			Email    *string `json:"email"`
-		}{}
-		err error
-	)
-	if err = c.BindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
-		return
-	}
-
-	uid := c.GetString("tokenUID")
-
-	if err = h.Queries.UpdateUser(h.Ctx, db.UpdateUserParams{
-		Username: user.Username,
-		Email:    user.Email,
-		Uid:      &uid,
-	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"msg": "user has been updated"})
 }
 
 func (h *UserHandler) UpdateUserRootLocation(c *gin.Context) {
@@ -162,31 +132,76 @@ func (h *UserHandler) UpdateUsername(c *gin.Context) {
 func (h *UserHandler) GetUserByUsername(c *gin.Context) {
 	username := c.Param("username")
 
+	log.Debug().Msgf("Get user by username: %s", username)
+
 	user, err := h.Queries.GetUserByUsername(h.Ctx, &username)
 	if err != nil {
-		c.JSON(http.StatusNotFound, nil)
+		log.Debug().Msgf("User by username %s not found. Error: %v", username, err)
+		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
 		return
 	}
 
 	if c.Request.Method == "HEAD" {
-		c.JSON(200, nil)
+		c.Status(http.StatusOK)
 	} else {
-		c.JSON(200, user)
+		c.JSON(http.StatusOK, user)
 	}
 }
 
 func (h *UserHandler) GetUserByUID(c *gin.Context) {
 	userUID := c.Query("userUID")
 
+	log.Debug().Msgf("Get user by UID: %s", userUID)
+
 	user, err := h.Queries.GetUserByUID(h.Ctx, &userUID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, nil)
+		log.Debug().Msgf("User by UID %s not found. Error: %v", userUID, err)
+		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
 		return
 	}
 
-	if c.Request.Method == "HEAD" {
-		c.JSON(200, nil)
-	} else {
-		c.JSON(200, user)
+	c.JSON(http.StatusOK, user)
+}
+
+func (h *UserHandler) DeleteUser(c *gin.Context) {
+	uid := c.GetString("tokenUID")
+
+	tx, err := h.DB.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		return
 	}
+	defer func() {
+		if deferredErr := tx.Rollback(); deferredErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": fmt.Sprintf("could not rollback a transaction: %v", deferredErr)})
+			return
+		}
+	}()
+
+	user, err := h.Queries.WithTx(tx).DeleteUser(h.Ctx, &uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		return
+	}
+
+	if user.ImageID != nil {
+		if err := h.Queries.WithTx(tx).DeleteImage(c, *user.ImageID); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+			return
+		}
+	}
+
+	isUserDeleted, err := h.Enforcer.DeleteUser(uid)
+	if err != nil || !isUserDeleted {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Could not delete user roles/privileges"})
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"msg": "user has been deleted"})
 }

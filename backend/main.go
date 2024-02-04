@@ -236,7 +236,7 @@ func setupRoutes(
 	userGroup.HEAD("/:username", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.GetUserByUsername)
 	userGroup.GET("/:username", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.GetUserByUsername)
 	userGroup.GET("", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.GetUserByUID)
-	userGroup.PUT("", authHandler.AuthorizeViaFirebase("data", "write"), userHandler.UpdateUser)
+	userGroup.DELETE("", authHandler.AuthorizeViaFirebase("data", "write"), userHandler.DeleteUser)
 	userGroup.PUT("/username", authHandler.AuthorizeViaFirebase("data", "write"), userHandler.UpdateUsername)
 	userGroup.PUT("/root-location/:id", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.UpdateUserRootLocation)
 	userGroup.DELETE("/location", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.DeleteUserLocation)
@@ -262,6 +262,7 @@ func setupRoutes(
 	postGroup.GET("/feed", authHandler.AuthorizeViaFirebase("data", "read"), postHandler.GetFeed)
 	postGroup.GET("/count", authHandler.AuthorizeViaFirebase("data", "read"), postHandler.GetUserPostsCount)
 	postGroup.POST("", authHandler.AuthorizeViaFirebase("data", "read"), postHandler.CreatePost)
+	postGroup.DELETE("/:id", authHandler.AuthorizeViaFirebase("data", "read"), postHandler.DeletePost)
 
 	friendshipHandler := internal.FriendshipHandler{
 		Queries: queries,
