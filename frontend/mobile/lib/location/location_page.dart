@@ -46,7 +46,7 @@ class _LocationPageState extends State<LocationPage> {
                     currentUserLocationId: snapshot.data?.locationId,
                     onChangedLocation: () => _refresh(),
                   )
-                : const CircularProgressIndicator();
+                : const Center(child: CircularProgressIndicator());
           }),
     );
   }

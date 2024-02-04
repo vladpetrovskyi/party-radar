@@ -3,14 +3,14 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
-import 'package:party_radar/common/util/extensions.dart';
+import 'package:party_radar/common/flavors/flavor_config.dart';
 
 class ImageService {
   static Future<bool> updateImage(int imageId, File imageFile) async {
     var request = MultipartRequest(
         'PUT',
         Uri.parse(
-            'http://${ServerAddressExtension.serverAddress}:8080/api/v1/image/$imageId'));
+            '${FlavorConfig.instance.values.baseUrl}/image/$imageId'));
     request.files.add(MultipartFile.fromBytes(
         'imageFile', imageFile.readAsBytesSync(),
         filename: imageFile.path));
@@ -34,7 +34,7 @@ class ImageService {
     var request = MultipartRequest(
         'POST',
         Uri.parse(
-            'http://${ServerAddressExtension.serverAddress}:8080/api/v1/image?userId=$userId'));
+            '${FlavorConfig.instance.values.baseUrl}/image?userId=$userId'));
     request.files.add(MultipartFile.fromBytes(
         'imageFile', imageFile.readAsBytesSync(),
         filename: imageFile.path));
@@ -62,7 +62,7 @@ class ImageService {
       width: size,
       height: size,
       fit: BoxFit.cover,
-      'http://${ServerAddressExtension.serverAddress}:8080/api/v1/image/$id',
+      '${FlavorConfig.instance.values.baseUrl}/image/$id',
       headers: {HttpHeaders.authorizationHeader: 'Bearer $token'},
       errorBuilder: (context, exception, stackTrace) {
         return Icon(Icons.question_mark, size: size ?? 128, color: Colors.grey);

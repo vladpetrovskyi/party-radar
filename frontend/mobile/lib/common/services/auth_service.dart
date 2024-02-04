@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart';
+import 'package:party_radar/common/flavors/flavor_config.dart';
 
 class AuthService {
   static Future<String?> login(String login, String password) async {
@@ -47,9 +49,10 @@ class AuthService {
     };
 
     Response response = await post(
-        Uri.parse('http://localhost:8080/api/v1/user/registration'),
-        body: json.encode(registrationData),
-        headers: {'Content-Type': 'application/json'});
+        Uri.parse(
+            '${FlavorConfig.instance.values.baseUrl}/user/registration'),
+        body: jsonEncode(registrationData),
+        headers: {HttpHeaders.contentTypeHeader: 'application/json'});
 
     if (response.statusCode != 200) {
       FirebaseAuth.instance.currentUser?.delete();

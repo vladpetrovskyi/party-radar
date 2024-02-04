@@ -1,38 +1,27 @@
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth_pkg;
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:party_radar/common/flavors/flavor_banner.dart';
 import 'package:party_radar/common/models.dart';
-import 'package:party_radar/firebase_options.dart';
+import 'package:party_radar/common/services/location_service.dart';
+import 'package:party_radar/common/services/user_service.dart';
 import 'package:party_radar/home/feed/feed_page.dart';
 import 'package:party_radar/home/location_selection_page.dart';
 import 'package:party_radar/location/location_page.dart';
 import 'package:party_radar/login/login_widget.dart';
 import 'package:party_radar/profile/user_profile_page.dart';
-import 'package:party_radar/common/services/location_service.dart';
-import 'package:party_radar/common/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  runApp(const MyApp());
-}
-
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+class PartyRadarApp extends StatefulWidget {
+  const PartyRadarApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<PartyRadarApp> createState() => _PartyRadarAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _PartyRadarAppState extends State<PartyRadarApp> {
   @override
   Widget build(BuildContext context) {
     firebase_auth_pkg.User? getUserData() =>
@@ -101,44 +90,49 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: [
-        club == null
-            ? LocationSelectionPage(
-                onChangeLocation: () => _initClub(),
-              ) : const FeedPage(),
-        club != null ? LocationPage(
-            club: club!,
-            onQuitRootLocation: () => setState(() {
-              _currentPageIndex = 0;
-              club = null;
-            })) : Container(),
-        const UserProfilePage(),
-      ][_currentPageIndex],
-      bottomNavigationBar: NavigationBar(
-        height: 65,
-        onDestinationSelected: (int index) {
-          setState(() {
-            _currentPageIndex = index;
-          });
-        },
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: <Widget>[
-          const NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            label: 'Feed',
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.share_location_outlined),
-            label: 'Location',
-            enabled: club != null,
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          )
-        ],
-        selectedIndex: _currentPageIndex,
+    return FlavorBanner(
+      child: Scaffold(
+        body: [
+          club == null
+              ? LocationSelectionPage(
+                  onChangeLocation: () => _initClub(),
+                )
+              : const FeedPage(),
+          club != null
+              ? LocationPage(
+                  club: club!,
+                  onQuitRootLocation: () => setState(() {
+                        _currentPageIndex = 0;
+                        club = null;
+                      }))
+              : Container(),
+          const UserProfilePage(),
+        ][_currentPageIndex],
+        bottomNavigationBar: NavigationBar(
+          height: 65,
+          onDestinationSelected: (int index) {
+            setState(() {
+              _currentPageIndex = index;
+            });
+          },
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: <Widget>[
+            const NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              label: 'Feed',
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.share_location_outlined),
+              label: 'Location',
+              enabled: club != null,
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              label: 'Profile',
+            )
+          ],
+          selectedIndex: _currentPageIndex,
+        ),
       ),
     );
   }

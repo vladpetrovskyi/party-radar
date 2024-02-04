@@ -3,10 +3,11 @@ import 'package:party_radar/common/models.dart';
 import 'package:party_radar/common/services/post_service.dart';
 
 class ShareLocationDialog extends StatefulWidget {
-  const ShareLocationDialog(
-      {super.key,
-        required this.onCurrentLocationChanged,
-        required this.locationId});
+  const ShareLocationDialog({
+    super.key,
+    required this.onCurrentLocationChanged,
+    required this.locationId,
+  });
 
   final Function() onCurrentLocationChanged;
   final int locationId;
@@ -34,7 +35,6 @@ class _ShareLocationDialogState extends State<ShareLocationDialog> {
             ElevatedButton(
               onPressed: () {
                 _postLocation(widget.locationId);
-                Navigator.of(context).pop();
               },
               child: const Icon(Icons.check),
             ),
@@ -45,15 +45,25 @@ class _ShareLocationDialogState extends State<ShareLocationDialog> {
   }
 
   void _postLocation(int locationId) {
-    PostService
-        .createPost(locationId, PostType.ongoing)
-        .then((value) {
+    PostService.createPost(locationId, PostType.ongoing).then((value) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Your current location has been posted'),
         ),
       );
       widget.onCurrentLocationChanged();
+      Navigator.of(context).pop();
+    }).onError((error, stackTrace) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Could not post your location',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+      Navigator.of(context).pop();
     });
   }
 }

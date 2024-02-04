@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart';
+import 'package:party_radar/common/flavors/flavor_config.dart';
 import 'package:party_radar/common/models.dart' as models;
 import 'package:party_radar/common/util/extensions.dart';
 
@@ -10,7 +11,7 @@ class UserService {
   static Future<bool> userExists(String username) async {
     Response response = await head(
       Uri.parse(
-          'http://${ServerAddressExtension.serverAddress}:8080/api/v1/user/$username'),
+          '${FlavorConfig.instance.values.baseUrl}/user/$username'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -21,14 +22,26 @@ class UserService {
 
   static Future<models.User?> getUser({String? username}) async {
     username = username ?? FirebaseAuth.instance.currentUser?.displayName;
-    Response response = await get(
-      Uri.parse(
-          'http://${ServerAddressExtension.serverAddress}:8080/api/v1/user/$username'),
-      headers: {
-        HttpHeaders.authorizationHeader:
-            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
-      },
-    );
+    Response response;
+    if (username != null && username.isNotEmpty) {
+      response = await get(
+        Uri.parse(
+            '${FlavorConfig.instance.values.baseUrl}/user/$username'),
+        headers: {
+          HttpHeaders.authorizationHeader:
+          'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+        },
+      );
+    } else {
+      response = await get(
+        Uri.parse(
+            '${FlavorConfig.instance.values.baseUrl}/user?userUID=${FirebaseAuth.instance.currentUser?.uid}'),
+        headers: {
+          HttpHeaders.authorizationHeader:
+          'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+        },
+      );
+    }
 
     return response.ok
         ? models.User.fromJson(jsonDecode(response.body))
@@ -43,7 +56,7 @@ class UserService {
 
     Response response = await put(
       Uri.parse(
-          'http://${ServerAddressExtension.serverAddress}:8080/api/v1/user'),
+          '${FlavorConfig.instance.values.baseUrl}/user'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -70,7 +83,7 @@ class UserService {
   static Future<bool> updateUserRootLocation(int locationId) async {
     Response response = await put(
       Uri.parse(
-          'http://${ServerAddressExtension.serverAddress}:8080/api/v1/user/root-location/$locationId'),
+          '${FlavorConfig.instance.values.baseUrl}/user/root-location/$locationId'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -82,7 +95,7 @@ class UserService {
   static Future<bool> deleteUserLocation() async {
     Response response = await delete(
       Uri.parse(
-          'http://${ServerAddressExtension.serverAddress}:8080/api/v1/user/location'),
+          '${FlavorConfig.instance.values.baseUrl}/user/location'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'

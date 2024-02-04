@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart';
+import 'package:party_radar/common/flavors/flavor_config.dart';
 import 'package:party_radar/common/models.dart';
 import 'package:party_radar/common/util/extensions.dart';
 
@@ -10,7 +11,7 @@ class LocationService {
   static Future<List<Location>?> getLocations(ElementType elementType) async {
     final response = await get(
       Uri.parse(
-          'http://${ServerAddressExtension.serverAddress}:8080/api/v1/location?type=${elementType.name}'),
+          '${FlavorConfig.instance.values.baseUrl}/location?type=${elementType.name}'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -29,7 +30,7 @@ class LocationService {
 
     final response = await get(
       Uri.parse(
-          'http://${ServerAddressExtension.serverAddress}:8080/api/v1/location/$locationId'),
+          '${FlavorConfig.instance.values.baseUrl}/location/$locationId'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -46,7 +47,7 @@ class LocationService {
   static Future<int?> getLocationUserCount(int id) async {
     final response = await get(
       Uri.parse(
-          'http://${ServerAddressExtension.serverAddress}:8080/api/v1/location/$id/user/count'),
+          '${FlavorConfig.instance.values.baseUrl}/location/$id/user/count'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'

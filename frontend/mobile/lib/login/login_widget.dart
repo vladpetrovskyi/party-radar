@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_login/flutter_login.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:party_radar/main.dart';
+import 'package:party_radar/app.dart';
 import 'package:party_radar/common/services/auth_service.dart';
 import 'package:party_radar/common/util/validators.dart';
 

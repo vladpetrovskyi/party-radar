@@ -100,12 +100,20 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
 
   void _postLocation(int locationId) {
     PostService.createPost(locationId, PostType.ongoing).then((value) {
-      ScaffoldMessenger.of(widget.context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Your current location has been posted'),
         ),
       );
-      widget.onChangedLocation();
+      Navigator.of(context).pop();
+    }).onError((error, stackTrace) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Could not post your location', style: TextStyle(color: Colors.white),),
+        ),
+      );
+      Navigator.of(context).pop();
     });
   }
 }
