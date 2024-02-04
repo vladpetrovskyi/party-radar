@@ -50,11 +50,13 @@ CREATE TABLE location
 CREATE TABLE "user"
 (
     id                       SERIAL PRIMARY KEY,
-    uid                      TEXT   NULL UNIQUE,
-    username                 TEXT   NULL UNIQUE,
-    image_id                 BIGINT NULL,
-    current_location_id      BIGINT NULL,
-    current_root_location_id BIGINT NULL,
+    uid                      TEXT      NULL UNIQUE,
+    username                 TEXT      NULL UNIQUE,
+    image_id                 BIGINT    NULL,
+    current_location_id      BIGINT    NULL,
+    current_root_location_id BIGINT    NULL,
+    created_on               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_on               TIMESTAMP NULL,
     CONSTRAINT fk_user_image FOREIGN KEY (image_id) REFERENCES image (id),
     CONSTRAINT fk_user_current_location FOREIGN KEY (current_location_id) REFERENCES location (id),
     CONSTRAINT fk_user_current_root_location FOREIGN KEY (current_root_location_id) REFERENCES location (id)
@@ -69,11 +71,11 @@ CREATE TABLE friendship_status
 CREATE TABLE friendship
 (
     id         SERIAL PRIMARY KEY,
-    user_1_id  BIGINT NOT NULL,
-    user_2_id  BIGINT NOT NULL,
-    status_id  BIGINT NOT NULL,
+    user_1_id  BIGINT    NOT NULL,
+    user_2_id  BIGINT    NOT NULL,
+    status_id  BIGINT    NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP   NULL,
+    updated_at TIMESTAMP NULL,
     CONSTRAINT fk_friendship_status FOREIGN KEY (status_id) REFERENCES friendship_status (id),
     CONSTRAINT fk_user_1_friendship FOREIGN KEY (user_1_id) REFERENCES "user" (id) ON DELETE CASCADE,
     CONSTRAINT fk_user_2_friendship FOREIGN KEY (user_2_id) REFERENCES "user" (id) ON DELETE CASCADE,
@@ -89,36 +91,44 @@ CREATE TABLE post_type
 CREATE TABLE post
 (
     id           SERIAL PRIMARY KEY,
-    user_id      BIGINT NOT NULL,
-    location_id  BIGINT NOT NULL,
-    post_type_id BIGINT NOT NULL,
-    timestamp    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    user_id      BIGINT    NOT NULL,
+    location_id  BIGINT    NOT NULL,
+    post_type_id BIGINT    NOT NULL,
+    timestamp    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_post_user FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE CASCADE,
     CONSTRAINT fk_post_location FOREIGN KEY (location_id) REFERENCES location (id),
     CONSTRAINT fk_post_type FOREIGN KEY (post_type_id) REFERENCES post_type (id)
 );
 
-CREATE OR REPLACE FUNCTION update_changetimestamp_column()
+CREATE OR REPLACE FUNCTION update_timestamp_column()
     RETURNS TRIGGER AS
 $$
 BEGIN
     NEW.updated_at = now();
-RETURN NEW;
+    RETURN NEW;
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER update_ab_changetimestamp
+CREATE TRIGGER update_friendship_timestamp
     BEFORE UPDATE
     ON friendship
     FOR EACH ROW
-    EXECUTE PROCEDURE
-        update_changetimestamp_column();
+EXECUTE PROCEDURE
+    update_timestamp_column();
+
+CREATE TRIGGER update_user_timestamp
+    BEFORE UPDATE
+    ON "user"
+    FOR EACH ROW
+EXECUTE PROCEDURE
+    update_timestamp_column();
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TRIGGER update_ab_changetimestamp ON friendship;
-DROP FUNCTION update_changetimestamp_column();
+DROP TRIGGER update_user_timestamp ON "user";
+DROP TRIGGER update_friendship_timestamp ON friendship;
+DROP FUNCTION update_timestamp_column();
 DROP TABLE post;
 DROP TABLE post_type;
 DROP TABLE friendship;
