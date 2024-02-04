@@ -47,7 +47,7 @@ dependencies:
   image_picker: ^0.8.7
   infinite_scroll_pagination: ^4.0.0
   flutter_native_splash: ^2.3.10
-  device_info: ^2.0.3
+  device_info_plus: ^9.1.2
 
 dev_dependencies:
   flutter_test:

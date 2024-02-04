@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:device_info/device_info.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/flavors/device_utils.dart';
 import 'package:party_radar/common/flavors/flavor_config.dart';
