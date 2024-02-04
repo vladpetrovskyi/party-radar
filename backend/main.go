@@ -233,8 +233,9 @@ func setupRoutes(
 	}
 	userGroup := v1.Group("/user")
 	userGroup.POST("/registration", userHandler.Register)
-	userGroup.HEAD("/:username", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.GetUser)
-	userGroup.GET("/:username", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.GetUser)
+	userGroup.HEAD("/:username", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.GetUserByUsername)
+	userGroup.GET("/:username", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.GetUserByUsername)
+	userGroup.GET("", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.GetUserByUID)
 	userGroup.PUT("", authHandler.AuthorizeViaFirebase("data", "write"), userHandler.UpdateUser)
 	userGroup.PUT("/username", authHandler.AuthorizeViaFirebase("data", "write"), userHandler.UpdateUsername)
 	userGroup.PUT("/root-location/:id", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.UpdateUserRootLocation)

@@ -159,10 +159,26 @@ func (h *UserHandler) UpdateUsername(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "Username updated"})
 }
 
-func (h *UserHandler) GetUser(c *gin.Context) {
+func (h *UserHandler) GetUserByUsername(c *gin.Context) {
 	username := c.Param("username")
 
 	user, err := h.Queries.GetUserByUsername(h.Ctx, &username)
+	if err != nil {
+		c.JSON(http.StatusNotFound, nil)
+		return
+	}
+
+	if c.Request.Method == "HEAD" {
+		c.JSON(200, nil)
+	} else {
+		c.JSON(200, user)
+	}
+}
+
+func (h *UserHandler) GetUserByUID(c *gin.Context) {
+	userUID := c.Query("userUID")
+
+	user, err := h.Queries.GetUserByUID(h.Ctx, &userUID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, nil)
 		return
