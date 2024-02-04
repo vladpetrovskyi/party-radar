@@ -55,8 +55,8 @@ CREATE TABLE "user"
     image_id                 BIGINT    NULL,
     current_location_id      BIGINT    NULL,
     current_root_location_id BIGINT    NULL,
-    created_on               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_on               TIMESTAMP NULL,
+    created_at               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at               TIMESTAMP NULL,
     CONSTRAINT fk_user_image FOREIGN KEY (image_id) REFERENCES image (id),
     CONSTRAINT fk_user_current_location FOREIGN KEY (current_location_id) REFERENCES location (id),
     CONSTRAINT fk_user_current_root_location FOREIGN KEY (current_root_location_id) REFERENCES location (id)
