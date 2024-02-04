@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "185966042146",
-    "project_id": "partytime-bce04",
-    "storage_bucket": "partytime-bce04.appspot.com"
+    "project_number": "458837589684",
+    "project_id": "party-radar-dev",
+    "storage_bucket": "party-radar-dev.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:185966042146:android:e79fc7e4519ac77495fe7b",
+        "mobilesdk_app_id": "1:458837589684:android:8ba2306befd5a0edf8a1e1",
         "android_client_info": {
-          "package_name": "com.example.mobile"
+          "package_name": "app.party_radar"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDhU2pex5N9f8NuemLNKLE7l43nHADODIg"
+          "current_key": "AIzaSyDplo5mcz__uah8HEcFwQ_iQcCBctoUP4U"
         }
       ],
       "services": {

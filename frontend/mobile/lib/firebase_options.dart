@@ -50,19 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDhU2pex5N9f8NuemLNKLE7l43nHADODIg',
-    appId: '1:185966042146:android:e79fc7e4519ac77495fe7b',
-    messagingSenderId: '185966042146',
-    projectId: 'partytime-bce04',
-    storageBucket: 'partytime-bce04.appspot.com',
+    apiKey: 'AIzaSyDplo5mcz__uah8HEcFwQ_iQcCBctoUP4U',
+    appId: '1:458837589684:android:8ba2306befd5a0edf8a1e1',
+    messagingSenderId: '458837589684',
+    projectId: 'party-radar-dev',
+    storageBucket: 'party-radar-dev.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCgBxMfHD7sHvInd11p1KN5WIx5klN-8m4',
-    appId: '1:185966042146:ios:f65d4f9560503e3e95fe7b',
-    messagingSenderId: '185966042146',
-    projectId: 'partytime-bce04',
-    storageBucket: 'partytime-bce04.appspot.com',
-    iosBundleId: 'org.partytime',
+    apiKey: 'AIzaSyBaim2dFzJMG-FoVo8uAXkZIgnRGT6KwSs',
+    appId: '1:458837589684:ios:048473fead7448eef8a1e1',
+    messagingSenderId: '458837589684',
+    projectId: 'party-radar-dev',
+    storageBucket: 'party-radar-dev.appspot.com',
+    iosBundleId: 'app.party-radar.dev.ios',
   );
 }
