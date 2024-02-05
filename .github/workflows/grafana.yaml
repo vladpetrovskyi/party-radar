@@ -1,0 +1,35 @@
+name: Grafana deployment
+
+run-name: Deploy Grafana on ${{ github.ref_name }}
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "infrastructure/grafana/**"
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Copy files via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          key: ${{ secrets.PRIVATE_KEY }}
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.HOST_USERNAME }}
+          password: ${{ secrets.HOST_PASSWORD }}
+          overwrite: true
+          source: "infrastructure/grafana/docker-compose.yaml"
+          target: ~/
+
+      - name: Deploy to Hel server via SSH action
+        uses: appleboy/ssh-action@master
+        with:
+          key: ${{ secrets.PRIVATE_KEY }}
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.HOST_USERNAME }}
+          password: ${{ secrets.HOST_PASSWORD }}
+          script: |
+            docker compose -f infrastructure/grafana/docker-compose.yaml down
+            docker compose -f infrastructure/grafana/docker-compose.yaml up -d

@@ -15,6 +15,7 @@ services:
     networks:
       - dev
       - prod
+      - loki
 
 networks:
   dev:
@@ -22,4 +23,7 @@ networks:
     external: true
   prod:
     name: party-radar_prod
+    external: true
+  loki:
+    name: loki
     external: true
