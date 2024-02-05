@@ -8,7 +8,8 @@ import 'package:party_radar/common/services/friendship_service.dart';
 import 'package:party_radar/common/services/post_service.dart';
 
 class ProfileTabsWidget extends StatefulWidget {
-  const ProfileTabsWidget({super.key, required this.tabController, this.initialIndex = 0});
+  const ProfileTabsWidget(
+      {super.key, required this.tabController, this.initialIndex = 0});
 
   final TabController tabController;
   final int initialIndex;
@@ -33,7 +34,8 @@ class _ProfileTabsWidgetState extends State<ProfileTabsWidget> {
             tabs: [
               Tab(
                 child: FutureBuilder(
-                    future: PostService.getPostCount(FirebaseAuth.instance.currentUser?.displayName),
+                    future: PostService.getPostCount(
+                        FirebaseAuth.instance.currentUser?.displayName),
                     builder: (context, snapshot) {
                       return _getTabText(
                           snapshot.hasData ? '${snapshot.data} ' : '',
@@ -42,7 +44,8 @@ class _ProfileTabsWidgetState extends State<ProfileTabsWidget> {
               ),
               Tab(
                 child: FutureBuilder(
-                  future: FriendshipService.getFriendshipsCount(FriendshipStatus.accepted),
+                  future: FriendshipService.getFriendshipsCount(
+                      FriendshipStatus.accepted),
                   builder: (context, snapshot) {
                     return _getTabText(
                         snapshot.hasData ? '${snapshot.data} ' : '',
@@ -52,8 +55,8 @@ class _ProfileTabsWidgetState extends State<ProfileTabsWidget> {
               ),
               Tab(
                 child: FutureBuilder(
-                  future:
-                      FriendshipService.getFriendshipsCount(FriendshipStatus.requested),
+                  future: FriendshipService.getFriendshipsCount(
+                      FriendshipStatus.requested),
                   builder: (context, snapshot) {
                     return _getTabText(
                         snapshot.hasData ? '${snapshot.data} ' : '',
@@ -70,7 +73,8 @@ class _ProfileTabsWidgetState extends State<ProfileTabsWidget> {
               children: [
                 UserPostsTab(pageSize: _pageSize, onUpdate: () => _refresh()),
                 FriendsTab(pageSize: _pageSize, onUpdate: () => _refresh()),
-                FriendshipRequestsTab(pageSize: _pageSize, onUpdate: () => _refresh()),
+                FriendshipRequestsTab(
+                    pageSize: _pageSize, updateTabCounter: () => _refresh()),
               ],
             ),
           ),
@@ -79,7 +83,7 @@ class _ProfileTabsWidgetState extends State<ProfileTabsWidget> {
     );
   }
 
-  _refresh() {
+  void _refresh() {
     setState(() {});
   }
 

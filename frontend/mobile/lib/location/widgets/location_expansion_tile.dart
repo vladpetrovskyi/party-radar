@@ -18,21 +18,7 @@ class LocationExpansionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
-      title: Row(
-        children: [
-          Text(
-            location.emoji != null
-                ? "${location.emoji} ${location.name}"
-                : location.name,
-            style: const TextStyle(
-              fontSize: 28,
-              // fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 5,),
-          if (currentUserLocationId == location.id) const Icon(Icons.check),
-        ],
-      ),
+      title: _buildTitle(context),
       subtitle: UserDotsWidget(locationId: location.id),
       children: [
         GridView.builder(
@@ -45,16 +31,53 @@ class LocationExpansionTile extends StatelessWidget {
           physics: const ClampingScrollPhysics(),
           padding: const EdgeInsets.all(10.0),
           itemCount: location.children.length,
-          itemBuilder: (context, post) {
+          itemBuilder: (context, index) {
             return LocationCard(
-              location: location.children[post],
+              location: location.children[index],
               onChangedLocation: onChangedLocation,
               isSelected:
-                  location.children[post].id == currentUserLocationId,
+                  _checkContainsSelectedLocation(location.children[index]),
             );
           },
         )
       ],
     );
   }
+
+  Widget _buildTitle(BuildContext context) {
+    bool containsSelectedLocation = _checkContainsSelectedLocation(location);
+
+    return Text(
+      location.emoji != null
+          ? "${location.emoji} ${location.name}"
+          : location.name,
+      style: TextStyle(
+        fontSize: 28,
+        color: containsSelectedLocation
+            ? Theme.of(context).colorScheme.primary
+            : null,
+        fontWeight: containsSelectedLocation ? FontWeight.bold : null,
+      ),
+    );
+  }
+
+  bool _checkContainsSelectedLocation(Location location) {
+    if (location.id == currentUserLocationId) {
+      return true;
+    }
+
+    for (Location child in location.children) {
+      if (child.children.isNotEmpty) {
+        if (_checkContainsSelectedLocation(child)) {
+          return true;
+        }
+      } else if (child.id == currentUserLocationId) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }
+
+//

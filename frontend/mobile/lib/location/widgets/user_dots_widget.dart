@@ -47,7 +47,7 @@ class UserDots extends StatelessWidget {
           child: Icon(
             Icons.circle,
             size: 10,
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
       ),

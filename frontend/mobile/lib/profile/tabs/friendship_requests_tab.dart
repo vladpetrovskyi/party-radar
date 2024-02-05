@@ -8,18 +8,18 @@ import 'package:party_radar/common/services/image_service.dart';
 
 class FriendshipRequestsTab extends StatefulWidget {
   const FriendshipRequestsTab(
-      {super.key, required this.pageSize, this.onUpdate});
+      {super.key, required this.pageSize, this.updateTabCounter});
 
   final int pageSize;
-  final Function()? onUpdate;
+  final Function()? updateTabCounter;
 
   @override
   State<FriendshipRequestsTab> createState() => _FriendshipRequestsTabState();
 }
 
 class _FriendshipRequestsTabState extends State<FriendshipRequestsTab> {
-  final PagingController<int, Friendship>
-      _friendshipRequestsPagingController = PagingController(firstPageKey: 0);
+  final PagingController<int, Friendship> _friendshipRequestsPagingController =
+      PagingController(firstPageKey: 0);
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +27,7 @@ class _FriendshipRequestsTabState extends State<FriendshipRequestsTab> {
       onRefresh: () async {
         await Future.delayed(const Duration(milliseconds: 500));
         _friendshipRequestsPagingController.refresh();
-        widget.onUpdate?.call();
+        widget.updateTabCounter?.call();
       },
       child: PagedListView<int, Friendship>(
         pagingController: _friendshipRequestsPagingController,
@@ -40,7 +40,7 @@ class _FriendshipRequestsTabState extends State<FriendshipRequestsTab> {
                     ? FriendWidget(
                         padding: const EdgeInsets.symmetric(vertical: 7.25),
                         username: item.friend.username ?? '? ? ? ?',
-                        image: snapshot.data,
+                        image: snapshot.data!,
                         popupMenu: _getPopupMenu(item.id),
                       )
                     : Container();
@@ -60,24 +60,19 @@ class _FriendshipRequestsTabState extends State<FriendshipRequestsTab> {
           _updateFriendship(friendshipStatus, friendshipId),
       itemBuilder: (BuildContext context) => <PopupMenuEntry<FriendshipStatus>>[
         const PopupMenuItem<FriendshipStatus>(
-          value: FriendshipStatus.accepted,
-          child: Text('Accept'),
-        ),
+            value: FriendshipStatus.accepted, child: Text('Accept')),
         const PopupMenuItem<FriendshipStatus>(
-          value: FriendshipStatus.rejected,
-          child: Text('Decline'),
-        ),
+            value: FriendshipStatus.rejected, child: Text('Decline')),
       ],
     );
   }
 
-  _updateFriendship(FriendshipStatus friendshipStatus, int friendshipId) {
-    FriendshipService
-        .updateFriendship(friendshipId, friendshipStatus)
-        .then((value) {
-      if (value) {
+  void _updateFriendship(FriendshipStatus friendshipStatus, int friendshipId) {
+    FriendshipService.updateFriendship(friendshipId, friendshipStatus)
+        .then((isUpdated) {
+      if (isUpdated) {
         _friendshipRequestsPagingController.refresh();
-        widget.onUpdate?.call();
+        widget.updateTabCounter?.call();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -96,8 +91,8 @@ class _FriendshipRequestsTabState extends State<FriendshipRequestsTab> {
   void initState() {
     _friendshipRequestsPagingController.addPageRequestListener((pageKey) async {
       try {
-        final newItems = await FriendshipService.getFriendships(FriendshipStatus.requested,
-            pageKey, widget.pageSize);
+        final newItems = await FriendshipService.getFriendships(
+            FriendshipStatus.requested, pageKey, widget.pageSize);
         final isLastPage = newItems.length < widget.pageSize;
         if (isLastPage) {
           _friendshipRequestsPagingController.appendLastPage(newItems);

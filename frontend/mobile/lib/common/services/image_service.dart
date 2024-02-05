@@ -55,7 +55,7 @@ class ImageService {
     return true;
   }
 
-  static Future<Image?> getImage(int? id, {double? size}) async {
+  static Future<Image> getImage(int? id, {double? size}) async {
     var token = await FirebaseAuth.instance.currentUser?.getIdToken();
 
     return Image.network(

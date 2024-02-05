@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/models.dart';
 import 'package:party_radar/common/services/post_service.dart';
+import 'package:party_radar/home/feed/widgets/simple_location_dialog.dart';
+import 'package:widget_zoom/widget_zoom.dart';
 
 class PostWidget extends StatefulWidget {
   const PostWidget({
@@ -10,7 +12,7 @@ class PostWidget extends StatefulWidget {
     required this.post,
     this.image,
     this.isEditable = false,
-    this.onDelete
+    this.onDelete,
   });
 
   final String title;
@@ -27,24 +29,51 @@ class PostWidget extends StatefulWidget {
 class _PostWidgetState extends State<PostWidget> {
   late Offset _tapPosition;
 
+  void _openPositionDialog(Location openDialogLocation) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return SimpleLocationDialog(
+          dialogName: openDialogLocation.children[0].name,
+          imageId: openDialogLocation.imageId,
+        );
+      },
+    );
+  }
+
+  Location? _getOpenDialogLocation(Location location) {
+    if (widget.post.location.onClickAction == OnClickAction.openDialog) {
+      return location;
+    }
+    for (Location child in location.children) {
+      if (child.onClickAction == OnClickAction.openDialog) {
+        return child;
+      }
+      var c = _getOpenDialogLocation(child);
+      if (c?.onClickAction == OnClickAction.openDialog) {
+        return c;
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    var openDialogLocation = _getOpenDialogLocation(widget.post.location);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       clipBehavior: Clip.hardEdge,
       child: InkWell(
-        onTapDown: _storePosition,
+        onTapDown: widget.isEditable ? _storePosition : null,
         onLongPress: widget.isEditable ? () => _showPopupMenu() : null,
+        onTap: openDialogLocation != null
+            ? () => _openPositionDialog(openDialogLocation)
+            : null,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             ListTile(
-              leading: widget.image != null
-                  ? ClipOval(
-                      child:
-                          SizedBox(width: 50, height: 50, child: widget.image),
-                    )
-                  : null,
+              leading: _getLeadingImage(),
               title: Text(
                 widget.title,
                 style: const TextStyle(fontWeight: FontWeight.bold),
@@ -73,6 +102,17 @@ class _PostWidgetState extends State<PostWidget> {
       ),
     );
   }
+
+  Widget? _getLeadingImage() => widget.image != null
+      ? ClipOval(
+          child: SizedBox(
+          width: 50,
+          height: 50,
+          child: WidgetZoom(
+              heroAnimationTag: 'tag-${widget.post.id}',
+              zoomWidget: widget.image!),
+        ))
+      : null;
 
   String _getLocationHeader(Post post) {
     if (post.type == PostType.start) {
@@ -116,8 +156,8 @@ class _PostWidgetState extends State<PostWidget> {
       items: <PopupMenuEntry<Post>>[
         PopupMenuItem<Post>(
           onTap: () {
-            PostService.deletePost(widget.post.id!).then((value) {
-              if (!value) {
+            PostService.deletePost(widget.post.id!).then((isDeleted) {
+              if (!isDeleted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     backgroundColor: Colors.redAccent,

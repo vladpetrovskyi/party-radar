@@ -57,67 +57,59 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
             const SizedBox(height: 10),
             DialogRadiosWidget(
               locations: widget.locations,
-              onChangeSelectedRadio: (locationId) => setState(() {
-                selectedRadio = locationId;
-              }),
+              onChangeSelectedRadio: (locationId) =>
+                  setState(() => selectedRadio = locationId),
               selectedRadio: selectedRadio,
             )
           ],
         ),
         actions: <Widget>[
-          ElevatedButton(
-            onPressed: _isLoading
-                ? null
-                : () {
-                    selectedRadio = null;
-                    Navigator.of(context).pop();
-                  },
-            child: const Icon(Icons.close),
-          ),
-          ElevatedButton(
-            onPressed: _isLoading
-                ? null
-                : () {
-                    setState(() {
-                      selectedRadio = null;
-                    });
-                  },
-            child: const Icon(Icons.delete_forever_outlined),
-          ),
-          ElevatedButton(
-            onPressed: _isLoading
-                ? null
-                : _isRegistrationFinished()
-                    ? () {
-                        _postLocation(selectedRadio ?? widget.parentLocationId);
-                        Navigator.of(context).pop();
-                      }
-                    : null,
-            child: const Icon(Icons.check),
-          ),
+          _getLoadingButton(
+              icon: Icons.close,
+              onPressedFunction: () {
+                selectedRadio = null;
+                Navigator.of(context).pop();
+              }),
+          _getLoadingButton(
+              icon: Icons.delete_forever_outlined,
+              onPressedFunction: () => setState(() => selectedRadio = null)),
+          _getLoadingButton(
+              icon: Icons.check,
+              onPressedFunction: _isRegistrationFinished()
+                  ? () =>
+                      _postLocation(selectedRadio ?? widget.parentLocationId)
+                  : () {}),
         ],
         actionsAlignment: MainAxisAlignment.center,
       );
     });
   }
 
-  bool _isRegistrationFinished() {
-    return (FirebaseAuth.instance.currentUser!.emailVerified ||
-            FlavorConfig.instance.flavor != Flavor.prod) &&
-        FirebaseAuth.instance.currentUser!.displayName != null;
-  }
+  Widget _getLoadingButton({
+    required IconData icon,
+    required Function() onPressedFunction,
+  }) =>
+      ElevatedButton(
+        onPressed: _isLoading ? null : onPressedFunction,
+        child: Icon(icon),
+      );
+
+  bool _isRegistrationFinished() =>
+      (FirebaseAuth.instance.currentUser!.emailVerified ||
+          FlavorConfig.instance.flavor != Flavor.prod) &&
+      FirebaseAuth.instance.currentUser!.displayName != null;
 
   void _postLocation(int locationId) {
-    setState(() {
-      _isLoading = true;
-    });
-    PostService.createPost(locationId, PostType.ongoing).then((value) {
+    setState(() => _isLoading = true);
+
+    PostService.createPost(locationId, PostType.ongoing).then((_) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Your current location has been posted'),
         ),
       );
       Navigator.of(context).pop();
+      widget.onChangedLocation();
     }).onError((error, stackTrace) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
