@@ -31,5 +31,5 @@ jobs:
           username: ${{ secrets.HOST_USERNAME }}
           password: ${{ secrets.HOST_PASSWORD }}
           script: |
-            docker compose -f infrastructure/nginx/docker-compose.yaml down
-            docker compose -f infrastructure/nginx/docker-compose.yaml up -d
+            docker compose -f infrastructure/proxy/docker-compose.yaml down
+            docker compose -f infrastructure/proxy/docker-compose.yaml up -d
