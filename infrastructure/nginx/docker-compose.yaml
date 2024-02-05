@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  proxy:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: proxy
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+      - '5432:5432'
+    volumes:
+      - ./.proxy/data:/data
+      - ./.proxy/letsencrypt:/etc/letsencrypt
+    networks:
+      - dev
+      - prod
+    labels:
+      logging: "promtail"
+      logging_jobname: "containerlogs"
+
+networks:
+  dev:
+    name: party-radar_dev
+    external: true
+  prod:
+    name: party-radar_prod
+    external: true
