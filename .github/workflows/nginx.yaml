@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "infrastructure/nginx/**"
+      - "infrastructure/proxy/**"
 
 jobs:
   deploy:
@@ -20,7 +20,7 @@ jobs:
           username: ${{ secrets.HOST_USERNAME }}
           password: ${{ secrets.HOST_PASSWORD }}
           overwrite: true
-          source: "infrastructure/nginx/docker-compose.nginx.yaml"
+          source: "infrastructure/proxy/docker-compose.yaml"
           target: ~/
 
       - name: Deploy to Hel server via SSH action
@@ -31,5 +31,5 @@ jobs:
           username: ${{ secrets.HOST_USERNAME }}
           password: ${{ secrets.HOST_PASSWORD }}
           script: |
-            docker compose -f infrastructure/nginx/docker-compose.nginx.yaml down
-            docker compose -f infrastructure/nginx/docker-compose.nginx.yaml up -d
+            docker compose -f infrastructure/nginx/docker-compose.yaml down
+            docker compose -f infrastructure/nginx/docker-compose.yaml up -d
