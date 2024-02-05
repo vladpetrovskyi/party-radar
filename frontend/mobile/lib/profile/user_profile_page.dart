@@ -90,16 +90,26 @@ class _UserProfilePageState extends State<UserProfilePage>
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showDialog<bool>(
-            context: context,
-            builder: (BuildContext context) {
-              return const FriendshipRequestDialog();
-            },
-          ).then((value) {
-            if (value != null && value) setState(() {});
-          });
-        },
+        onPressed: FirebaseAuth.instance.currentUser?.displayName != null
+            ? () {
+                showDialog<bool>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return const FriendshipRequestDialog();
+                  },
+                ).then((value) {
+                  if (value != null && value) setState(() {});
+                });
+              }
+            : () => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    backgroundColor: Colors.red,
+                    content: Text(
+                      'Please select a username first!',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
         child: const Icon(Icons.person_add_alt_outlined),
       ),
     );

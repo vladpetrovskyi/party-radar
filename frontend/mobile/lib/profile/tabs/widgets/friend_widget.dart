@@ -4,14 +4,14 @@ class FriendWidget extends StatelessWidget {
   const FriendWidget({
     super.key,
     this.image,
-    required this.username,
+    this.username,
     this.subtitle,
     required this.popupMenu,
     this.padding = EdgeInsets.zero,
   });
 
   final Image? image;
-  final String username;
+  final String? username;
   final Text? subtitle;
   final PopupMenuButton? popupMenu;
   final EdgeInsetsGeometry padding;
@@ -31,7 +31,7 @@ class FriendWidget extends StatelessWidget {
                 child: SizedBox(width: 50, height: 50, child: image),
               ),
               title: Text(
-                username,
+                username ?? '? ? ? ?',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               subtitle: subtitle,

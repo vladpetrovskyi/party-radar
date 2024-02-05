@@ -38,7 +38,7 @@ class _FriendsTabState extends State<FriendsTab> {
                   return snapshot.hasData
                       ? FriendWidget(
                           image: snapshot.data,
-                          username: item.friend.username!,
+                          username: item.friend.username,
                           subtitle: item.friend.locationName != null
                               ? Text('📍 ${item.friend.locationName!}')
                               : const Text('Offline 😴'),

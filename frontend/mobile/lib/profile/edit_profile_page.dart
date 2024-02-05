@@ -192,7 +192,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   void _returnToUserPage() {
     _isLoading = false;
-    Navigator.pop(context);
+    Navigator.pop(context, true);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Changes have been saved')),
     );

@@ -71,12 +71,12 @@ class _FriendshipRequestDialogState extends State<FriendshipRequestDialog> {
                     Navigator.of(context).pop(isSuccessful);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        backgroundColor: isSuccessful ? Colors.red : null,
+                        backgroundColor: isSuccessful ? null : Colors.red,
                         content: Text(
                           isSuccessful
                               ? 'Request to ${_usernameFieldController.text} has been sent!'
                               : 'Request could not be sent: wrong username or user does not exist!',
-                          style: isSuccessful ? const TextStyle(color: Colors.white) : null,
+                          style: isSuccessful ? null : const TextStyle(color: Colors.white),
                         ),
                       ),
                     );

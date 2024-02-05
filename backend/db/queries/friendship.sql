@@ -5,11 +5,11 @@ WHERE (f.user_2_id = $1 OR f.user_1_id = $1)
   AND f.status_id = 2;
 
 -- name: GetFriendshipsByUser :many
-SELECT t.id::bigint       AS id,
-       t.user_id::bigint  AS user_id,
-       t.username::text   AS username,
-       t.image_id::bigint AS image_id,
-       l.name             AS location
+SELECT t.id       AS id,
+       t.user_id  AS user_id,
+       t.username AS username,
+       t.image_id AS image_id,
+       l.name     AS location
 FROM (SELECT f.id,
              CASE WHEN f.user_1_id != @userId::bigint then u1.id else u2.id END AS user_id,
              CASE
