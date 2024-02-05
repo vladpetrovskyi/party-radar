@@ -1,0 +1,65 @@
+version: "3.8"
+
+services:
+  proxy:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: proxy
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+      - '5432:5432'
+    volumes:
+      - ./.proxy/data:/data
+      - ./.proxy/letsencrypt:/etc/letsencrypt
+    networks:
+      - dev
+      - prod
+      - infra
+    labels:
+      logging: "promtail"
+      logging_jobname: "containerlogs"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    networks:
+      - infra
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - ./config/promtail.yaml:/etc/promtail/docker-config.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/docker-config.yaml
+    depends_on:
+      - loki
+    networks:
+      - infra
+
+  loki:
+    image: grafana/loki:2.9.4
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - infra
+
+networks:
+  infra:
+  dev:
+    name: party-radar_dev
+    external: true
+  prod:
+    name: party-radar_prod
+    external: true

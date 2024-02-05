@@ -12,6 +12,9 @@ services:
         interval: 1s
         timeout: 5s
         retries: 10
+    labels:
+      logging: "promtail"
+      logging_jobname: "containerlogs"
 
   api:
     image: ${IMAGE}
@@ -26,9 +29,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
-volumes:
-  party-radar:
+    labels:
+      logging: "promtail"
+      logging_jobname: "containerlogs"
 
 networks:
   default:
