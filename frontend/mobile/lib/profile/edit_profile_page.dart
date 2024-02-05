@@ -27,6 +27,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late final TextEditingController _usernameController;
   late final TextEditingController _emailController;
 
+  bool _isLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -97,24 +99,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: () => _updateUserData(),
-                  child: const Text('Update account'),
+                  onPressed: _isLoading ? null : () => _updateUserData(),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 25,
+                          width: 25,
+                          child: CircularProgressIndicator(),
+                        )
+                      : const Text('Update account'),
                 ),
                 const SizedBox(height: 6),
-                ElevatedButton(
-                  onPressed: () {
-                    showDialog(
-                        context: context,
-                        builder: (context) {
-                          return const DeleteAccountDialog();
-                        });
-                  },
-                  style: ButtonStyle(
-                      backgroundColor:
-                          MaterialStateProperty.all(Colors.red)),
+                OutlinedButton(
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          showDialog(
+                              context: context,
+                              builder: (context) {
+                                return const DeleteAccountDialog();
+                              });
+                        },
                   child: const Text(
                     'Delete account',
-                    style: TextStyle(color: Colors.black),
+                    style: TextStyle(color: Colors.redAccent),
                   ),
                 )
               ],
@@ -125,10 +132,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   void _updateUserData() async {
     if (_formKey.currentState?.validate() ?? false) {
+      setState(() {
+        _isLoading = true;
+      });
       if (imagePath != null) {
         bool isImageUpdated = await _uploadImage();
         if (!isImageUpdated) {
           _showErrorSnackBar('Could not update profile picture');
+          setState(() {
+            _isLoading = false;
+          });
           return;
         }
       }
@@ -137,6 +150,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
             await UserService.updateUsername(_usernameController.text);
         if (!isUserUpdated) {
           _showErrorSnackBar(null);
+          setState(() {
+            _isLoading = false;
+          });
           return;
         }
       }
@@ -145,6 +161,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
             await UserService.updateEmail(_emailController.text);
         if (!isUserEmailUpdated) {
           _showErrorSnackBar(null);
+          setState(() {
+            _isLoading = false;
+          });
           return;
         }
       }
@@ -172,6 +191,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   void _returnToUserPage() {
+    _isLoading = false;
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Changes have been saved')),

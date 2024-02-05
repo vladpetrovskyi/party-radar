@@ -12,7 +12,9 @@ class AuthService {
           .signInWithEmailAndPassword(email: login, password: password);
 
       if (userCredentials.user?.emailVerified != null &&
-          !userCredentials.user!.emailVerified) {
+          !userCredentials.user!.emailVerified &&
+          FlavorConfig.instance.flavor == Flavor.prod) {
+        FirebaseAuth.instance.signOut();
         return 'Please verify your email address';
       }
     } on FirebaseAuthException catch (e) {
@@ -49,8 +51,7 @@ class AuthService {
     };
 
     Response response = await post(
-        Uri.parse(
-            '${FlavorConfig.instance.values.baseUrl}/user/registration'),
+        Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/registration'),
         body: jsonEncode(registrationData),
         headers: {HttpHeaders.contentTypeHeader: 'application/json'});
 

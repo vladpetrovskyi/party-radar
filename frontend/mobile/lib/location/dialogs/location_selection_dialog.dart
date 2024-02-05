@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:party_radar/common/flavors/flavor_config.dart';
 import 'package:party_radar/common/models.dart';
 import 'package:party_radar/location/widgets/dialog_radios.dart';
 import 'package:party_radar/common/services/image_service.dart';
@@ -31,6 +32,7 @@ class LocationSelectionDialog extends StatefulWidget {
 
 class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
   int? selectedRadio;
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -64,27 +66,33 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
         ),
         actions: <Widget>[
           ElevatedButton(
-            child: const Icon(Icons.close),
-            onPressed: () {
-              selectedRadio = null;
-              Navigator.of(context).pop();
-            },
-          ),
-          ElevatedButton(
-            child: const Icon(Icons.delete_forever_outlined),
-            onPressed: () {
-              setState(() {
-                selectedRadio = null;
-              });
-            },
-          ),
-          ElevatedButton(
-            onPressed: _isRegistrationFinished()
-                ? () {
-                    _postLocation(selectedRadio ?? widget.parentLocationId);
+            onPressed: _isLoading
+                ? null
+                : () {
+                    selectedRadio = null;
                     Navigator.of(context).pop();
-                  }
-                : null,
+                  },
+            child: const Icon(Icons.close),
+          ),
+          ElevatedButton(
+            onPressed: _isLoading
+                ? null
+                : () {
+                    setState(() {
+                      selectedRadio = null;
+                    });
+                  },
+            child: const Icon(Icons.delete_forever_outlined),
+          ),
+          ElevatedButton(
+            onPressed: _isLoading
+                ? null
+                : _isRegistrationFinished()
+                    ? () {
+                        _postLocation(selectedRadio ?? widget.parentLocationId);
+                        Navigator.of(context).pop();
+                      }
+                    : null,
             child: const Icon(Icons.check),
           ),
         ],
@@ -94,11 +102,15 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
   }
 
   bool _isRegistrationFinished() {
-    return FirebaseAuth.instance.currentUser!.emailVerified &&
+    return (FirebaseAuth.instance.currentUser!.emailVerified ||
+            FlavorConfig.instance.flavor != Flavor.prod) &&
         FirebaseAuth.instance.currentUser!.displayName != null;
   }
 
   void _postLocation(int locationId) {
+    setState(() {
+      _isLoading = true;
+    });
     PostService.createPost(locationId, PostType.ongoing).then((value) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -110,7 +122,10 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Colors.red,
-          content: Text('Could not post your location', style: TextStyle(color: Colors.white),),
+          content: Text(
+            'Could not post your location',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
       );
       Navigator.of(context).pop();

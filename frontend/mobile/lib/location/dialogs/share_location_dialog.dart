@@ -17,6 +17,8 @@ class ShareLocationDialog extends StatefulWidget {
 }
 
 class _ShareLocationDialogState extends State<ShareLocationDialog> {
+  bool _isLoading = false;
+
   @override
   Widget build(BuildContext context) {
     return StatefulBuilder(
@@ -27,13 +29,13 @@ class _ShareLocationDialogState extends State<ShareLocationDialog> {
               'Would you like to share the selected location as your current in your feed?'),
           actions: <Widget>[
             ElevatedButton(
-              child: const Icon(Icons.close),
-              onPressed: () {
+              onPressed: _isLoading ? null : () {
                 Navigator.of(context).pop();
               },
+              child: const Icon(Icons.close),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: _isLoading ? null : () {
                 _postLocation(widget.locationId);
               },
               child: const Icon(Icons.check),
@@ -45,6 +47,9 @@ class _ShareLocationDialogState extends State<ShareLocationDialog> {
   }
 
   void _postLocation(int locationId) {
+    setState(() {
+      _isLoading = true;
+    });
     PostService.createPost(locationId, PostType.ongoing).then((value) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

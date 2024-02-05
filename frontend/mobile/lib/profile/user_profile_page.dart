@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:party_radar/common/flavors/flavor_config.dart';
 import 'package:party_radar/profile/dialogs/friendship_request.dart';
 import 'package:party_radar/profile/edit_profile_page.dart';
 import 'package:party_radar/profile/tabs/tabs_widget.dart';
@@ -111,7 +112,9 @@ class _UserProfilePageState extends State<UserProfilePage>
 
   _openEditPage(Image image) {
     User? currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null && currentUser.emailVerified) {
+    if (currentUser != null &&
+        (currentUser.emailVerified ||
+            FlavorConfig.instance.flavor != Flavor.prod)) {
       Navigator.of(context)
           .push(MaterialPageRoute(
         builder: (context) => EditProfilePage(image: image),
@@ -119,7 +122,9 @@ class _UserProfilePageState extends State<UserProfilePage>
           .then((value) {
         setState(() {});
       });
-    } else if (currentUser != null && !currentUser.emailVerified) {
+    } else if (currentUser != null &&
+        !currentUser.emailVerified &&
+        FlavorConfig.instance.flavor == Flavor.prod) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please verify your email address'),
