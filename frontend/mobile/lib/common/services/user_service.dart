@@ -20,7 +20,6 @@ class UserService {
   }
 
   static Future<models.User?> getUser({String? username}) async {
-    username = username ?? FirebaseAuth.instance.currentUser?.displayName;
     Response response;
     if (username != null && username.isNotEmpty) {
       response = await get(

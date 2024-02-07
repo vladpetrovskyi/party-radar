@@ -5,16 +5,18 @@ import 'package:widget_zoom/widget_zoom.dart';
 class SimpleLocationDialog extends StatelessWidget {
   const SimpleLocationDialog({
     super.key,
-    required this.dialogName,
+    required this.locationName,
     this.imageId,
+    this.username,
   });
 
-  final String dialogName;
+  final String locationName;
   final int? imageId;
+  final String? username;
 
   @override
   Widget build(BuildContext context) {
-    return SimpleDialog(title: _buildDialogTitle(), children: [
+    return SimpleDialog(title: _buildDialogTitle(context), children: [
       if (imageId != null) _buildImage(),
       const SizedBox(height: 12),
       _buildBackButton(context)
@@ -36,15 +38,17 @@ class SimpleLocationDialog extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             return WidgetZoom(
-                heroAnimationTag: 'tag-$dialogName',
+                heroAnimationTag: 'tag-$locationName$username',
                 zoomWidget: snapshot.data!);
           }
           return const CircularProgressIndicator();
         },
       );
 
-  Widget _buildDialogTitle() => Text(
-        'Location: $dialogName',
-        style: const TextStyle(fontWeight: FontWeight.bold),
+  Widget _buildDialogTitle(BuildContext context) => Text(
+        username != null
+            ? 'Location of $username: $locationName'
+            : 'Location: $locationName',
+    style: const TextStyle(fontWeight: FontWeight.bold),
       );
 }

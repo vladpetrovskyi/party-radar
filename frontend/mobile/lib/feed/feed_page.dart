@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:party_radar/common/models.dart';
 import 'package:party_radar/common/post_widget.dart';
-import 'package:party_radar/home/feed/widgets/no_items_found.dart';
 import 'package:party_radar/common/services/image_service.dart';
 import 'package:party_radar/common/services/post_service.dart';
+import 'package:party_radar/feed/widgets/no_items_found.dart';
 
 class FeedPage extends StatefulWidget {
   const FeedPage({super.key});

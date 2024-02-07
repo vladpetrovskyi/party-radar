@@ -7,8 +7,8 @@ import 'package:party_radar/common/flavors/flavor_banner.dart';
 import 'package:party_radar/common/models.dart';
 import 'package:party_radar/common/services/location_service.dart';
 import 'package:party_radar/common/services/user_service.dart';
-import 'package:party_radar/home/feed/feed_page.dart';
-import 'package:party_radar/home/location_selection_page.dart';
+import 'package:party_radar/feed/feed_page.dart';
+import 'package:party_radar/location/location_selection_page.dart';
 import 'package:party_radar/location/location_page.dart';
 import 'package:party_radar/login/login_widget.dart';
 import 'package:party_radar/profile/user_profile_page.dart';
@@ -53,7 +53,7 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  int _currentPageIndex = 0;
+  int _currentPageIndex = 1;
 
   Location? club;
 
@@ -93,19 +93,17 @@ class _MainPageState extends State<MainPage> {
     return FlavorBanner(
       child: Scaffold(
         body: [
-          club == null
-              ? LocationSelectionPage(
-                  onChangeLocation: () => _initClub(),
-                )
-              : const FeedPage(),
+          const FeedPage(),
           club != null
               ? LocationPage(
                   club: club!,
                   onQuitRootLocation: () => setState(() {
-                        _currentPageIndex = 0;
+                        _currentPageIndex = 1;
                         club = null;
                       }))
-              : Container(),
+              : LocationSelectionPage(
+            onChangeLocation: () => _initClub(),
+          ),
           const UserProfilePage(),
         ][_currentPageIndex],
         bottomNavigationBar: NavigationBar(
@@ -117,14 +115,14 @@ class _MainPageState extends State<MainPage> {
           },
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: <Widget>[
-            const NavigationDestination(
-              icon: Icon(Icons.home_outlined),
+             NavigationDestination(
+              icon: const Icon(Icons.history),
               label: 'Feed',
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.share_location_outlined),
-              label: 'Location',
               enabled: club != null,
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.share_location_outlined),
+              label: 'Location',
             ),
             const NavigationDestination(
               icon: Icon(Icons.person_outline),
