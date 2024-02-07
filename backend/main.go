@@ -221,6 +221,7 @@ func setupRoutes(
 		Ctx:     ctx,
 	}
 	imageGroup := v1.Group("/image")
+	imageGroup.HEAD("/:id", authHandler.AuthorizeViaFirebase("data", "read"), imageHandler.CheckImageExists)
 	imageGroup.GET("/:id", authHandler.AuthorizeViaFirebase("data", "read"), imageHandler.GetImage)
 	imageGroup.POST("", authHandler.AuthorizeViaFirebase("data", "write"), imageHandler.CreateImage)
 	imageGroup.PUT("/:id", authHandler.AuthorizeViaFirebase("data", "write"), imageHandler.UpdateImage)

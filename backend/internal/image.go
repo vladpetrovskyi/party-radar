@@ -59,6 +59,26 @@ func (h *ImageHandler) GetImage(c *gin.Context) {
 	c.Data(http.StatusOK, "application/octet-stream", image.Content)
 }
 
+func (h *ImageHandler) CheckImageExists(c *gin.Context) {
+	imageId, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Incorrect ID"})
+		return
+	}
+
+	image, err := h.Queries.GetImage(h.Ctx, imageId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	if len(image.Content) == 0 {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
 func (h *ImageHandler) UpdateImage(c *gin.Context) {
 	h.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (err error) {
 		imageId, err := strconv.ParseInt(c.Param("id"), 10, 64)
