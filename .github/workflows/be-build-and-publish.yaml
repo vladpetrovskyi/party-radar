@@ -56,3 +56,5 @@ jobs:
     needs: build_and_publish
     if: github.ref == 'refs/heads/main'
     secrets: inherit
+    with:
+      choice: dev
