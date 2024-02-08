@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  db:
+    image: postgres
+    container_name: db-prod
+    restart: always
+    env_file: .env
+    volumes:
+      - ./.db-prod/:/var/lib/postgresql/data
+    healthcheck:
+        test: [ 'CMD-SHELL', 'pg_isready', '-U', 'postgres', '-d', 'party-radar' ]
+        interval: 1s
+        timeout: 5s
+        retries: 10
+    labels:
+      logging: "promtail"
+      logging_jobname: "containerlogs"
+
+  api:
+    image: ${IMAGE}
+    container_name: ${CONTAINER}
+    restart: unless-stopped
+    env_file: .env
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8080/api/v1/health || exit 1
+      interval: 5s
+      retries: 5
+      timeout: 10s
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      logging: "promtail"
+      logging_jobname: "containerlogs"
+
+networks:
+  default:
+    name: party-radar_prod
+    external: true
