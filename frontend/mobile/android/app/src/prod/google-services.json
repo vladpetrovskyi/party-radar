@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "1048334599741",
+    "project_id": "party-radar-prod",
+    "storage_bucket": "party-radar-prod.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1048334599741:android:a0b82f719ccdf0b0234c54",
+        "android_client_info": {
+          "package_name": "app.party_radar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1048334599741-2q4qssfv1h5s7bdpq1md7lpd7pf0ja45.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbK7wRBFtkv_6tj088IzTSF7M7gO_rJgA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1048334599741-2q4qssfv1h5s7bdpq1md7lpd7pf0ja45.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1048334599741-rtntr4sdkdjcebr6ce1d2r6uga7og7g0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "app.party-radar"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

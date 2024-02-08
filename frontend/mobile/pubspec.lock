@@ -408,6 +408,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
+  freerasp:
+    dependency: "direct main"
+    description:
+      name: freerasp
+      sha256: "9c71f1306d24806594a6ee11706fa5c4ca833733e28ce948ac93c56f74096681"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.4.0"
   google_fonts:
     dependency: "direct main"
     description:

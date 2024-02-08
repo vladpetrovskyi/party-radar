@@ -53,7 +53,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage> {
                   id: snapshot.data![index].id),
             );
           } else if (snapshot.hasError) {
-            return const NotFoundWidget(title: 'No results', message: 'No location has been found. This might be an internal server error, please restart the app');
+            return const NotFoundWidget(title: 'No results', message: 'Locations could not be loaded or found.');
           }
           return const Center(child: CircularProgressIndicator());
         },

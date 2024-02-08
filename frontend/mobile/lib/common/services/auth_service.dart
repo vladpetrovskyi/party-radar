@@ -29,10 +29,10 @@ class AuthService {
   }
 
   static Future<String?> register(String email, String password) async {
+    UserCredential user;
     try {
-      UserCredential user = await FirebaseAuth.instance
+      user = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
-      user.user?.sendEmailVerification();
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
         return 'The password provided is too weak';
@@ -60,6 +60,7 @@ class AuthService {
       return json.decode(response.body)['msg'];
     }
 
+    user.user?.sendEmailVerification();
     FirebaseAuth.instance.signOut();
     return null;
   }

@@ -3,13 +3,33 @@ import 'package:flutter/material.dart';
 import 'package:party_radar/app.dart';
 import 'package:party_radar/common/flavors/flavor_config.dart';
 import 'package:party_radar/firebase_options.dart';
+import 'package:freerasp/freerasp.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  // create configuration for freeRASP
+  final config = TalsecConfig(
+    /// For Android
+    androidConfig: AndroidConfig(
+      packageName: 'app.party_radar',
+      signingCertHashes: [
+        'FMfznBvrCEaXQcpvXBLBFBshHvn6h0CiD6FhCQp/xrY='
+      ],
+    ),
+
+    /// For iOS
+    iosConfig: IOSConfig(
+      bundleIds: ['app.party-radar'],
+      teamId: 'C9V8FS7238',
+    ),
+    watcherMail: 'v.petrovskyi98@gmail.com',
+    isProd: true,
   );
+
+  await Talsec.instance.start(config);
+
+  await Firebase.initializeApp();
 
   FlavorConfig(
     flavor: Flavor.prod,
