@@ -14,7 +14,7 @@ import 'package:flutter/foundation.dart'
 ///   options: DefaultFirebaseOptions.currentPlatform,
 /// );
 /// ```
-class DefaultFirebaseOptions {
+class ProdFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
       throw UnsupportedError(
@@ -50,19 +50,21 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDplo5mcz__uah8HEcFwQ_iQcCBctoUP4U',
-    appId: '1:458837589684:android:8ba2306befd5a0edf8a1e1',
-    messagingSenderId: '458837589684',
-    projectId: 'party-radar-dev',
-    storageBucket: 'party-radar-dev.appspot.com',
+    apiKey: 'AIzaSyCbK7wRBFtkv_6tj088IzTSF7M7gO_rJgA',
+    appId: '1:1048334599741:android:a0b82f719ccdf0b0234c54',
+    messagingSenderId: '1048334599741',
+    projectId: 'party-radar-prod',
+    storageBucket: 'party-radar-prod.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBaim2dFzJMG-FoVo8uAXkZIgnRGT6KwSs',
-    appId: '1:458837589684:ios:048473fead7448eef8a1e1',
-    messagingSenderId: '458837589684',
-    projectId: 'party-radar-dev',
-    storageBucket: 'party-radar-dev.appspot.com',
-    iosBundleId: 'app.party-radar.dev.ios',
+    apiKey: 'AIzaSyDzRA1CCVJNaMP34kdJUYIJeFEeWvxDTS8',
+    appId: '1:1048334599741:ios:f942209e7acef7f8234c54',
+    messagingSenderId: '1048334599741',
+    projectId: 'party-radar-prod',
+    storageBucket: 'party-radar-prod.appspot.com',
+    androidClientId: '1048334599741-sahbkjdbm4hru6brdog6753r2evj8n27.apps.googleusercontent.com',
+    iosClientId: '1048334599741-61s18i1e8el4n4pgafejucofntcnt6i1.apps.googleusercontent.com',
+    iosBundleId: 'app.party-radar',
   );
 }

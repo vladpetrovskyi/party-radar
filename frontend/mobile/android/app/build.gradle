@@ -74,6 +74,14 @@ android {
     flavorDimensions "app"
 
     productFlavors {
+        local {
+            dimension "app"
+            applicationIdSuffix ".local"
+            versionNameSuffix "-local"
+            manifestPlaceholders = [appName: "Party Radar Local"]
+            resValue "string", "app_name", "Party Radar Local"
+        }
+
         dev {
             dimension "app"
             applicationIdSuffix ".dev"

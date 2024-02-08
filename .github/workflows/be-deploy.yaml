@@ -9,12 +9,13 @@ on:
         required: true
         type: string
   workflow_dispatch:
-    choice:
-      type: choice
-      description: Environment
-      options:
-        - dev
-        - prod
+    inputs:
+      choice:
+        type: choice
+        description: Environment
+        options:
+          - dev
+          - prod
 
 jobs:
   deploy:

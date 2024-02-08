@@ -2,8 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:party_radar/app.dart';
 import 'package:party_radar/common/flavors/flavor_config.dart';
-import 'package:party_radar/firebase_options.dart';
 import 'package:freerasp/freerasp.dart';
+import 'package:party_radar/firebase_options_prod.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,9 +13,7 @@ void main() async {
     /// For Android
     androidConfig: AndroidConfig(
       packageName: 'app.party_radar',
-      signingCertHashes: [
-        'FMfznBvrCEaXQcpvXBLBFBshHvn6h0CiD6FhCQp/xrY='
-      ],
+      signingCertHashes: ['FMfznBvrCEaXQcpvXBLBFBshHvn6h0CiD6FhCQp/xrY='],
     ),
 
     /// For iOS
@@ -29,7 +27,7 @@ void main() async {
 
   await Talsec.instance.start(config);
 
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: ProdFirebaseOptions.currentPlatform);
 
   FlavorConfig(
     flavor: Flavor.prod,
