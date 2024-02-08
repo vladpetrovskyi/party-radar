@@ -6,7 +6,7 @@ services:
     restart: always
     env_file: .env
     volumes:
-      - ./.db-dev/:/var/lib/postgresql/data
+      - /home/deployer/data/db/dev:/var/lib/postgresql/data
     healthcheck:
         test: [ 'CMD-SHELL', 'pg_isready', '-U', 'postgres', '-d', 'party-radar' ]
         interval: 1s
