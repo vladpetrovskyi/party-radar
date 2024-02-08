@@ -21,13 +21,13 @@ jobs:
     runs-on: self-hosted
     env:
       REGISTRY: ghcr.io
-      CONTAINER_NAME: api-${{ github.event.inputs.choice }}
+      CONTAINER_NAME: api-${{ inputs.choice }}
       IMAGE_NAME: "ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}"
-      ENVIRONMENT: ${{ github.event.inputs.choice }}
+      ENVIRONMENT: ${{ inputs.choice }}
     steps:
       - name: Create .env file
         run: |
-          echo "${{ secrets[format('{0}_ENV_FILE', github.event.inputs.choice)] }}" > backend/.env
+          echo "${{ secrets[format('{0}_ENV_FILE', inputs.choice)] }}" > backend/.env
 
       - name: Copy files via SCP
         uses: appleboy/scp-action@v0.1.7
@@ -37,8 +37,8 @@ jobs:
           username: ${{ secrets.HOST_USERNAME }}
           password: ${{ secrets.HOST_PASSWORD }}
           overwrite: true
-          source: backend/.env,backend/docker-compose.${{ github.event.inputs.choice }}.yaml
-          target: ~/${{ github.event.inputs.choice }}/
+          source: backend/.env,backend/docker-compose.${{ inputs.choice }}.yaml
+          target: ~/${{ inputs.choice }}/
 
       - name: Deploy to Hel server via SSH action
         uses: appleboy/ssh-action@master
@@ -52,4 +52,4 @@ jobs:
             docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
             docker pull $IMAGE_NAME
             docker container rm -f $CONTAINER_NAME
-            docker compose -f ${{ github.event.inputs.choice }}/backend/docker-compose.${{ github.event.inputs.choice }}.yaml up -d
+            docker compose -f ${{ inputs.choice }}/backend/docker-compose.${{ inputs.choice }}.yaml up -d
