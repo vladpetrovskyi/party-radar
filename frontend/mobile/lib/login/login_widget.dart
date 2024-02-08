@@ -67,8 +67,13 @@ class LoginWidget extends StatelessWidget {
           TermOfService(
               id: "1",
               mandatory: true,
-              text: "Accept privacy policy, terms and conditions",
-              linkUrl: "https://legal.party-radar.app")
+              text: "Accept privacy policy",
+              linkUrl: "https://www.party-radar.app/privacy-policy"),
+          TermOfService(
+              id: "2",
+              mandatory: true,
+              text: "Accept terms and conditions",
+              linkUrl: "https://www.party-radar.app/terms-and-conditions")
         ],
         onRecoverPassword: AuthService.recoverPassword,
         messages: LoginMessages(
