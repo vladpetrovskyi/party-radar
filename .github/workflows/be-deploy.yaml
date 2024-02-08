@@ -19,11 +19,11 @@ jobs:
       REGISTRY: ghcr.io
       CONTAINER_NAME: api-${{ github.event.inputs.choice }}
       IMAGE_NAME: "ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}"
-      ENV_FILE_NAME: ${{ github.event.inputs.choice }}_ENV_FILE
+      ENVIRONMENT: ${{ github.event.inputs.choice }}
     steps:
       - name: Create .env file
         run: |
-          echo "${{ secrets.$ENV_FILE_NAME }}" > backend/.env
+          echo "${{ secrets[format('{0}_ENV_FILE', github.event.inputs.choice)] }}" > backend/.env
 
       - name: Copy files via SCP
         uses: appleboy/scp-action@v0.1.7
