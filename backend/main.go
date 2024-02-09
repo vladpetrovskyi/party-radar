@@ -84,8 +84,9 @@ func main() {
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatal().AnErr("listen: %s\n", err).Ctx(ctx)
 		}
-		log.Info().Msg("Server setup finished!")
 	}()
+
+	log.Info().Msg("Server setup finished!")
 
 	<-ctx.Done()
 
