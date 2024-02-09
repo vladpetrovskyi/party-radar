@@ -35,14 +35,6 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Create serviceAccountKey.json file
-        id: create-json
-        uses: jsdaniell/create-json@v1.2.3
-        with:
-          name: "serviceAccountKey.json"
-          json: ${{ secrets.SERVICE_ACCOUNT_KEY }}
-          dir: "backend/"
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5.1.0
         with:

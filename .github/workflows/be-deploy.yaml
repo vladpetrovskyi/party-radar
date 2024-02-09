@@ -30,6 +30,14 @@ jobs:
         run: |
           echo "${{ secrets[format('{0}_ENV_FILE', inputs.choice)] }}" > backend/.env
 
+      - name: Create serviceAccountKey.json file
+        id: create-json
+        uses: jsdaniell/create-json@v1.2.3
+        with:
+          name: "serviceAccountKey.json"
+          json: ${{ secrets[format('{0}_SERVICE_ACCOUNT_KEY', inputs.choice)] }}
+          dir: ${{ inputs.choice }}/backend/
+
       - name: Copy files via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
