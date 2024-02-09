@@ -36,7 +36,7 @@ jobs:
         with:
           name: "serviceAccountKey.json"
           json: ${{ secrets[format('{0}_SERVICE_ACCOUNT_KEY', inputs.choice)] }}
-          dir: "~/${{ inputs.choice }}/backend/"
+          dir: "backend/"
 
       - name: Copy files via SCP
         uses: appleboy/scp-action@v0.1.7
@@ -46,7 +46,7 @@ jobs:
           username: ${{ secrets.HOST_USERNAME }}
           password: ${{ secrets.HOST_PASSWORD }}
           overwrite: true
-          source: backend/.env,backend/docker-compose.${{ inputs.choice }}.yaml
+          source: backend/.env,backend/docker-compose.${{ inputs.choice }}.yaml,backend/serviceAccountKey.json
           target: ~/${{ inputs.choice }}/
 
       - name: Deploy to Hel server via SSH action
