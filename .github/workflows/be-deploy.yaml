@@ -53,4 +53,4 @@ jobs:
             docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
             docker pull $IMAGE_NAME
             docker container rm -f $CONTAINER_NAME
-            docker compose -f ${{ inputs.choice }}/backend/docker-compose.${{ inputs.choice }}.yaml up -d
+            docker compose -f ${{ inputs.choice }}/backend/docker-compose.${{ inputs.choice }}.yaml -p ${{ inputs.choice }} up -d
