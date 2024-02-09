@@ -37,6 +37,9 @@ var (
 
 	//go:embed db/seeds/assets/*.png
 	embedImages embed.FS
+
+	//go:embed serviceAccountKey.json
+	embedServiceAccountKey embed.FS
 )
 
 func main() {
@@ -66,7 +69,12 @@ func main() {
 		panic(fmt.Errorf("failed to add policies to DB: %w", err))
 	}
 
-	opt := option.WithCredentialsFile("serviceAccountKey.json")
+	file, err := fs.ReadFile(embedServiceAccountKey, "serviceAccountKey.json")
+	if err != nil {
+		log.Fatal().Msgf("Could not open serviceAccountKey: %w", err.Error())
+	}
+
+	opt := option.WithCredentialsJSON(file)
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
 		panic(fmt.Errorf("error initializing app: %v", err))
@@ -84,6 +92,7 @@ func main() {
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatal().AnErr("listen: %s\n", err).Ctx(ctx)
 		}
+		log.Info().Msg("Server setup finished!")
 	}()
 
 	<-ctx.Done()
