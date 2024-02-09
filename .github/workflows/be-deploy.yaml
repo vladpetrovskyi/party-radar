@@ -36,7 +36,7 @@ jobs:
         with:
           name: "serviceAccountKey.json"
           json: ${{ secrets[format('{0}_SERVICE_ACCOUNT_KEY', inputs.choice)] }}
-          dir: ${{ inputs.choice }}/backend/
+          dir: ./${{ inputs.choice }}/backend/
 
       - name: Copy files via SCP
         uses: appleboy/scp-action@v0.1.7
