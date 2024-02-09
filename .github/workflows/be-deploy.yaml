@@ -23,7 +23,7 @@ jobs:
     env:
       REGISTRY: ghcr.io
       CONTAINER_NAME: api-${{ inputs.choice }}
-      IMAGE_NAME: "ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}"
+      IMAGE_NAME: ghcr.io/${{ github.repository }}/backend-${{ inputs.choice }}:${{ github.ref_name }}
       ENVIRONMENT: ${{ inputs.choice }}
     steps:
       - name: Checkout
