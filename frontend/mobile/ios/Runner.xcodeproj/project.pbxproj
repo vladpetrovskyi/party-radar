@@ -589,6 +589,7 @@
 				DEVELOPMENT_TEAM = C9V8FS7238;
 				DISPLAY_NAME = "Party Radar";
 				ENABLE_BITCODE = NO;
+				FLUTTER_TARGET = /Users/vladi.petrovskyi/Documents/DEV/pt/partytime/frontend/mobile/lib/main_prod.dart;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Party Radar";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
@@ -1998,6 +1999,7 @@
 				DEVELOPMENT_TEAM = C9V8FS7238;
 				DISPLAY_NAME = "Party Radar";
 				ENABLE_BITCODE = NO;
+				FLUTTER_TARGET = /Users/vladi.petrovskyi/Documents/DEV/pt/partytime/frontend/mobile/lib/main_prod.dart;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Party Radar";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
@@ -2027,6 +2029,7 @@
 				DEVELOPMENT_TEAM = C9V8FS7238;
 				DISPLAY_NAME = "Party Radar";
 				ENABLE_BITCODE = NO;
+				FLUTTER_TARGET = /Users/vladi.petrovskyi/Documents/DEV/pt/partytime/frontend/mobile/lib/main_prod.dart;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Party Radar";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
