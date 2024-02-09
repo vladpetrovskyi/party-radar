@@ -20,6 +20,7 @@ WORKDIR /root/
 
 COPY --from=builder /go/src/app/run/ ./
 COPY ./config/model.conf ./config/model.conf
+COPY ./serviceAccountKey.json ./serviceAccountKey.json
 COPY ./db/migrations/ ./db/migrations/
 COPY ./db/seeds/ ./db/seeds/
 
