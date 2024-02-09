@@ -7,10 +7,17 @@ on:
     paths:
       - "backend/**"
   workflow_dispatch:
+    inputs:
+      choice:
+        type: choice
+        description: Environment
+        options:
+          - dev
+          - prod
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/backend
+  IMAGE_NAME: ${{ github.repository }}/backend-${{ inputs.choice || 'dev' }}
 
 jobs:
   build_and_publish:
@@ -28,6 +35,14 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create serviceAccountKey.json file
+        id: create-json
+        uses: jsdaniell/create-json@v1.2.3
+        with:
+          name: "serviceAccountKey.json"
+          json: ${{ secrets[format('{0}_SERVICE_ACCOUNT_KEY', (inputs.choice || 'dev'))] }}
+          dir: "backend/"
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -49,4 +64,4 @@ jobs:
     if: github.ref == 'refs/heads/main'
     secrets: inherit
     with:
-      choice: dev
+      choice: ${{ inputs.choice || 'dev' }}

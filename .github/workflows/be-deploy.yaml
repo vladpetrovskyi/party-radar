@@ -30,14 +30,6 @@ jobs:
         run: |
           echo "${{ secrets[format('{0}_ENV_FILE', inputs.choice)] }}" > backend/.env
 
-      - name: Create serviceAccountKey.json file
-        id: create-json
-        uses: jsdaniell/create-json@v1.2.3
-        with:
-          name: "serviceAccountKey.json"
-          json: ${{ secrets[format('{0}_SERVICE_ACCOUNT_KEY', inputs.choice)] }}
-          dir: "backend/"
-
       - name: Copy files via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -46,7 +38,7 @@ jobs:
           username: ${{ secrets.HOST_USERNAME }}
           password: ${{ secrets.HOST_PASSWORD }}
           overwrite: true
-          source: backend/.env,backend/docker-compose.${{ inputs.choice }}.yaml,backend/serviceAccountKey.json
+          source: backend/.env,backend/docker-compose.${{ inputs.choice }}.yaml
           target: ~/${{ inputs.choice }}/
 
       - name: Deploy to Hel server via SSH action
