@@ -13,7 +13,7 @@ void main() async {
     /// For Android
     androidConfig: AndroidConfig(
       packageName: 'app.party_radar.dev',
-      signingCertHashes: ['FMfznBvrCEaXQcpvXBLBFBshHvn6h0CiD6FhCQp/xrY=.'],
+      signingCertHashes: ['FMfznBvrCEaXQcpvXBLBFBshHvn6h0CiD6FhCQp/xrY='],
     ),
 
     /// For iOS
