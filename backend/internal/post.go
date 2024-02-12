@@ -89,10 +89,16 @@ func (h *PostHandler) GetFeed(c *gin.Context) {
 		return
 	}
 
+	var rootLocationId *int64
+	*rootLocationId, err = strconv.ParseInt(c.Query("rootLocationId"), 10, 64)
+	if err != nil {
+		rootLocationId = user.CurrentRootLocationID
+	}
+
 	userFeedRows, err := h.Queries.GetUserFeed(c, db.GetUserFeedParams{
 		User2ID:        user.ID,
 		Username:       &username,
-		RootLocationID: user.CurrentRootLocationID,
+		RootLocationID: rootLocationId,
 		Offset:         int32(offset),
 		Limit:          int32(limit),
 	})
