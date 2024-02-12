@@ -12,7 +12,7 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Copy files via SCP
         uses: appleboy/scp-action@v0.1.7
