@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/models.dart';
+import 'package:party_radar/common/services/image_service.dart';
 import 'package:party_radar/common/services/post_service.dart';
 import 'package:party_radar/common/simple_location_dialog.dart';
 import 'package:widget_zoom/widget_zoom.dart';
@@ -10,17 +11,17 @@ class PostWidget extends StatefulWidget {
     required this.title,
     required this.subtitle,
     required this.post,
-    this.image,
     this.isEditable = false,
     this.onDelete,
+    this.imageId,
   });
 
   final String title;
   final String subtitle;
   final Post post;
-  final Image? image;
   final bool isEditable;
   final Function()? onDelete;
+  final int? imageId;
 
   @override
   State<PostWidget> createState() => _PostWidgetState();
@@ -34,7 +35,7 @@ class _PostWidgetState extends State<PostWidget> {
       context: context,
       builder: (context) {
         return SimpleLocationDialog(
-          locationName: openDialogLocation.children[0].name ,
+          locationName: openDialogLocation.children[0].name,
           imageId: openDialogLocation.imageId,
           username: widget.post.username,
         );
@@ -67,9 +68,10 @@ class _PostWidgetState extends State<PostWidget> {
       child: InkWell(
         onTapDown: widget.isEditable ? _storePosition : null,
         onLongPress: widget.isEditable ? () => _showPopupMenu() : null,
-        onTap: openDialogLocation != null && openDialogLocation.children.isNotEmpty
-            ? () => _openPositionDialog(openDialogLocation)
-            : null,
+        onTap:
+            openDialogLocation != null && openDialogLocation.children.isNotEmpty
+                ? () => _openPositionDialog(openDialogLocation)
+                : null,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -104,15 +106,23 @@ class _PostWidgetState extends State<PostWidget> {
     );
   }
 
-  Widget? _getLeadingImage() => widget.image != null
-      ? ClipOval(
-          child: SizedBox(
-          width: 50,
-          height: 50,
-          child: WidgetZoom(
-              heroAnimationTag: 'tag-${widget.post.id}',
-              zoomWidget: widget.image!),
-        ))
+  Widget? _getLeadingImage() => widget.imageId != null
+      ? FutureBuilder(
+          future: ImageService.getImage(widget.imageId, size: 50),
+          builder: (context, snapshot) {
+            return snapshot.hasData
+                ? ClipOval(
+                    child: SizedBox(
+                      width: 50,
+                      height: 50,
+                      child: WidgetZoom(
+                          heroAnimationTag: 'tag-${widget.post.id}',
+                          zoomWidget: snapshot.data!),
+                    ),
+                  )
+                : const SizedBox();
+          },
+        )
       : null;
 
   String _getLocationHeader(Post post) {

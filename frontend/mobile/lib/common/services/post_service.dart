@@ -9,10 +9,10 @@ import 'package:party_radar/common/util/extensions.dart';
 
 class PostService {
   static Future<List<Post>> getFeed(
-      int offset, int limit, String username) async {
+      int offset, int limit, String username, int? rootLocationId) async {
     Response response = await get(
       Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/post/feed?offset=$offset&limit=$limit&username=$username'),
+          '${FlavorConfig.instance.values.baseUrl}/post/feed?offset=$offset&limit=$limit&username=$username&rootLocationId=${rootLocationId ?? ''}'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -46,7 +46,7 @@ class PostService {
   static Future<int?> getPostCount(String? username) async {
     Response response = await get(
       Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/post/count?username=$username'),
+          '${FlavorConfig.instance.values.baseUrl}/post/count?username=${username ?? ''}'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'

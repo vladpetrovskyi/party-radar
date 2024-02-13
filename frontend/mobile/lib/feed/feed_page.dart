@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:party_radar/common/models.dart';
 import 'package:party_radar/common/post_widget.dart';
-import 'package:party_radar/common/services/image_service.dart';
 import 'package:party_radar/common/services/post_service.dart';
 import 'package:party_radar/feed/widgets/no_items_found.dart';
 
 class FeedPage extends StatefulWidget {
-  const FeedPage({super.key});
+  const FeedPage({super.key, required this.locationId});
+
+  final int locationId;
 
   @override
   State<FeedPage> createState() => _FeedPageState();
@@ -34,8 +35,8 @@ class _FeedPageState extends State<FeedPage> {
   void initState() {
     _feedPagingController.addPageRequestListener((pageKey) async {
       try {
-        final newItems =
-            await PostService.getFeed(pageKey, _pageSize, _usernameQuery);
+        final newItems = await PostService.getFeed(
+            pageKey, _pageSize, _usernameQuery, widget.locationId);
         final isLastPage = newItems.length < _pageSize;
         setState(() {
           if (isLastPage) {
@@ -66,18 +67,11 @@ class _FeedPageState extends State<FeedPage> {
           pagingController: _feedPagingController,
           builderDelegate: PagedChildBuilderDelegate<Post>(
             itemBuilder: (context, item, index) {
-              return FutureBuilder(
-                future: ImageService.getImage(item.imageId, size: 50),
-                builder: (context, snapshot) {
-                  return snapshot.hasData
-                      ? PostWidget(
-                          title: item.username!,
-                          subtitle: _getTimestampString(item.timestamp),
-                          post: item,
-                          image: snapshot.data,
-                        )
-                      : Container();
-                },
+              return PostWidget(
+                title: item.username!,
+                subtitle: _getTimestampString(item.timestamp),
+                post: item,
+                imageId: item.imageId,
               );
             },
             noItemsFoundIndicatorBuilder: (_) => const NoItemsFoundView(),

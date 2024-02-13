@@ -8,7 +8,6 @@ import 'package:party_radar/common/models.dart';
 import 'package:party_radar/common/services/location_service.dart';
 import 'package:party_radar/common/services/user_service.dart';
 import 'package:party_radar/feed/feed_page.dart';
-import 'package:party_radar/location/location_selection_page.dart';
 import 'package:party_radar/location/location_page.dart';
 import 'package:party_radar/login/login_widget.dart';
 import 'package:party_radar/profile/user_profile_page.dart';
@@ -93,15 +92,13 @@ class _MainPageState extends State<MainPage> {
     return FlavorBanner(
       child: Scaffold(
         body: [
-          const FeedPage(),
-          club != null
-              ? LocationPage(
-                  club: club!,
-                  onQuitRootLocation: () => setState(() {
-                        _currentPageIndex = 1;
-                        club = null;
-                      }))
-              : LocationSelectionPage(
+          if (club != null) FeedPage(locationId: club!.id,),
+          LocationPage(
+            club: club,
+            onQuitRootLocation: () => setState(() {
+              _currentPageIndex = 1;
+              club = null;
+            }),
             onChangeLocation: () => _initClub(),
           ),
           const UserProfilePage(),
@@ -115,7 +112,7 @@ class _MainPageState extends State<MainPage> {
           },
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: <Widget>[
-             NavigationDestination(
+            NavigationDestination(
               icon: const Icon(Icons.history),
               label: 'Feed',
               enabled: club != null,

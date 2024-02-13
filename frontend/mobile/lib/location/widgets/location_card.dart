@@ -10,11 +10,13 @@ class LocationCard extends StatelessWidget with ShareLocationDialogBuilder {
     required this.location,
     required this.onChangedLocation,
     this.isSelected = false,
+    this.isActive = false,
   });
 
   final Location location;
   final Function() onChangedLocation;
   final bool isSelected;
+  final bool isActive;
 
   @override
   Widget build(BuildContext context) {
@@ -29,29 +31,41 @@ class LocationCard extends StatelessWidget with ShareLocationDialogBuilder {
               borderRadius: const BorderRadius.all(Radius.circular(10)))
           : null,
       child: InkWell(
-        onTap: () {
-          if (location.onClickAction == OnClickAction.openDialog) {
-            showDialog<void>(
-                context: context,
-                builder: (context) {
-                  return LocationSelectionDialog(
-                    context: context,
-                    locations: location.children,
-                    dialogName: location.dialogName,
-                    imageId: location.imageId,
-                    parentLocationId: location.id,
-                    onChangedLocation: onChangedLocation,
-                  );
-                });
-          } else {
-            buildShareLocationDialog(context, location.id);
-          }
-        },
+        onTap: isActive
+            ? () {
+                if (location.onClickAction == OnClickAction.openDialog) {
+                  showDialog<void>(
+                      context: context,
+                      builder: (context) {
+                        return LocationSelectionDialog(
+                          context: context,
+                          locations: location.children,
+                          dialogName: location.dialogName,
+                          imageId: location.imageId,
+                          parentLocationId: location.id,
+                          onChangedLocation: onChangedLocation,
+                        );
+                      });
+                } else {
+                  buildShareLocationDialog(context, location.id);
+                }
+              }
+            : () => _showErrorSnackBar(
+                'Please check in first by pressing play button', context),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [_buildCardText(), _buildOnlineStatusDots()],
         ),
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String message, BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red,
       ),
     );
   }
