@@ -9,11 +9,13 @@ class LocationExpansionTile extends StatelessWidget {
     required this.location,
     required this.onChangedLocation,
     this.currentUserLocationId,
+    this.canPostUpdates = false,
   });
 
   final Location location;
   final Function() onChangedLocation;
   final int? currentUserLocationId;
+  final bool canPostUpdates;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +39,7 @@ class LocationExpansionTile extends StatelessWidget {
               onChangedLocation: onChangedLocation,
               isSelected:
                   _checkContainsSelectedLocation(location.children[index]),
+              isActive: canPostUpdates,
             );
           },
         )

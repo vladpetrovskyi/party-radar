@@ -12,11 +12,13 @@ class LocationWidget extends StatelessWidget {
     required this.club,
     required this.onChangedLocation,
     this.currentUserLocationId,
+    this.canPostUpdates = false,
   });
 
   final Location club;
   final Function() onChangedLocation;
   final int? currentUserLocationId;
+  final bool canPostUpdates;
 
   @override
   Widget build(BuildContext context) {
@@ -50,11 +52,13 @@ class LocationWidget extends StatelessWidget {
           location: rootChild,
           onChangedLocation: onChangedLocation,
           currentUserLocationId: currentUserLocationId,
+          canPostUpdates: canPostUpdates,
         ));
       } else if (rootChild.elementType == ElementType.card) {
         resultList.add(LocationCard(
           location: rootChild,
           onChangedLocation: onChangedLocation,
+          isActive: canPostUpdates,
         ));
       }
     }

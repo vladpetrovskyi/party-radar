@@ -13,12 +13,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LocationPage extends StatefulWidget {
   const LocationPage({
     super.key,
-    this.club,
+    this.rootLocation,
     required this.onQuitRootLocation,
     required this.onChangeLocation,
   });
 
-  final Location? club;
+  final Location? rootLocation;
   final Function()? onQuitRootLocation;
   final Function()? onChangeLocation;
 
@@ -39,12 +39,8 @@ class _LocationPageState extends State<LocationPage> {
           child: Hero(
               tag: 'logo_hero', child: Image.asset('assets/logo_app_bar.png')),
         ),
-        actions: widget.club != null
+        actions: widget.rootLocation != null
             ? [
-                IconButton(
-                  icon: const Icon(Icons.visibility_off_outlined),
-                  onPressed: () {},
-                ),
                 FutureBuilder(
                     future: futureUser,
                     builder: (context, snapshot) {
@@ -109,15 +105,18 @@ class _LocationPageState extends State<LocationPage> {
           },
         ),
       ),
-      body: widget.club != null
+      body: widget.rootLocation != null
           ? FutureBuilder(
               future: futureUser,
               builder: (context, snapshot) {
                 return snapshot.hasData
                     ? LocationWidget(
-                        club: widget.club!,
+                        club: widget.rootLocation!,
                         currentUserLocationId: snapshot.data?.locationId,
                         onChangedLocation: () => _refresh(),
+                        canPostUpdates: snapshot.data!.rootLocationId != null &&
+                            snapshot.data!.rootLocationId ==
+                                widget.rootLocation?.id,
                       )
                     : const Center(child: CircularProgressIndicator());
               })
@@ -136,14 +135,15 @@ class _LocationPageState extends State<LocationPage> {
         onPressed: () => _openDialog(PartyStateDialog(
             onAccept: () => _leaveTheLocation(),
             title: 'Leaving the club?',
-            content: 'An update with the time you left will be posted to the feed')),
+            content:
+                'An update with the time you left will be posted to the feed')),
         icon: const Icon(Icons.stop_circle_outlined));
   }
 
   Widget _getStartPartyButton() {
     return IconButton(
         onPressed: () => _openDialog(PartyStateDialog(
-            onAccept: () => _arriveAtLocation(widget.club!.id),
+            onAccept: () => _arriveAtLocation(widget.rootLocation!.id),
             title: 'Check in?',
             content:
                 'An update about your arrival at the selected location will be posted to the feed')),
