@@ -20,3 +20,4 @@ go.work
 db/*.go
 .proxy/
 .db/
+serviceAccountKey.json
