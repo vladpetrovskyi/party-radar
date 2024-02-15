@@ -54,7 +54,7 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _currentPageIndex = 1;
 
-  Location? club;
+  Location? rootLocation;
 
   @override
   void initState() {
@@ -67,7 +67,7 @@ class _MainPageState extends State<MainPage> {
     var sharedPreferences = await SharedPreferences.getInstance();
     if (sharedPreferences.containsKey('club')) {
       setState(() {
-        club =
+        rootLocation =
             Location.fromJson(jsonDecode(sharedPreferences.getString('club')!));
       });
     } else {
@@ -76,12 +76,12 @@ class _MainPageState extends State<MainPage> {
         var userLocation =
             await LocationService.getLocation(user?.rootLocationId);
         setState(() {
-          club = userLocation;
+          rootLocation = userLocation;
         });
         sharedPreferences.setString('club', jsonEncode(userLocation));
       } else {
         setState(() {
-          club = null;
+          rootLocation = null;
         });
       }
     }
@@ -92,12 +92,12 @@ class _MainPageState extends State<MainPage> {
     return FlavorBanner(
       child: Scaffold(
         body: [
-          if (club != null) FeedPage(locationId: club!.id,),
+          if (rootLocation != null) FeedPage(locationId: rootLocation!.id) else Container(),
           LocationPage(
-            club: club,
+            rootLocation: rootLocation,
             onQuitRootLocation: () => setState(() {
               _currentPageIndex = 1;
-              club = null;
+              rootLocation = null;
             }),
             onChangeLocation: () => _initClub(),
           ),
@@ -115,7 +115,7 @@ class _MainPageState extends State<MainPage> {
             NavigationDestination(
               icon: const Icon(Icons.history),
               label: 'Feed',
-              enabled: club != null,
+              enabled: rootLocation != null,
             ),
             const NavigationDestination(
               icon: Icon(Icons.share_location_outlined),
