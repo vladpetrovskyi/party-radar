@@ -33,6 +33,7 @@ class LocationSelectionDialog extends StatefulWidget {
 class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
   int? selectedRadio;
   bool _isLoading = false;
+  double _currentSliderValue = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -40,28 +41,41 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
       return AlertDialog(
         buttonPadding: const EdgeInsets.all(5),
         title: Text(widget.dialogName ?? ''),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.imageId != null)
-              FutureBuilder(
-                future: ImageService.getImage(widget.imageId),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return WidgetZoom(
-                        heroAnimationTag: 'tag', zoomWidget: snapshot.data!);
-                  }
-                  return const CircularProgressIndicator();
-                },
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.imageId != null)
+                FutureBuilder(
+                  future: ImageService.getImage(widget.imageId),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return WidgetZoom(
+                          heroAnimationTag: 'tag', zoomWidget: snapshot.data!);
+                    }
+                    return const CircularProgressIndicator();
+                  },
+                ),
+              const SizedBox(height: 10),
+              DialogRadiosWidget(
+                locations: widget.locations,
+                onChangeSelectedRadio: (locationId) =>
+                    setState(() => selectedRadio = locationId),
+                selectedRadio: selectedRadio,
               ),
-            const SizedBox(height: 10),
-            DialogRadiosWidget(
-              locations: widget.locations,
-              onChangeSelectedRadio: (locationId) =>
-                  setState(() => selectedRadio = locationId),
-              selectedRadio: selectedRadio,
-            )
-          ],
+              if (widget.dialogName != null && widget.dialogName!.contains("Stall")) Slider(
+                value: _currentSliderValue,
+                max: 10,
+                divisions: 10,
+                label: 'Free places: ${_currentSliderValue.round().toString()}',
+                onChanged: (double value) {
+                  setState(() {
+                    _currentSliderValue = value;
+                  });
+                },
+              )
+            ],
+          ),
         ),
         actions: <Widget>[
           _getLoadingButton(
