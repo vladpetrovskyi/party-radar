@@ -27,7 +27,7 @@ jobs:
           username: ${{ secrets.HOST_USERNAME }}
           password: ${{ secrets.HOST_PASSWORD }}
           overwrite: true
-          source: infrastructure/backup/docker-compose.yaml
+          source: infrastructure/backup/backup.env,infrastructure/backup/docker-compose.yaml
           target: ~/
 
       - name: Deploy to Hel server via SSH action
