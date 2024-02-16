@@ -5,10 +5,10 @@ services:
     restart: always
     env_file: ./backup.env
     environment:
-      BACKUP_CRON_EXPRESSION: "15 22 * * *"
+      BACKUP_CRON_EXPRESSION: "16 21 * * *"
       DROPBOX_REMOTE_PATH: "/party-radar/db-backups"
 
     volumes:
       - /home/deployer/data/db/dev:/backup/db/dev:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /home/deployer/data/backup/db:/archive
+      - /home/deployer/data/backup:/archive
