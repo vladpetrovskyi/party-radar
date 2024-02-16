@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/models.dart';
@@ -20,7 +18,7 @@ class LocationPage extends StatefulWidget {
 
   final Location? rootLocation;
   final Function()? onQuitRootLocation;
-  final Function()? onChangeLocation;
+  final Function(int)? onChangeLocation;
 
   @override
   State<LocationPage> createState() => _LocationPageState();
@@ -163,13 +161,8 @@ class _LocationPageState extends State<LocationPage> {
         firebase.FirebaseAuth.instance.currentUser!.displayName!.isEmpty) {
       _showErrorSnackBar('Please select username first');
     } else {
+      widget.onChangeLocation?.call(locationId);
       Navigator.of(context).pop();
-      LocationService.getLocation(locationId).then((location) {
-        SharedPreferences.getInstance().then((sharedPreferences) {
-          sharedPreferences.setString('club', jsonEncode(location));
-          widget.onChangeLocation?.call();
-        });
-      });
     }
   }
 

@@ -58,32 +58,26 @@ class _MainPageState extends State<MainPage> {
 
   @override
   void initState() {
-    _initClub();
+    _initClub(null);
     super.initState();
   }
 
-  void _initClub() async {
-    setState(() {});
-    var sharedPreferences = await SharedPreferences.getInstance();
-    if (sharedPreferences.containsKey('club')) {
+  void _initClub(int? locationId) async {
+    int? userRootLocationId;
+    if (locationId != null ||
+        (userRootLocationId = (await UserService.getUser())?.rootLocationId) !=
+            null) {
+      var sharedPreferences = await SharedPreferences.getInstance();
+      var userLocation =
+          await LocationService.getLocation(locationId ?? userRootLocationId);
       setState(() {
-        rootLocation =
-            Location.fromJson(jsonDecode(sharedPreferences.getString('club')!));
+        rootLocation = userLocation;
       });
+      sharedPreferences.setString('club', jsonEncode(userLocation));
     } else {
-      var user = await UserService.getUser();
-      if (user?.rootLocationId != null) {
-        var userLocation =
-            await LocationService.getLocation(user?.rootLocationId);
-        setState(() {
-          rootLocation = userLocation;
-        });
-        sharedPreferences.setString('club', jsonEncode(userLocation));
-      } else {
-        setState(() {
-          rootLocation = null;
-        });
-      }
+      setState(() {
+        rootLocation = null;
+      });
     }
   }
 
@@ -92,14 +86,17 @@ class _MainPageState extends State<MainPage> {
     return FlavorBanner(
       child: Scaffold(
         body: [
-          if (rootLocation != null) FeedPage(locationId: rootLocation!.id) else Container(),
+          if (rootLocation != null)
+            FeedPage(locationId: rootLocation!.id)
+          else
+            Container(),
           LocationPage(
             rootLocation: rootLocation,
             onQuitRootLocation: () => setState(() {
               _currentPageIndex = 1;
               rootLocation = null;
             }),
-            onChangeLocation: () => _initClub(),
+            onChangeLocation: (locationId) => _initClub(locationId),
           ),
           const UserProfilePage(),
         ][_currentPageIndex],
