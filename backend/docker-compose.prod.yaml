@@ -3,7 +3,7 @@ services:
   db:
     image: postgres
     container_name: db-prod
-    restart: always
+    restart: unless-stopped
     env_file: .env
     volumes:
       - /home/deployer/data/db/prod:/var/lib/postgresql/data
@@ -15,6 +15,7 @@ services:
     labels:
       logging: "promtail"
       logging_jobname: "containerlogs"
+      docker-volume-backup.stop-during-backup: true
 
   api:
     image: ${IMAGE}
