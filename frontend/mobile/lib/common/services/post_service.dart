@@ -26,7 +26,8 @@ class PostService {
     return [];
   }
 
-  static Future<List<Post>> getUserPosts(int offset, int limit, int? userId) async {
+  static Future<List<Post>> getUserPosts(
+      int offset, int limit, int? userId) async {
     Response response = await get(
       Uri.parse(
           '${FlavorConfig.instance.values.baseUrl}/post?offset=$offset&limit=$limit&userId=$userId'),
@@ -59,29 +60,46 @@ class PostService {
     return null;
   }
 
-  static Future<bool> createPost(int? locationId, PostType postType) async {
+  static Future<bool> createPost(
+      int? locationId, PostType postType, int? capacity) async {
     Response response = await post(
-      Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/post'),
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/post'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
       },
-      body: jsonEncode({'location_id': locationId, 'post_type': postType.name}),
+      body: jsonEncode({
+        'location_id': locationId,
+        'post_type': postType.name,
+        'capacity': capacity
+      }),
     );
+
+    if (!response.ok) throw Exception("Could not post location: ${response.body}");
+
+    return response.ok;
+  }
+
+  static Future<bool> increaseViewCountByOne(int? postId) async {
+    Response response = await put(
+        Uri.parse('${FlavorConfig.instance.values.baseUrl}/post/$postId/view'),
+        headers: {
+          HttpHeaders.authorizationHeader:
+          'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+        });
+
+    if (!response.ok) throw Exception("Could not increase view count: \n${response.body}");
 
     return response.ok;
   }
 
   static Future<bool> deletePost(int postId) async {
     Response response = await delete(
-      Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/post/$postId'),
-      headers: {
-        HttpHeaders.authorizationHeader:
-        'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
-      }
-    );
+        Uri.parse('${FlavorConfig.instance.values.baseUrl}/post/$postId'),
+        headers: {
+          HttpHeaders.authorizationHeader:
+              'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+        });
 
     return response.ok;
   }

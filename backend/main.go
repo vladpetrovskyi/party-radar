@@ -160,7 +160,7 @@ func populateSeeds(db *sql.DB) {
 	if err := goose.SetDialect("postgres"); err != nil {
 		panic(err)
 	}
-	if err := goose.Up(db, "db/seeds"); err != nil {
+	if err := goose.Up(db, "db/seeds", goose.WithAllowMissing()); err != nil {
 		panic(err)
 	}
 }
@@ -241,8 +241,8 @@ func setupRoutes(
 	userGroup.GET("", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.GetUserByUID)
 	userGroup.DELETE("", authHandler.AuthorizeViaFirebase("data", "write"), userHandler.DeleteUser)
 	userGroup.PUT("/username", authHandler.AuthorizeViaFirebase("data", "write"), userHandler.UpdateUsername)
-	userGroup.PUT("/root-location/:id", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.UpdateUserRootLocation)
-	userGroup.DELETE("/location", authHandler.AuthorizeViaFirebase("data", "read"), userHandler.DeleteUserLocation)
+	userGroup.PUT("/root-location/:id", authHandler.AuthorizeViaFirebase("data", "write"), userHandler.UpdateUserRootLocation)
+	userGroup.DELETE("/location", authHandler.AuthorizeViaFirebase("data", "write"), userHandler.DeleteUserLocation)
 
 	locationHandler := internal.LocationHandler{
 		Queries: queries,
@@ -264,8 +264,9 @@ func setupRoutes(
 	postGroup.GET("", authHandler.AuthorizeViaFirebase("data", "read"), postHandler.GetPosts)
 	postGroup.GET("/feed", authHandler.AuthorizeViaFirebase("data", "read"), postHandler.GetFeed)
 	postGroup.GET("/count", authHandler.AuthorizeViaFirebase("data", "read"), postHandler.GetUserPostsCount)
-	postGroup.POST("", authHandler.AuthorizeViaFirebase("data", "read"), postHandler.CreatePost)
-	postGroup.DELETE("/:id", authHandler.AuthorizeViaFirebase("data", "read"), postHandler.DeletePost)
+	postGroup.POST("", authHandler.AuthorizeViaFirebase("data", "write"), postHandler.CreatePost)
+	postGroup.PUT("/:id/view", authHandler.AuthorizeViaFirebase("data", "write"), postHandler.IncreaseViewsByOne)
+	postGroup.DELETE("/:id", authHandler.AuthorizeViaFirebase("data", "write"), postHandler.DeletePost)
 
 	friendshipHandler := internal.FriendshipHandler{
 		Queries: queries,

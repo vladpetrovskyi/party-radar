@@ -4,25 +4,26 @@ import (
 	"context"
 	"database/sql"
 	"github.com/gin-gonic/gin"
-	"log"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"party-time/db"
 	"strconv"
 )
 
 type Location struct {
-	ID            int64      `json:"id"`
-	Name          string     `json:"name"`
-	Emoji         *string    `json:"emoji"`
-	Enabled       bool       `json:"enabled"`
-	ElementType   *string    `json:"element_type"`
-	OnClickAction *string    `json:"on_click_action"`
-	ColumnIndex   *int64     `json:"column_index"`
-	ColumnsNumber *int64     `json:"columns_number"`
-	DialogName    *string    `json:"dialog_name"`
-	ImageID       *int64     `json:"image_id"`
-	Children      []Location `json:"children"`
-	ParentID      *int64
+	ID                   int64      `json:"id"`
+	Name                 string     `json:"name"`
+	Emoji                *string    `json:"emoji"`
+	Enabled              bool       `json:"enabled"`
+	ElementType          *string    `json:"element_type"`
+	OnClickAction        *string    `json:"on_click_action"`
+	ColumnIndex          *int64     `json:"column_index"`
+	ColumnsNumber        *int64     `json:"columns_number"`
+	DialogName           *string    `json:"dialog_name"`
+	ImageID              *int64     `json:"image_id"`
+	IsCapacitySelectable *bool      `json:"is_capacity_selectable"`
+	Children             []Location `json:"children"`
+	ParentID             *int64
 }
 
 type LocationHandler struct {
@@ -49,21 +50,21 @@ func (h *LocationHandler) GetLocations(c *gin.Context) {
 func (h *LocationHandler) GetLocation(c *gin.Context) {
 	locationId, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
-		log.Printf("[ERROR] parseLocationId: %v", err.Error())
+		log.Debug().AnErr("[ERROR] parseLocationId", err)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
 	rootLocationRow, err := h.getAndMapLocationFromDb(locationId)
 	if err != nil {
-		log.Printf("[ERROR] GetLocation -> getAndMapLocationFromDb: %v", err.Error())
+		log.Debug().AnErr("[ERROR] GetLocation -> getAndMapLocationFromDb", err)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
 	rootLocation, err := h.buildLocationFromParent(rootLocationRow)
 	if err != nil {
-		log.Printf("[ERROR] GetLocation -> buildLocationFromParent: %v", err.Error())
+		log.Debug().AnErr("[ERROR] GetLocation -> buildLocationFromParent", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
@@ -74,7 +75,7 @@ func (h *LocationHandler) GetLocation(c *gin.Context) {
 func (h *LocationHandler) GetLocationUserCount(c *gin.Context) {
 	locationId, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
-		log.Printf("[ERROR] parseLocationId: %v", err.Error())
+		log.Debug().AnErr("[ERROR] parseLocationId", err)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
@@ -160,33 +161,35 @@ func (h *LocationHandler) buildLocationFromChild(location Location) (Location, e
 
 func (h *LocationHandler) mapLocationChild(dbLocation db.GetLocationChildrenRow) Location {
 	return Location{
-		ID:            dbLocation.ID,
-		Name:          *dbLocation.Name,
-		Emoji:         dbLocation.Emoji,
-		Enabled:       dbLocation.Enabled,
-		ElementType:   dbLocation.ElementType,
-		OnClickAction: dbLocation.OnClickAction,
-		ColumnIndex:   dbLocation.ColumnIndex,
-		ColumnsNumber: dbLocation.ColumnsNumber,
-		DialogName:    dbLocation.DialogName,
-		ImageID:       dbLocation.ImageID,
-		Children:      []Location{},
+		ID:                   dbLocation.ID,
+		Name:                 *dbLocation.Name,
+		Emoji:                dbLocation.Emoji,
+		Enabled:              dbLocation.Enabled,
+		ElementType:          dbLocation.ElementType,
+		OnClickAction:        dbLocation.OnClickAction,
+		ColumnIndex:          dbLocation.ColumnIndex,
+		ColumnsNumber:        dbLocation.ColumnsNumber,
+		DialogName:           dbLocation.DialogName,
+		IsCapacitySelectable: dbLocation.IsCapacitySelectable,
+		ImageID:              dbLocation.ImageID,
+		Children:             []Location{},
 	}
 }
 
 func (h *LocationHandler) mapLocation(dbLocation db.GetLocationRow) Location {
 	return Location{
-		ID:            dbLocation.ID,
-		Name:          *dbLocation.Name,
-		Emoji:         dbLocation.Emoji,
-		Enabled:       dbLocation.Enabled,
-		ElementType:   dbLocation.ElementType,
-		OnClickAction: dbLocation.OnClickAction,
-		ColumnIndex:   dbLocation.ColumnIndex,
-		ColumnsNumber: dbLocation.ColumnsNumber,
-		DialogName:    dbLocation.DialogName,
-		ImageID:       dbLocation.ImageID,
-		Children:      []Location{},
-		ParentID:      dbLocation.ParentID,
+		ID:                   dbLocation.ID,
+		Name:                 *dbLocation.Name,
+		Emoji:                dbLocation.Emoji,
+		Enabled:              dbLocation.Enabled,
+		ElementType:          dbLocation.ElementType,
+		OnClickAction:        dbLocation.OnClickAction,
+		ColumnIndex:          dbLocation.ColumnIndex,
+		ColumnsNumber:        dbLocation.ColumnsNumber,
+		DialogName:           dbLocation.DialogName,
+		ImageID:              dbLocation.ImageID,
+		IsCapacitySelectable: dbLocation.IsCapacitySelectable,
+		Children:             []Location{},
+		ParentID:             dbLocation.ParentID,
 	}
 }

@@ -1,5 +1,5 @@
 -- name: GetUserFeed :many
-SELECT p.id, p.user_id, u.username, pt.name AS post_type, p.location_id, u.image_id as image_id, p.timestamp
+SELECT p.id, p.user_id, u.username, pt.name AS post_type, p.location_id, u.image_id as image_id, p.timestamp, p.views, p.capacity
 FROM post p
          INNER JOIN post_type pt ON p.post_type_id = pt.id
          INNER JOIN location l ON p.location_id = l.id
@@ -35,10 +35,13 @@ FROM post p
 WHERE u.username = $1;
 
 -- name: CreatePost :exec
-INSERT INTO post (user_id, location_id, post_type_id)
-VALUES ($1, $2, $3);
+INSERT INTO post (user_id, location_id, post_type_id, capacity)
+VALUES ($1, $2, $3, $4);
 
 -- name: DeletePost :exec
 DELETE
 FROM post
 WHERE id = $1;
+
+-- name: IncreasePostViewsByOne :exec
+UPDATE post SET views = COALESCE(views, 0) + 1 WHERE id = $1;

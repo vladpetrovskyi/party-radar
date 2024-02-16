@@ -86,7 +86,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage> {
             widget.onChangeLocation?.call();
           });
         });
-        PostService.createPost(locationId, PostType.start);
+        PostService.createPost(locationId, PostType.start, null);
       }
     }
   }

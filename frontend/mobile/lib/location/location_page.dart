@@ -182,7 +182,7 @@ class _LocationPageState extends State<LocationPage> {
     if (!await UserService.deleteUserLocation()) {
       _showErrorSnackBar('Could not check you out from the current location');
     } else {
-      PostService.createPost(userRootLocationId, PostType.end).then((value) {
+      PostService.createPost(userRootLocationId, PostType.end, null).then((value) {
         if (value) {
           setState(() {
             futureUser = UserService.getUser();
@@ -202,7 +202,7 @@ class _LocationPageState extends State<LocationPage> {
       if (!await UserService.updateUserRootLocation(locationId)) {
         _showErrorSnackBar('Could not update your location, please retry');
       } else {
-        PostService.createPost(locationId, PostType.start).then((value) {
+        PostService.createPost(locationId, PostType.start, null).then((value) {
           if (value) {
             setState(() {
               futureUser = UserService.getUser();

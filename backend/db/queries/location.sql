@@ -9,7 +9,8 @@ SELECT l.id,
        oca.name AS on_click_action,
        ds.name  as dialog_name,
        ds.columns_number,
-       ds.image_id
+       ds.image_id,
+       ds.is_capacity_selectable
 FROM location l
          LEFT JOIN element_type et on l.element_type_id = et.id
          LEFT JOIN on_click_action oca ON l.on_click_action_id = oca.id
@@ -34,7 +35,8 @@ SELECT l.id,
        oca.name AS on_click_action,
        ds.name  as dialog_name,
        ds.columns_number,
-       ds.image_id
+       ds.image_id,
+       ds.is_capacity_selectable
 FROM location l
          LEFT JOIN element_type et on l.element_type_id = et.id
          LEFT JOIN on_click_action oca ON l.on_click_action_id = oca.id

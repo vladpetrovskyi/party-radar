@@ -14,6 +14,8 @@ class PostWidget extends StatefulWidget {
     this.isEditable = false,
     this.onDelete,
     this.imageId,
+    this.increaseViewCount = false,
+    this.showImage = false,
   });
 
   final String title;
@@ -22,6 +24,8 @@ class PostWidget extends StatefulWidget {
   final bool isEditable;
   final Function()? onDelete;
   final int? imageId;
+  final bool showImage;
+  final bool increaseViewCount;
 
   @override
   State<PostWidget> createState() => _PostWidgetState();
@@ -31,6 +35,8 @@ class _PostWidgetState extends State<PostWidget> {
   late Offset _tapPosition;
 
   void _openPositionDialog(Location openDialogLocation) {
+    PostService.increaseViewCountByOne(widget.post.id);
+
     showDialog(
       context: context,
       builder: (context) {
@@ -38,6 +44,8 @@ class _PostWidgetState extends State<PostWidget> {
           locationName: openDialogLocation.children[0].name,
           imageId: openDialogLocation.imageId,
           username: widget.post.username,
+          views: widget.post.views,
+          capacity: widget.post.capacity,
         );
       },
     );
@@ -106,7 +114,7 @@ class _PostWidgetState extends State<PostWidget> {
     );
   }
 
-  Widget? _getLeadingImage() => widget.imageId != null
+  Widget? _getLeadingImage() => widget.showImage
       ? FutureBuilder(
           future: ImageService.getImage(widget.imageId, size: 50),
           builder: (context, snapshot) {

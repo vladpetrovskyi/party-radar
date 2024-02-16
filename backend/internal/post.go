@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"net/http"
@@ -26,6 +27,8 @@ type PostDTO struct {
 	Location  *Location `json:"location"`
 	ImageID   *int64    `json:"image_id"`
 	Timestamp time.Time `json:"timestamp"`
+	Views     *int64    `json:"views"`
+	Capacity  *int64    `json:"capacity"`
 }
 
 func (h *PostHandler) GetPosts(c *gin.Context) {
@@ -160,6 +163,8 @@ func (h *PostHandler) mapDBUserFeedPostToDTO(entity db.GetUserFeedRow) (PostDTO,
 		Location:  &location,
 		ImageID:   entity.ImageID,
 		Timestamp: entity.Timestamp,
+		Views:     entity.Views,
+		Capacity:  entity.Capacity,
 	}, nil
 }
 
@@ -203,10 +208,38 @@ func (h *PostHandler) DeletePost(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+func (h *PostHandler) IncreaseViewsByOne(c *gin.Context) {
+	postStringId := c.Param("id")
+	if len(postStringId) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Cannot update post without ID"})
+		return
+	}
+
+	var (
+		postId int64
+		err    error
+	)
+	if postId, err = strconv.ParseInt(c.Param("id"), 10, 64); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Post ID must be numeric"})
+		return
+	}
+
+	err = h.Queries.IncreasePostViewsByOne(c, postId)
+	if err != nil {
+		msg := fmt.Sprintf("Could not update post views, post ID %d", postId)
+		log.Debug().Ctx(c).Msg(msg)
+		c.JSON(http.StatusBadRequest, gin.H{"msg": msg})
+		return
+	}
+
+	c.Status(200)
+}
+
 func (h *PostHandler) CreatePost(c *gin.Context) {
 	post := struct {
 		LocationID *int64 `json:"location_id"`
 		PostType   string `json:"post_type"`
+		Capacity   *int64 `json:"capacity"`
 	}{}
 
 	err := c.BindJSON(&post)
@@ -244,6 +277,7 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		UserID:     user.ID,
 		LocationID: *post.LocationID,
 		PostTypeID: postTypeId,
+		Capacity:   post.Capacity,
 	})
 	if err != nil {
 		log.Err(err)

@@ -50,7 +50,7 @@ class _ShareLocationDialogState extends State<ShareLocationDialog> {
     setState(() {
       _isLoading = true;
     });
-    PostService.createPost(locationId, PostType.ongoing).then((value) {
+    PostService.createPost(locationId, PostType.ongoing, null).then((value) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Your current location has been posted'),

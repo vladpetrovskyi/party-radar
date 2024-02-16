@@ -9,6 +9,7 @@ class Location {
   final int columnIndex;
   final String? dialogName;
   final int? imageId;
+  final bool? isCapacitySelectable;
 
   const Location({
     required this.id,
@@ -21,6 +22,7 @@ class Location {
     this.children = const [],
     this.dialogName,
     this.imageId,
+    this.isCapacitySelectable,
   });
 
   Location.fromJson(Map<String, dynamic> json)
@@ -37,6 +39,7 @@ class Location {
             : OnClickAction.select,
         columnIndex = json['column_index'] ?? 0,
         imageId = json['image_id'],
+        isCapacitySelectable = json['is_capacity_selectable'],
         children = (json['children'] ?? [])
             .map<Location>((e) => Location.fromJson(e))
             .toList();
@@ -50,6 +53,7 @@ class Location {
         'enabled': enabled,
         'on_click_action': onClickAction.name,
         'column_index': columnIndex,
+        'is_capacity_selectable': isCapacitySelectable,
         'image_id': imageId,
         'children': children.map((e) => e.toJson()).toList(),
       };
@@ -95,6 +99,8 @@ class Post {
   final DateTime timestamp;
   final Location location;
   final int? imageId;
+  final int? views;
+  final int? capacity;
 
   Post({
     this.id,
@@ -103,6 +109,8 @@ class Post {
     required this.timestamp,
     required this.location,
     this.imageId,
+    this.capacity,
+    this.views,
   });
 
   Post.fromJson(Map<String, dynamic> json)
@@ -111,7 +119,9 @@ class Post {
         type = PostType.fromJson(json['post_type']),
         timestamp = DateTime.parse(json['timestamp']).toLocal(),
         location = Location.fromJson(json['location']),
-        imageId = json['image_id'];
+        imageId = json['image_id'],
+        capacity = json['capacity'],
+        views = json['views'];
 }
 
 class Friendship {

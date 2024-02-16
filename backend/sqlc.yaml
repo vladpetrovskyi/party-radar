@@ -129,3 +129,18 @@ sql:
               type: "int64"
               pointer: false
             nullable: false
+          - column: "dialog_settings.is_capacity_selectable"
+            go_type:
+              type: "bool"
+              pointer: true
+            nullable: true
+          - column: "post.capacity"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "post.views"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true

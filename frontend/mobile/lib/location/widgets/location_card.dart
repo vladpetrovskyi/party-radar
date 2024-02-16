@@ -44,6 +44,7 @@ class LocationCard extends StatelessWidget with ShareLocationDialogBuilder {
                           imageId: location.imageId,
                           parentLocationId: location.id,
                           onChangedLocation: onChangedLocation,
+                          isCapacitySelectable: location.isCapacitySelectable,
                         );
                       });
                 } else {

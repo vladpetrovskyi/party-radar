@@ -86,6 +86,15 @@ AppBar buildAppBar(BuildContext context) {
                   SimpleDialogOption(
                     child: const Center(
                       child: Text(
+                        'SEND A FEEDBACK',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ),
+                    onPressed: () => launchUrl(Uri.parse('https://www.party-radar.app/contact')),
+                  ),
+                  SimpleDialogOption(
+                    child: const Center(
+                      child: Text(
                         'REPORT AN ERROR',
                         style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
                       ),

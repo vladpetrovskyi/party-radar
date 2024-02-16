@@ -72,6 +72,7 @@ class _FeedPageState extends State<FeedPage> {
                 subtitle: _getTimestampString(item.timestamp),
                 post: item,
                 imageId: item.imageId,
+                showImage: true,
               );
             },
             noItemsFoundIndicatorBuilder: (_) => const NoItemsFoundView(),

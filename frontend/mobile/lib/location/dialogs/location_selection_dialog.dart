@@ -16,6 +16,7 @@ class LocationSelectionDialog extends StatefulWidget {
     this.imageId,
     required this.parentLocationId,
     required this.onChangedLocation,
+    this.isCapacitySelectable,
   });
 
   final BuildContext context;
@@ -24,6 +25,7 @@ class LocationSelectionDialog extends StatefulWidget {
   final int? imageId;
   final Function() onChangedLocation;
   final int parentLocationId;
+  final bool? isCapacitySelectable;
 
   @override
   State<LocationSelectionDialog> createState() =>
@@ -33,7 +35,7 @@ class LocationSelectionDialog extends StatefulWidget {
 class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
   int? selectedRadio;
   bool _isLoading = false;
-  double _currentSliderValue = 0;
+  double? _currentSliderValue;
 
   @override
   Widget build(BuildContext context) {
@@ -63,17 +65,19 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
                     setState(() => selectedRadio = locationId),
                 selectedRadio: selectedRadio,
               ),
-              if (widget.dialogName != null && widget.dialogName!.contains("Stall")) Slider(
-                value: _currentSliderValue,
-                max: 10,
-                divisions: 10,
-                label: 'Free places: ${_currentSliderValue.round().toString()}',
-                onChanged: (double value) {
-                  setState(() {
-                    _currentSliderValue = value;
-                  });
-                },
-              )
+              if (widget.isCapacitySelectable ?? false)
+                Slider(
+                  value: _currentSliderValue ?? 0,
+                  max: 10,
+                  divisions: 10,
+                  label:
+                      ' Free spots: ${(_currentSliderValue ?? 0.0).round().toString()} ',
+                  onChanged: (double value) {
+                    setState(() {
+                      _currentSliderValue = value;
+                    });
+                  },
+                )
             ],
           ),
         ),
@@ -116,7 +120,7 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
   void _postLocation(int locationId) {
     setState(() => _isLoading = true);
 
-    PostService.createPost(locationId, PostType.ongoing).then((_) {
+    PostService.createPost(locationId, PostType.ongoing, _currentSliderValue?.round()).then((_) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Your current location has been posted'),
