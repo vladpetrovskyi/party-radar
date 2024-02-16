@@ -4,7 +4,6 @@ import 'package:party_radar/profile/tabs/widgets/not_found_widget.dart';
 import 'package:party_radar/common/models.dart';
 import 'package:party_radar/profile/tabs/widgets/friend_widget.dart';
 import 'package:party_radar/common/services/friendship_service.dart';
-import 'package:party_radar/common/services/image_service.dart';
 
 class FriendsTab extends StatefulWidget {
   const FriendsTab({super.key, required this.pageSize, this.onUpdate});
