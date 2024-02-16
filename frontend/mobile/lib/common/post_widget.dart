@@ -14,7 +14,6 @@ class PostWidget extends StatefulWidget {
     this.isEditable = false,
     this.onDelete,
     this.imageId,
-    this.increaseViewCount = false,
     this.showImage = false,
   });
 
@@ -25,7 +24,6 @@ class PostWidget extends StatefulWidget {
   final Function()? onDelete;
   final int? imageId;
   final bool showImage;
-  final bool increaseViewCount;
 
   @override
   State<PostWidget> createState() => _PostWidgetState();
@@ -44,8 +42,8 @@ class _PostWidgetState extends State<PostWidget> {
           locationName: openDialogLocation.children[0].name,
           imageId: openDialogLocation.imageId,
           username: widget.post.username,
-          views: widget.post.views,
-          capacity: widget.post.capacity,
+          views: openDialogLocation.isCapacitySelectable ?? false ? widget.post.views : null,
+          capacity: openDialogLocation.isCapacitySelectable ?? false ? widget.post.capacity : null,
         );
       },
     );
