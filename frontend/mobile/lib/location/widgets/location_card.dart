@@ -56,7 +56,11 @@ class LocationCard extends StatelessWidget with ShareLocationDialogBuilder {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: [_buildCardText(), _buildOnlineStatusDots()],
+          children: [
+            if (location.emoji != null) _buildCardEmoji(),
+            _buildCardName(),
+            _buildOnlineStatusDots(),
+          ],
         ),
       ),
     );
@@ -71,12 +75,22 @@ class LocationCard extends StatelessWidget with ShareLocationDialogBuilder {
     );
   }
 
-  Widget _buildCardText() => Padding(
-        padding: const EdgeInsets.only(left: 5, right: 5),
+  Widget _buildCardName() => Padding(
+        padding: const EdgeInsets.only(left: 5, right: 5, top: 2, bottom: 5),
         child: Text(
-          location.emoji != null
-              ? "${location.emoji}\n${location.name}"
-              : location.name,
+          location.name,
+          style: const TextStyle(
+            fontSize: 20,
+            height: 1.2,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+
+  Widget _buildCardEmoji() => Padding(
+        padding: const EdgeInsets.only(left: 5, right: 5, bottom: 2),
+        child: Text(
+          location.emoji ?? '',
           style: const TextStyle(
             fontSize: 20,
             height: 1.2,
@@ -86,7 +100,7 @@ class LocationCard extends StatelessWidget with ShareLocationDialogBuilder {
       );
 
   Widget _buildOnlineStatusDots() => Padding(
-        padding: const EdgeInsets.only(left: 5, right: 5, top: 10),
+        padding: const EdgeInsets.only(left: 5, right: 5, top: 5),
         child: UserDotsWidget(
           locationId: location.id,
           alignment: WrapAlignment.center,
