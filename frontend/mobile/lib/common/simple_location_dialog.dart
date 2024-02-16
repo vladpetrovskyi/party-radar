@@ -58,7 +58,7 @@ class SimpleLocationDialog extends StatelessWidget {
                   zoomWidget: snapshot.data!),
             );
           }
-          return const CircularProgressIndicator();
+          return const Center(child: CircularProgressIndicator());
         },
       );
 

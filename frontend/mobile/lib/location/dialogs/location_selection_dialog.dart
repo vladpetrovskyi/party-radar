@@ -55,7 +55,7 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
                       return WidgetZoom(
                           heroAnimationTag: 'tag', zoomWidget: snapshot.data!);
                     }
-                    return const CircularProgressIndicator();
+                    return const Center(child: CircularProgressIndicator());
                   },
                 ),
               const SizedBox(height: 10),
@@ -90,7 +90,10 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
               }),
           _getLoadingButton(
               icon: Icons.delete_forever_outlined,
-              onPressedFunction: () => setState(() => selectedRadio = null)),
+              onPressedFunction: () => setState(() {
+                selectedRadio = null;
+                _currentSliderValue = null;
+              })),
           _getLoadingButton(
               icon: Icons.check,
               onPressedFunction: _isRegistrationFinished()

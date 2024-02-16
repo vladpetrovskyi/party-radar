@@ -174,7 +174,9 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   _refresh() {
-    setState(() {});
+    setState(() {
+      futureUser = UserService.getUser();
+    });
   }
 
   void _leaveTheLocation() async {
