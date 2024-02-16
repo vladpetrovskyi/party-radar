@@ -5,7 +5,7 @@ services:
     restart: always
     env_file: ./backup.env
     environment:
-      BACKUP_CRON_EXPRESSION: "0 4 * * 6,2"
+      BACKUP_CRON_EXPRESSION: "15 22 * * *"
       DROPBOX_REMOTE_PATH: "/party-radar/db-backups"
 
     volumes:
