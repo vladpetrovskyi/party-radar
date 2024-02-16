@@ -32,20 +32,14 @@ class _FriendsTabState extends State<FriendsTab> {
         pagingController: _friendshipsPagingController,
         builderDelegate: PagedChildBuilderDelegate<Friendship>(
           itemBuilder: (context, item, index) {
-            return FutureBuilder(
-                future: ImageService.getImage(item.friend.imageId, size: 50),
-                builder: (context, snapshot) {
-                  return snapshot.hasData
-                      ? FriendWidget(
-                          image: snapshot.data!,
-                          username: item.friend.username,
-                          subtitle: item.friend.locationName != null
-                              ? Text('📍 ${item.friend.locationName!}')
-                              : const Text('Offline 😴'),
-                          popupMenu: _getPopupMenu(item.id),
-                        )
-                      : Container();
-                });
+            return FriendWidget(
+              imageId: item.friend.imageId,
+              username: item.friend.username,
+              subtitle: item.friend.locationName != null
+                  ? Text('📍 ${item.friend.locationName!}')
+                  : const Text('Offline 😴'),
+              popupMenu: _getPopupMenu(item.id),
+            );
           },
           noItemsFoundIndicatorBuilder: (_) => const NotFoundWidget(
               title: 'No friends found', message: 'Pull down to refresh'),

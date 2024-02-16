@@ -33,18 +33,11 @@ class _FriendshipRequestsTabState extends State<FriendshipRequestsTab> {
         pagingController: _friendshipRequestsPagingController,
         builderDelegate: PagedChildBuilderDelegate<Friendship>(
           itemBuilder: (context, item, index) {
-            return FutureBuilder(
-              future: ImageService.getImage(item.friend.imageId, size: 50),
-              builder: (context, snapshot) {
-                return snapshot.hasData
-                    ? FriendWidget(
-                        padding: const EdgeInsets.symmetric(vertical: 7.25),
-                        username: item.friend.username ?? '? ? ? ?',
-                        image: snapshot.data!,
-                        popupMenu: _getPopupMenu(item.id),
-                      )
-                    : Container();
-              },
+            return FriendWidget(
+              padding: const EdgeInsets.symmetric(vertical: 7.25),
+              username: item.friend.username ?? '? ? ? ?',
+              imageId: item.friend.imageId,
+              popupMenu: _getPopupMenu(item.id),
             );
           },
           noItemsFoundIndicatorBuilder: (_) => const NotFoundWidget(
