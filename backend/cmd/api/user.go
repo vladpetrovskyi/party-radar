@@ -1,25 +1,14 @@
-package internal
+package main
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
-	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"party-time/db"
-	"strconv"
 )
 
-type UserHandler struct {
-	Queries  *db.Queries
-	DB       *sql.DB
-	Ctx      context.Context
-	Enforcer *casbin.Enforcer
-}
-
-func (h *UserHandler) Register(c *gin.Context) {
+func (app *application) register(c *gin.Context) {
 	var (
 		user = struct {
 			UID *string `json:"uid"`
@@ -37,12 +26,12 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	if err = h.Queries.CreateUser(h.Ctx, user.UID); err != nil {
+	if err = app.q.CreateUser(app.ctx, user.UID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
 
-	if _, err = h.Enforcer.AddRoleForUser(*user.UID, "user"); err != nil {
+	if _, err = app.enforcer.AddRoleForUser(*user.UID, "user"); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
@@ -50,27 +39,26 @@ func (h *UserHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "new user has been created"})
 }
 
-func (h *UserHandler) UpdateUserRootLocation(c *gin.Context) {
+func (app *application) updateUserRootLocation(c *gin.Context) {
 	var (
-		locationId int64
+		locationID int64
 		err        error
 	)
-	if locationId, err = strconv.ParseInt(c.Param("id"), 10, 64); err != nil {
-		fmt.Printf("[ERROR] parseLocationId: %v\n", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
+	locationID, err = app.readIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	uid := c.GetString("tokenUID")
-	user, err := h.Queries.GetUserByUID(h.Ctx, &uid)
+	user, err := app.getUser(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err = h.Queries.UpdateUserRootLocation(h.Ctx, db.UpdateUserRootLocationParams{
+	if err = app.q.UpdateUserRootLocation(app.ctx, db.UpdateUserRootLocationParams{
 		ID:                    user.ID,
-		CurrentRootLocationID: &locationId,
+		CurrentRootLocationID: &locationID,
 	}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
@@ -79,15 +67,14 @@ func (h *UserHandler) UpdateUserRootLocation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "user has been updated"})
 }
 
-func (h *UserHandler) DeleteUserLocation(c *gin.Context) {
-	uid := c.GetString("tokenUID")
-	user, err := h.Queries.GetUserByUID(h.Ctx, &uid)
+func (app *application) deleteUserLocation(c *gin.Context) {
+	user, err := app.getUser(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err = h.Queries.UpdateUserRootLocation(h.Ctx, db.UpdateUserRootLocationParams{
+	if err = app.q.UpdateUserRootLocation(app.ctx, db.UpdateUserRootLocationParams{
 		ID:                    user.ID,
 		CurrentRootLocationID: nil,
 	}); err != nil {
@@ -95,7 +82,7 @@ func (h *UserHandler) DeleteUserLocation(c *gin.Context) {
 		return
 	}
 
-	if err = h.Queries.UpdateUserLocation(h.Ctx, db.UpdateUserLocationParams{
+	if err = app.q.UpdateUserLocation(app.ctx, db.UpdateUserLocationParams{
 		ID:                user.ID,
 		CurrentLocationID: nil,
 	}); err != nil {
@@ -106,7 +93,7 @@ func (h *UserHandler) DeleteUserLocation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "user location has been deleted"})
 }
 
-func (h *UserHandler) UpdateUsername(c *gin.Context) {
+func (app *application) updateUsername(c *gin.Context) {
 	var user = struct {
 		Username string `json:"username"`
 	}{}
@@ -118,7 +105,7 @@ func (h *UserHandler) UpdateUsername(c *gin.Context) {
 
 	uid := c.GetString("tokenUID")
 
-	if err := h.Queries.UpdateUsername(h.Ctx, db.UpdateUsernameParams{
+	if err := app.q.UpdateUsername(app.ctx, db.UpdateUsernameParams{
 		Username: &user.Username,
 		Uid:      &uid,
 	}); err != nil {
@@ -129,12 +116,12 @@ func (h *UserHandler) UpdateUsername(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "Username updated"})
 }
 
-func (h *UserHandler) GetUserByUsername(c *gin.Context) {
+func (app *application) getUserByUsername(c *gin.Context) {
 	username := c.Param("username")
 
 	log.Debug().Msgf("Get user by username: %s", username)
 
-	user, err := h.Queries.GetUserByUsername(h.Ctx, &username)
+	user, err := app.q.GetUserByUsername(app.ctx, &username)
 	if err != nil {
 		log.Debug().Msgf("User by username %s not found. Error: %v", username, err)
 		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
@@ -148,12 +135,12 @@ func (h *UserHandler) GetUserByUsername(c *gin.Context) {
 	}
 }
 
-func (h *UserHandler) GetUserByUID(c *gin.Context) {
+func (app *application) getUserByUID(c *gin.Context) {
 	userUID := c.Query("userUID")
 
-	log.Debug().Msgf("Get user by UID: %s", userUID)
+	app.log.Debug().Msgf("Get user by UID: %s", userUID)
 
-	user, err := h.Queries.GetUserByUID(h.Ctx, &userUID)
+	user, err := app.q.GetUserByUID(app.ctx, &userUID)
 	if err != nil {
 		log.Debug().Msgf("User by UID %s not found. Error: %v", userUID, err)
 		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
@@ -163,10 +150,10 @@ func (h *UserHandler) GetUserByUID(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-func (h *UserHandler) DeleteUser(c *gin.Context) {
+func (app *application) deleteUser(c *gin.Context) {
 	uid := c.GetString("tokenUID")
 
-	tx, err := h.DB.Begin()
+	tx, err := app.db.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
@@ -178,20 +165,20 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		}
 	}()
 
-	user, err := h.Queries.WithTx(tx).DeleteUser(h.Ctx, &uid)
+	user, err := app.q.WithTx(tx).DeleteUser(app.ctx, &uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
 
 	if user.ImageID != nil {
-		if err := h.Queries.WithTx(tx).DeleteImage(c, *user.ImageID); err != nil {
+		if err := app.q.WithTx(tx).DeleteImage(c, *user.ImageID); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 			return
 		}
 	}
 
-	isUserDeleted, err := h.Enforcer.DeleteUser(uid)
+	isUserDeleted, err := app.enforcer.DeleteUser(uid)
 	if err != nil || !isUserDeleted {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Could not delete user roles/privileges"})
 		return

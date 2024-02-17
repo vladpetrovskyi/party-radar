@@ -12,14 +12,14 @@ COPY ./ ./
 
 RUN sqlc generate
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o ./run .
+RUN CGO_ENABLED=0 GOOS=linux go build -o ./run ./cmd/api
 
 FROM golang:alpine AS package
 
 WORKDIR /root/
 
 COPY --from=builder /go/src/app/run/ ./
-COPY ./config/model.conf ./config/model.conf
+COPY rbac/model.conf ./rbac/model.conf
 COPY ./serviceAccountKey.json ./serviceAccountKey.json
 COPY ./db/migrations/ ./db/migrations/
 COPY ./db/seeds/ ./db/seeds/

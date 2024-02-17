@@ -1,13 +1,10 @@
-package internal
+package main
 
 import (
-	"context"
-	"database/sql"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"party-time/db"
-	"strconv"
 )
 
 type Location struct {
@@ -26,19 +23,13 @@ type Location struct {
 	ParentID             *int64
 }
 
-type LocationHandler struct {
-	Queries *db.Queries
-	DB      *sql.DB
-	Ctx     context.Context
-}
-
-func (h *LocationHandler) GetLocations(c *gin.Context) {
+func (app *application) getLocations(c *gin.Context) {
 	elementType := c.Query("type")
 	if len(elementType) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Element type cannot be empty"})
 	}
 
-	locations, err := h.Queries.GetLocationsByElementType(c, &elementType)
+	locations, err := app.q.GetLocationsByElementType(c, &elementType)
 	if err != nil {
 		c.JSON(http.StatusNotFound, nil)
 		return
@@ -47,24 +38,23 @@ func (h *LocationHandler) GetLocations(c *gin.Context) {
 	c.JSON(200, locations)
 }
 
-func (h *LocationHandler) GetLocation(c *gin.Context) {
-	locationId, err := strconv.ParseInt(c.Param("id"), 10, 64)
+func (app *application) getLocation(c *gin.Context) {
+	locationId, err := app.readIDParam(c)
 	if err != nil {
-		log.Debug().AnErr("[ERROR] parseLocationId", err)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
-	rootLocationRow, err := h.getAndMapLocationFromDb(locationId)
+	rootLocationRow, err := app.getAndMapLocationFromDb(locationId)
 	if err != nil {
-		log.Debug().AnErr("[ERROR] GetLocation -> getAndMapLocationFromDb", err)
+		log.Debug().AnErr("[ERROR] getLocation -> getAndMapLocationFromDb", err)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
-	rootLocation, err := h.buildLocationFromParent(rootLocationRow)
+	rootLocation, err := app.buildLocationFromParent(rootLocationRow)
 	if err != nil {
-		log.Debug().AnErr("[ERROR] GetLocation -> buildLocationFromParent", err)
+		log.Debug().AnErr("[ERROR] getLocation -> buildLocationFromParent", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
@@ -72,22 +62,20 @@ func (h *LocationHandler) GetLocation(c *gin.Context) {
 	c.JSON(http.StatusOK, rootLocation)
 }
 
-func (h *LocationHandler) GetLocationUserCount(c *gin.Context) {
-	locationId, err := strconv.ParseInt(c.Param("id"), 10, 64)
+func (app *application) getLocationUserCount(c *gin.Context) {
+	locationId, err := app.readIDParam(c)
 	if err != nil {
-		log.Debug().AnErr("[ERROR] parseLocationId", err)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
-	uid := c.GetString("tokenUID")
-	user, err := h.Queries.GetUserByUID(c, &uid)
+	user, err := app.getUser(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	usersAtLocation, err := h.countUsersAtLocationTree(c, locationId, user.ID)
+	usersAtLocation, err := app.countUsersAtLocationTree(c, locationId, user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -96,8 +84,8 @@ func (h *LocationHandler) GetLocationUserCount(c *gin.Context) {
 	c.JSON(200, gin.H{"count": usersAtLocation})
 }
 
-func (h *LocationHandler) countUsersAtLocationTree(c *gin.Context, locationId, userId int64) (int64, error) {
-	usersAtLocation, err := h.Queries.CountUsersAtLocation(h.Ctx, db.CountUsersAtLocationParams{
+func (app *application) countUsersAtLocationTree(c *gin.Context, locationId, userId int64) (int64, error) {
+	usersAtLocation, err := app.q.CountUsersAtLocation(app.ctx, db.CountUsersAtLocationParams{
 		User2ID:           userId,
 		CurrentLocationID: &locationId,
 	})
@@ -105,13 +93,13 @@ func (h *LocationHandler) countUsersAtLocationTree(c *gin.Context, locationId, u
 		return 0, err
 	}
 
-	locationChildren, err := h.Queries.GetLocationChildren(c, &locationId)
+	locationChildren, err := app.q.GetLocationChildren(c, &locationId)
 	if err != nil {
 		return 0, err
 	}
 
 	for _, child := range locationChildren {
-		usersAtChildLocation, err := h.countUsersAtLocationTree(c, child.ID, userId)
+		usersAtChildLocation, err := app.countUsersAtLocationTree(c, child.ID, userId)
 		if err != nil {
 			return 0, err
 		}
@@ -120,21 +108,21 @@ func (h *LocationHandler) countUsersAtLocationTree(c *gin.Context, locationId, u
 	return usersAtLocation, nil
 }
 
-func (h *LocationHandler) getAndMapLocationFromDb(locationId int64) (Location, error) {
-	rootLocationRow, err := h.Queries.GetLocation(h.Ctx, locationId)
+func (app *application) getAndMapLocationFromDb(locationId int64) (Location, error) {
+	rootLocationRow, err := app.q.GetLocation(app.ctx, locationId)
 	if err != nil {
 		return Location{}, err
 	}
-	return h.mapLocation(rootLocationRow), nil
+	return app.mapLocation(rootLocationRow), nil
 }
 
-func (h *LocationHandler) buildLocationFromParent(location Location) (Location, error) {
-	locations, err := h.Queries.GetLocationChildren(h.Ctx, &location.ID)
+func (app *application) buildLocationFromParent(location Location) (Location, error) {
+	locations, err := app.q.GetLocationChildren(app.ctx, &location.ID)
 	if err != nil {
 		return location, err
 	} else if len(locations) > 0 {
 		for _, l := range locations {
-			childLocation, err := h.buildLocationFromParent(h.mapLocationChild(l))
+			childLocation, err := app.buildLocationFromParent(app.mapLocationChild(l))
 			if err != nil {
 				return location, err
 			}
@@ -144,22 +132,22 @@ func (h *LocationHandler) buildLocationFromParent(location Location) (Location, 
 	return location, nil
 }
 
-func (h *LocationHandler) buildLocationFromChild(location Location) (Location, error) {
+func (app *application) buildLocationFromChild(location Location) (Location, error) {
 	if location.ParentID == nil {
 		return location, nil
 	}
-	parentLocationRow, err := h.Queries.GetLocation(h.Ctx, *location.ParentID)
+	parentLocationRow, err := app.q.GetLocation(app.ctx, *location.ParentID)
 	if err != nil {
 		return location, err
 	}
 
-	parentLocation := h.mapLocation(parentLocationRow)
+	parentLocation := app.mapLocation(parentLocationRow)
 	parentLocation.Children = append(parentLocation.Children, location)
-	parentLocation, err = h.buildLocationFromChild(parentLocation)
+	parentLocation, err = app.buildLocationFromChild(parentLocation)
 	return parentLocation, err
 }
 
-func (h *LocationHandler) mapLocationChild(dbLocation db.GetLocationChildrenRow) Location {
+func (app *application) mapLocationChild(dbLocation db.GetLocationChildrenRow) Location {
 	return Location{
 		ID:                   dbLocation.ID,
 		Name:                 *dbLocation.Name,
@@ -176,7 +164,7 @@ func (h *LocationHandler) mapLocationChild(dbLocation db.GetLocationChildrenRow)
 	}
 }
 
-func (h *LocationHandler) mapLocation(dbLocation db.GetLocationRow) Location {
+func (app *application) mapLocation(dbLocation db.GetLocationRow) Location {
 	return Location{
 		ID:                   dbLocation.ID,
 		Name:                 *dbLocation.Name,
