@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"google.golang.org/api/option"
 	"net/http"
+	"os"
 	"os/signal"
 	database "party-time/db"
 	sqlc "party-time/db"
@@ -48,7 +49,7 @@ func main() {
 	flag.StringVar(&cfg.env, "env", "local", "Environment (local|dev|prod)")
 	flag.Parse()
 
-	var logger = log.Logger
+	var logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.TimeOnly})
 
 	db, queries := database.Init(ctx, &logger)
 
