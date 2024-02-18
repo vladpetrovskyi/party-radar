@@ -33,7 +33,9 @@ class _PostWidgetState extends State<PostWidget> {
   late Offset _tapPosition;
 
   void _openPositionDialog(Location openDialogLocation) {
-    PostService.increaseViewCountByOne(widget.post.id);
+    if (openDialogLocation.isCapacitySelectable ?? false) {
+      PostService.increaseViewCountByOne(widget.post.id);
+    }
 
     showDialog(
       context: context,
@@ -42,8 +44,12 @@ class _PostWidgetState extends State<PostWidget> {
           locationName: openDialogLocation.children[0].name,
           imageId: openDialogLocation.imageId,
           username: widget.post.username,
-          views: openDialogLocation.isCapacitySelectable ?? false ? widget.post.views : null,
-          capacity: openDialogLocation.isCapacitySelectable ?? false ? widget.post.capacity : null,
+          views: openDialogLocation.isCapacitySelectable ?? false
+              ? widget.post.views
+              : null,
+          capacity: openDialogLocation.isCapacitySelectable ?? false
+              ? widget.post.capacity
+              : null,
         );
       },
     );
