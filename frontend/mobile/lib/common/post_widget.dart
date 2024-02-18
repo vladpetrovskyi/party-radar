@@ -15,6 +15,7 @@ class PostWidget extends StatefulWidget {
     this.onDelete,
     this.imageId,
     this.showImage = false,
+    this.updateViewsCounter = false,
   });
 
   final String title;
@@ -24,6 +25,7 @@ class PostWidget extends StatefulWidget {
   final Function()? onDelete;
   final int? imageId;
   final bool showImage;
+  final bool updateViewsCounter;
 
   @override
   State<PostWidget> createState() => _PostWidgetState();
@@ -33,7 +35,7 @@ class _PostWidgetState extends State<PostWidget> {
   late Offset _tapPosition;
 
   void _openPositionDialog(Location openDialogLocation) {
-    if (openDialogLocation.isCapacitySelectable ?? false) {
+    if (widget.updateViewsCounter) {
       PostService.increaseViewCountByOne(widget.post.id);
     }
 

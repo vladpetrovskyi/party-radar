@@ -73,6 +73,7 @@ class _FeedPageState extends State<FeedPage> {
                 post: item,
                 imageId: item.imageId,
                 showImage: true,
+                updateViewsCounter: true,
               );
             },
             noItemsFoundIndicatorBuilder: (_) => const NoItemsFoundView(),
