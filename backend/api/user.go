@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"party-time/db"
 )
 
-func (app *application) register(c *gin.Context) {
+func (app *Application) register(c *gin.Context) {
 	var (
 		user = struct {
 			UID *string `json:"uid"`
@@ -31,7 +31,7 @@ func (app *application) register(c *gin.Context) {
 		return
 	}
 
-	if _, err = app.enforcer.AddRoleForUser(*user.UID, "user"); err != nil {
+	if _, err = app.n4cer.AddRoleForUser(*user.UID, "user"); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
@@ -39,7 +39,7 @@ func (app *application) register(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "new user has been created"})
 }
 
-func (app *application) updateUserRootLocation(c *gin.Context) {
+func (app *Application) updateUserRootLocation(c *gin.Context) {
 	var (
 		locationID int64
 		err        error
@@ -67,7 +67,7 @@ func (app *application) updateUserRootLocation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "user has been updated"})
 }
 
-func (app *application) deleteUserLocation(c *gin.Context) {
+func (app *Application) deleteUserLocation(c *gin.Context) {
 	user, err := app.getUser(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -93,7 +93,7 @@ func (app *application) deleteUserLocation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "user location has been deleted"})
 }
 
-func (app *application) updateUsername(c *gin.Context) {
+func (app *Application) updateUsername(c *gin.Context) {
 	var user = struct {
 		Username string `json:"username"`
 	}{}
@@ -116,7 +116,7 @@ func (app *application) updateUsername(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "Username updated"})
 }
 
-func (app *application) getUserByUsername(c *gin.Context) {
+func (app *Application) getUserByUsername(c *gin.Context) {
 	username := c.Param("username")
 
 	log.Debug().Msgf("Get user by username: %s", username)
@@ -135,7 +135,7 @@ func (app *application) getUserByUsername(c *gin.Context) {
 	}
 }
 
-func (app *application) getUserByUID(c *gin.Context) {
+func (app *Application) getUserByUID(c *gin.Context) {
 	userUID := c.Query("userUID")
 
 	app.log.Debug().Msgf("Get user by UID: %s", userUID)
@@ -150,7 +150,7 @@ func (app *application) getUserByUID(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-func (app *application) deleteUser(c *gin.Context) {
+func (app *Application) deleteUser(c *gin.Context) {
 	uid := c.GetString("tokenUID")
 
 	tx, err := app.db.Begin()
@@ -178,7 +178,7 @@ func (app *application) deleteUser(c *gin.Context) {
 		}
 	}
 
-	isUserDeleted, err := app.enforcer.DeleteUser(uid)
+	isUserDeleted, err := app.n4cer.DeleteUser(uid)
 	if err != nil || !isUserDeleted {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "Could not delete user roles/privileges"})
 		return

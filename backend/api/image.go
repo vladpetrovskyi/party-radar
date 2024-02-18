@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (app *application) createImage(c *gin.Context) {
+func (app *Application) createImage(c *gin.Context) {
 	userIdString := c.Query("userId")
 	dialogSettingsIdString := c.Query("dialogSettingsId")
 	if len(userIdString) > 0 {
@@ -34,7 +34,7 @@ func (app *application) createImage(c *gin.Context) {
 	return
 }
 
-func (app *application) getImage(c *gin.Context) {
+func (app *Application) getImage(c *gin.Context) {
 	imageID, err := app.readIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -51,7 +51,7 @@ func (app *application) getImage(c *gin.Context) {
 	c.Data(http.StatusOK, "application/octet-stream", image.Content)
 }
 
-func (app *application) checkImageExists(c *gin.Context) {
+func (app *Application) checkImageExists(c *gin.Context) {
 	imageID, err := app.readIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -71,7 +71,7 @@ func (app *application) checkImageExists(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (app *application) updateImage(c *gin.Context) {
+func (app *Application) updateImage(c *gin.Context) {
 	app.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (err error) {
 		imageID, err := app.readIDParam(c)
 		if err != nil {
@@ -87,7 +87,7 @@ func (app *application) updateImage(c *gin.Context) {
 	})
 }
 
-func (app *application) addDialogSettingsImage(c *gin.Context, dialogSettingsId int64) {
+func (app *Application) addDialogSettingsImage(c *gin.Context, dialogSettingsId int64) {
 	app.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (err error) {
 		var imageId *int64
 		if imageId, err = app.createImageInDB(fileName, content, q); err == nil {
@@ -101,7 +101,7 @@ func (app *application) addDialogSettingsImage(c *gin.Context, dialogSettingsId 
 	})
 }
 
-func (app *application) addUserImage(c *gin.Context, userId int64) {
+func (app *Application) addUserImage(c *gin.Context, userId int64) {
 	app.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (err error) {
 		var imageId *int64
 		if imageId, err = app.createImageInDB(fileName, content, q); err == nil {
@@ -115,7 +115,7 @@ func (app *application) addUserImage(c *gin.Context, userId int64) {
 	})
 }
 
-func (app *application) extractAndSaveImage(c *gin.Context, saveImage func(q *db.Queries, fileName string, content []byte) error) {
+func (app *Application) extractAndSaveImage(c *gin.Context, saveImage func(q *db.Queries, fileName string, content []byte) error) {
 	tx, err := app.db.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, fmt.Sprintf("createImageInDB, could not begin the transaction: %v", err))
@@ -168,7 +168,7 @@ func (app *application) extractAndSaveImage(c *gin.Context, saveImage func(q *db
 	c.JSON(http.StatusOK, nil)
 }
 
-func (app *application) createImageInDB(fileName string, content []byte, q *db.Queries) (*int64, error) {
+func (app *Application) createImageInDB(fileName string, content []byte, q *db.Queries) (*int64, error) {
 	if q == nil {
 		q = app.q
 	}

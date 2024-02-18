@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"firebase.google.com/go/auth"
@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func (app *application) authorizeViaFirebase(obj, act string) gin.HandlerFunc {
+func (app *Application) authorizeViaFirebase(obj, act string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := app.verifyToken(c)
 
@@ -26,20 +26,20 @@ func (app *application) authorizeViaFirebase(obj, act string) gin.HandlerFunc {
 	}
 }
 
-func (app *application) authenticateViaFirebase() gin.HandlerFunc {
+func (app *Application) authenticateViaFirebase() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		app.verifyToken(c)
 	}
 }
 
-func (app *application) verifyToken(c *gin.Context) (token *auth.Token) {
+func (app *Application) verifyToken(c *gin.Context) (token *auth.Token) {
 	authHeader := strings.SplitN(c.GetHeader("Authorization"), " ", 2)
 	if len(authHeader) != 2 || authHeader[0] != "Bearer" {
 		app.respondWithError(http.StatusUnauthorized, "Unauthorized", c)
 		return
 	}
 
-	client, err := app.firebaseApp.Auth(app.ctx)
+	client, err := app.fb.Auth(app.ctx)
 	if err != nil {
 		app.respondWithError(http.StatusInternalServerError, fmt.Sprintf("error getting Auth client: %v", err), c)
 		return
@@ -55,7 +55,7 @@ func (app *application) verifyToken(c *gin.Context) (token *auth.Token) {
 	return
 }
 
-func (app *application) enforce(sub string, obj string, act string) (bool, error) {
-	ok, err := app.enforcer.Enforce(sub, obj, act)
+func (app *Application) enforce(sub string, obj string, act string) (bool, error) {
+	ok, err := app.n4cer.Enforce(sub, obj, act)
 	return ok, err
 }

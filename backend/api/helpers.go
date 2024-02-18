@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func (app *application) readIDParam(c *gin.Context) (id int64, err error) {
+func (app *Application) readIDParam(c *gin.Context) (id int64, err error) {
 	id, err = strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		app.log.Error().AnErr("Incorrect ID", err)
@@ -16,7 +16,7 @@ func (app *application) readIDParam(c *gin.Context) (id int64, err error) {
 	return
 }
 
-func (app *application) getUser(c *gin.Context) (db.User, error) {
+func (app *Application) getUser(c *gin.Context) (db.User, error) {
 	uid := c.GetString("tokenUID")
 	user, err := app.q.GetUserByUID(app.ctx, &uid)
 	if err != nil {
@@ -27,7 +27,7 @@ func (app *application) getUser(c *gin.Context) (db.User, error) {
 	return user, nil
 }
 
-func (app *application) respondWithError(code int, message string, c *gin.Context) {
+func (app *Application) respondWithError(code int, message string, c *gin.Context) {
 	resp := gin.H{"error": message}
 	app.log.Debug().Msg(message)
 	c.AbortWithStatusJSON(code, resp)

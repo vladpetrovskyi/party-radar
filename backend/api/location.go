@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"github.com/gin-gonic/gin"
@@ -23,7 +23,7 @@ type Location struct {
 	ParentID             *int64
 }
 
-func (app *application) getLocations(c *gin.Context) {
+func (app *Application) getLocations(c *gin.Context) {
 	elementType := c.Query("type")
 	if len(elementType) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Element type cannot be empty"})
@@ -38,7 +38,7 @@ func (app *application) getLocations(c *gin.Context) {
 	c.JSON(200, locations)
 }
 
-func (app *application) getLocation(c *gin.Context) {
+func (app *Application) getLocation(c *gin.Context) {
 	locationId, err := app.readIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
@@ -62,7 +62,7 @@ func (app *application) getLocation(c *gin.Context) {
 	c.JSON(http.StatusOK, rootLocation)
 }
 
-func (app *application) getLocationUserCount(c *gin.Context) {
+func (app *Application) getLocationUserCount(c *gin.Context) {
 	locationId, err := app.readIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
@@ -84,7 +84,7 @@ func (app *application) getLocationUserCount(c *gin.Context) {
 	c.JSON(200, gin.H{"count": usersAtLocation})
 }
 
-func (app *application) countUsersAtLocationTree(c *gin.Context, locationId, userId int64) (int64, error) {
+func (app *Application) countUsersAtLocationTree(c *gin.Context, locationId, userId int64) (int64, error) {
 	usersAtLocation, err := app.q.CountUsersAtLocation(app.ctx, db.CountUsersAtLocationParams{
 		User2ID:           userId,
 		CurrentLocationID: &locationId,
@@ -108,7 +108,7 @@ func (app *application) countUsersAtLocationTree(c *gin.Context, locationId, use
 	return usersAtLocation, nil
 }
 
-func (app *application) getAndMapLocationFromDb(locationId int64) (Location, error) {
+func (app *Application) getAndMapLocationFromDb(locationId int64) (Location, error) {
 	rootLocationRow, err := app.q.GetLocation(app.ctx, locationId)
 	if err != nil {
 		return Location{}, err
@@ -116,7 +116,7 @@ func (app *application) getAndMapLocationFromDb(locationId int64) (Location, err
 	return app.mapLocation(rootLocationRow), nil
 }
 
-func (app *application) buildLocationFromParent(location Location) (Location, error) {
+func (app *Application) buildLocationFromParent(location Location) (Location, error) {
 	locations, err := app.q.GetLocationChildren(app.ctx, &location.ID)
 	if err != nil {
 		return location, err
@@ -132,7 +132,7 @@ func (app *application) buildLocationFromParent(location Location) (Location, er
 	return location, nil
 }
 
-func (app *application) buildLocationFromChild(location Location) (Location, error) {
+func (app *Application) buildLocationFromChild(location Location) (Location, error) {
 	if location.ParentID == nil {
 		return location, nil
 	}
@@ -147,7 +147,7 @@ func (app *application) buildLocationFromChild(location Location) (Location, err
 	return parentLocation, err
 }
 
-func (app *application) mapLocationChild(dbLocation db.GetLocationChildrenRow) Location {
+func (app *Application) mapLocationChild(dbLocation db.GetLocationChildrenRow) Location {
 	return Location{
 		ID:                   dbLocation.ID,
 		Name:                 *dbLocation.Name,
@@ -164,7 +164,7 @@ func (app *application) mapLocationChild(dbLocation db.GetLocationChildrenRow) L
 	}
 }
 
-func (app *application) mapLocation(dbLocation db.GetLocationRow) Location {
+func (app *Application) mapLocation(dbLocation db.GetLocationRow) Location {
 	return Location{
 		ID:                   dbLocation.ID,
 		Name:                 *dbLocation.Name,

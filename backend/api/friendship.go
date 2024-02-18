@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func (app *application) getFriendships(c *gin.Context) {
+func (app *Application) getFriendships(c *gin.Context) {
 	status := c.Query("status")
 	if len(status) == 0 {
 		log.Debug().Ctx(c).Msg("Empty friendship status")
@@ -63,7 +63,7 @@ func (app *application) getFriendships(c *gin.Context) {
 	c.JSON(http.StatusBadRequest, gin.H{"message": "Friendship status unrecognized"})
 }
 
-func (app *application) getFriendshipsCount(c *gin.Context) {
+func (app *Application) getFriendshipsCount(c *gin.Context) {
 	friendshipStatus := c.Query("status")
 	if len(friendshipStatus) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "FriendshipStatus cannot be empty"})
@@ -102,7 +102,7 @@ func (app *application) getFriendshipsCount(c *gin.Context) {
 	c.JSON(200, gin.H{"count": friendshipsCount})
 }
 
-func (app *application) createFriendshipRequest(c *gin.Context) {
+func (app *Application) createFriendshipRequest(c *gin.Context) {
 	user, err := app.getUser(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -166,7 +166,7 @@ func (app *application) createFriendshipRequest(c *gin.Context) {
 	c.JSON(200, nil)
 }
 
-func (app *application) updateFriendship(c *gin.Context) {
+func (app *Application) updateFriendship(c *gin.Context) {
 	friendship := struct {
 		Status string `json:"status"`
 	}{}
@@ -222,7 +222,7 @@ func (app *application) updateFriendship(c *gin.Context) {
 	c.JSON(200, nil)
 }
 
-func (app *application) deleteFriendship(c *gin.Context) {
+func (app *Application) deleteFriendship(c *gin.Context) {
 	friendshipID, err := app.readIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})

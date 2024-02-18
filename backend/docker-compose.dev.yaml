@@ -33,6 +33,7 @@ services:
     labels:
       logging: "promtail"
       logging_jobname: "containerlogs"
+    command: [ "sh", "-c", "./migration up && ./api" ]
 
 networks:
   default:

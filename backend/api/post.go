@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ type PostDTO struct {
 	Capacity  *int64    `json:"capacity"`
 }
 
-func (app *application) getPosts(c *gin.Context) {
+func (app *Application) getPosts(c *gin.Context) {
 	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
@@ -63,7 +63,7 @@ func (app *application) getPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, userFeed)
 }
 
-func (app *application) getFeed(c *gin.Context) {
+func (app *Application) getFeed(c *gin.Context) {
 	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Offset value must be numeric"})
@@ -115,7 +115,7 @@ func (app *application) getFeed(c *gin.Context) {
 	c.JSON(http.StatusOK, userFeed)
 }
 
-func (app *application) mapDBUserPostToDTO(entity db.GetUserPostsRow) (PostDTO, error) {
+func (app *Application) mapDBUserPostToDTO(entity db.GetUserPostsRow) (PostDTO, error) {
 	location, err := app.getAndMapLocationFromDb(entity.LocationID)
 	if err != nil {
 		return PostDTO{}, err
@@ -136,7 +136,7 @@ func (app *application) mapDBUserPostToDTO(entity db.GetUserPostsRow) (PostDTO, 
 	}, nil
 }
 
-func (app *application) mapDBUserFeedPostToDTO(entity db.GetUserFeedRow) (PostDTO, error) {
+func (app *Application) mapDBUserFeedPostToDTO(entity db.GetUserFeedRow) (PostDTO, error) {
 	location, err := app.getAndMapLocationFromDb(entity.LocationID)
 	if err != nil {
 		return PostDTO{}, err
@@ -159,7 +159,7 @@ func (app *application) mapDBUserFeedPostToDTO(entity db.GetUserFeedRow) (PostDT
 	}, nil
 }
 
-func (app *application) getUserPostsCount(c *gin.Context) {
+func (app *Application) getUserPostsCount(c *gin.Context) {
 	username := strings.ToLower(c.Query("username"))
 	if len(username) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Username cannot be empty"})
@@ -174,7 +174,7 @@ func (app *application) getUserPostsCount(c *gin.Context) {
 	c.JSON(200, gin.H{"count": userPostsCount})
 }
 
-func (app *application) deletePost(c *gin.Context) {
+func (app *Application) deletePost(c *gin.Context) {
 	postId, err := app.readIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
@@ -190,7 +190,7 @@ func (app *application) deletePost(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (app *application) increaseViewsByOne(c *gin.Context) {
+func (app *Application) increaseViewsByOne(c *gin.Context) {
 	postID, err := app.readIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "Cannot update post without ID"})
@@ -208,7 +208,7 @@ func (app *application) increaseViewsByOne(c *gin.Context) {
 	c.Status(200)
 }
 
-func (app *application) createPost(c *gin.Context) {
+func (app *Application) createPost(c *gin.Context) {
 	post := struct {
 		LocationID *int64 `json:"location_id"`
 		PostType   string `json:"post_type"`
