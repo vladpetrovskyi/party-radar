@@ -12,7 +12,8 @@ COPY ./ ./
 
 RUN sqlc generate
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o ./run .
+RUN CGO_ENABLED=0 GOOS=linux go build -o ./run/api ./cmd/api/main.go  \
+    && go build -o ./run/migration ./cmd/db/main.go
 
 FROM golang:alpine AS package
 
@@ -26,4 +27,4 @@ COPY ./db/seeds/ ./db/seeds/
 
 ENV IS_DOCKER_CONTAINER="true"
 
-CMD ["./run"]
+CMD ["./api"]

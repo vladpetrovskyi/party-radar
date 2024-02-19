@@ -1,8 +1,6 @@
-package internal
+package api
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -10,13 +8,7 @@ import (
 	"strconv"
 )
 
-type ImageHandler struct {
-	Queries *db.Queries
-	DB      *sql.DB
-	Ctx     context.Context
-}
-
-func (h *ImageHandler) CreateImage(c *gin.Context) {
+func (app *Application) createImage(c *gin.Context) {
 	userIdString := c.Query("userId")
 	dialogSettingsIdString := c.Query("dialogSettingsId")
 	if len(userIdString) > 0 {
@@ -25,7 +17,7 @@ func (h *ImageHandler) CreateImage(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "User ID must be numeric"})
 			return
 		}
-		h.addUserImage(c, userId)
+		app.addUserImage(c, userId)
 		return
 	} else if len(dialogSettingsIdString) > 0 {
 		dialogSettingsId, err := strconv.ParseInt(dialogSettingsIdString, 10, 64)
@@ -34,7 +26,7 @@ func (h *ImageHandler) CreateImage(c *gin.Context) {
 			return
 		}
 
-		h.addDialogSettingsImage(c, dialogSettingsId)
+		app.addDialogSettingsImage(c, dialogSettingsId)
 		return
 	}
 
@@ -42,14 +34,14 @@ func (h *ImageHandler) CreateImage(c *gin.Context) {
 	return
 }
 
-func (h *ImageHandler) GetImage(c *gin.Context) {
-	imageId, err := strconv.ParseInt(c.Param("id"), 10, 64)
+func (app *Application) getImage(c *gin.Context) {
+	imageID, err := app.readIDParam(c)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Incorrect ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	image, err := h.Queries.GetImage(h.Ctx, imageId)
+	image, err := app.q.GetImage(app.ctx, imageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
@@ -59,14 +51,14 @@ func (h *ImageHandler) GetImage(c *gin.Context) {
 	c.Data(http.StatusOK, "application/octet-stream", image.Content)
 }
 
-func (h *ImageHandler) CheckImageExists(c *gin.Context) {
-	imageId, err := strconv.ParseInt(c.Param("id"), 10, 64)
+func (app *Application) checkImageExists(c *gin.Context) {
+	imageID, err := app.readIDParam(c)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Incorrect ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	image, err := h.Queries.GetImage(h.Ctx, imageId)
+	image, err := app.q.GetImage(app.ctx, imageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
@@ -79,14 +71,15 @@ func (h *ImageHandler) CheckImageExists(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (h *ImageHandler) UpdateImage(c *gin.Context) {
-	h.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (err error) {
-		imageId, err := strconv.ParseInt(c.Param("id"), 10, 64)
+func (app *Application) updateImage(c *gin.Context) {
+	app.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (err error) {
+		imageID, err := app.readIDParam(c)
 		if err != nil {
 			return err
 		}
-		err = q.UpdateImage(h.Ctx, db.UpdateImageParams{
-			ID:       imageId,
+
+		err = q.UpdateImage(app.ctx, db.UpdateImageParams{
+			ID:       imageID,
 			FileName: fileName,
 			Content:  content,
 		})
@@ -94,11 +87,11 @@ func (h *ImageHandler) UpdateImage(c *gin.Context) {
 	})
 }
 
-func (h *ImageHandler) addDialogSettingsImage(c *gin.Context, dialogSettingsId int64) {
-	h.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (err error) {
+func (app *Application) addDialogSettingsImage(c *gin.Context, dialogSettingsId int64) {
+	app.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (err error) {
 		var imageId *int64
-		if imageId, err = h.createImageInDB(fileName, content, q); err == nil {
-			err = q.UpdateDialogSettingsImage(h.Ctx, db.UpdateDialogSettingsImageParams{
+		if imageId, err = app.createImageInDB(fileName, content, q); err == nil {
+			err = q.UpdateDialogSettingsImage(app.ctx, db.UpdateDialogSettingsImageParams{
 				ID:      dialogSettingsId,
 				ImageID: imageId,
 			})
@@ -108,11 +101,11 @@ func (h *ImageHandler) addDialogSettingsImage(c *gin.Context, dialogSettingsId i
 	})
 }
 
-func (h *ImageHandler) addUserImage(c *gin.Context, userId int64) {
-	h.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (err error) {
+func (app *Application) addUserImage(c *gin.Context, userId int64) {
+	app.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (err error) {
 		var imageId *int64
-		if imageId, err = h.createImageInDB(fileName, content, q); err == nil {
-			err = q.UpdateUserImageId(h.Ctx, db.UpdateUserImageIdParams{
+		if imageId, err = app.createImageInDB(fileName, content, q); err == nil {
+			err = q.UpdateUserImageId(app.ctx, db.UpdateUserImageIdParams{
 				ID:      userId,
 				ImageID: imageId,
 			})
@@ -122,8 +115,8 @@ func (h *ImageHandler) addUserImage(c *gin.Context, userId int64) {
 	})
 }
 
-func (h *ImageHandler) extractAndSaveImage(c *gin.Context, saveImage func(q *db.Queries, fileName string, content []byte) error) {
-	tx, err := h.DB.Begin()
+func (app *Application) extractAndSaveImage(c *gin.Context, saveImage func(q *db.Queries, fileName string, content []byte) error) {
+	tx, err := app.db.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, fmt.Sprintf("createImageInDB, could not begin the transaction: %v", err))
 		return
@@ -159,7 +152,7 @@ func (h *ImageHandler) extractAndSaveImage(c *gin.Context, saveImage func(q *db.
 		return
 	}
 
-	q := h.Queries.WithTx(tx)
+	q := app.q.WithTx(tx)
 
 	err = saveImage(q, img.Filename, fileBytes)
 	if err != nil {
@@ -175,12 +168,12 @@ func (h *ImageHandler) extractAndSaveImage(c *gin.Context, saveImage func(q *db.
 	c.JSON(http.StatusOK, nil)
 }
 
-func (h *ImageHandler) createImageInDB(fileName string, content []byte, q *db.Queries) (*int64, error) {
+func (app *Application) createImageInDB(fileName string, content []byte, q *db.Queries) (*int64, error) {
 	if q == nil {
-		q = h.Queries
+		q = app.q
 	}
 
-	imageId, err := q.CreateImage(h.Ctx, db.CreateImageParams{
+	imageId, err := q.CreateImage(app.ctx, db.CreateImageParams{
 		FileName: fileName,
 		Content:  content,
 	})

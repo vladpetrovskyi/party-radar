@@ -1,8 +1,6 @@
-package internal
+package api
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -12,13 +10,6 @@ import (
 	"strings"
 	"time"
 )
-
-type PostHandler struct {
-	Queries         *db.Queries
-	DB              *sql.DB
-	Ctx             context.Context
-	LocationHandler *LocationHandler
-}
 
 type PostDTO struct {
 	ID        int64     `json:"id"`
@@ -31,7 +22,7 @@ type PostDTO struct {
 	Capacity  *int64    `json:"capacity"`
 }
 
-func (h *PostHandler) GetPosts(c *gin.Context) {
+func (app *Application) getPosts(c *gin.Context) {
 	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
@@ -49,7 +40,7 @@ func (h *PostHandler) GetPosts(c *gin.Context) {
 		return
 	}
 
-	userFeedRows, err := h.Queries.GetUserPosts(c, db.GetUserPostsParams{
+	userFeedRows, err := app.q.GetUserPosts(c, db.GetUserPostsParams{
 		UserID: userId,
 		Offset: int32(offset),
 		Limit:  int32(limit),
@@ -61,7 +52,7 @@ func (h *PostHandler) GetPosts(c *gin.Context) {
 
 	userFeed := make([]PostDTO, 0)
 	for _, post := range userFeedRows {
-		mappedPost, err := h.mapDBUserPostToDTO(post)
+		mappedPost, err := app.mapDBUserPostToDTO(post)
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
@@ -72,7 +63,7 @@ func (h *PostHandler) GetPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, userFeed)
 }
 
-func (h *PostHandler) GetFeed(c *gin.Context) {
+func (app *Application) getFeed(c *gin.Context) {
 	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Offset value must be numeric"})
@@ -83,10 +74,8 @@ func (h *PostHandler) GetFeed(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Limit value must be numeric"})
 		return
 	}
-	username := "%" + strings.ToLower(c.Query("username")) + "%"
 
-	uid := c.GetString("tokenUID")
-	user, err := h.Queries.GetUserByUID(c, &uid)
+	user, err := app.getUser(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No user found"})
 		return
@@ -99,7 +88,9 @@ func (h *PostHandler) GetFeed(c *gin.Context) {
 		rootLocationId = &id
 	}
 
-	userFeedRows, err := h.Queries.GetUserFeed(c, db.GetUserFeedParams{
+	username := "%" + strings.ToLower(c.Query("username")) + "%"
+
+	userFeedRows, err := app.q.GetUserFeed(c, db.GetUserFeedParams{
 		User2ID:        user.ID,
 		Username:       &username,
 		RootLocationID: rootLocationId,
@@ -113,7 +104,7 @@ func (h *PostHandler) GetFeed(c *gin.Context) {
 
 	userFeed := make([]PostDTO, 0)
 	for _, post := range userFeedRows {
-		mappedPost, err := h.mapDBUserFeedPostToDTO(post)
+		mappedPost, err := app.mapDBUserFeedPostToDTO(post)
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
@@ -124,13 +115,13 @@ func (h *PostHandler) GetFeed(c *gin.Context) {
 	c.JSON(http.StatusOK, userFeed)
 }
 
-func (h *PostHandler) mapDBUserPostToDTO(entity db.GetUserPostsRow) (PostDTO, error) {
-	location, err := h.LocationHandler.getAndMapLocationFromDb(entity.LocationID)
+func (app *Application) mapDBUserPostToDTO(entity db.GetUserPostsRow) (PostDTO, error) {
+	location, err := app.getAndMapLocationFromDb(entity.LocationID)
 	if err != nil {
 		return PostDTO{}, err
 	}
 
-	location, err = h.LocationHandler.buildLocationFromChild(location)
+	location, err = app.buildLocationFromChild(location)
 	if err != nil {
 		return PostDTO{}, err
 	}
@@ -145,13 +136,13 @@ func (h *PostHandler) mapDBUserPostToDTO(entity db.GetUserPostsRow) (PostDTO, er
 	}, nil
 }
 
-func (h *PostHandler) mapDBUserFeedPostToDTO(entity db.GetUserFeedRow) (PostDTO, error) {
-	location, err := h.LocationHandler.getAndMapLocationFromDb(entity.LocationID)
+func (app *Application) mapDBUserFeedPostToDTO(entity db.GetUserFeedRow) (PostDTO, error) {
+	location, err := app.getAndMapLocationFromDb(entity.LocationID)
 	if err != nil {
 		return PostDTO{}, err
 	}
 
-	location, err = h.LocationHandler.buildLocationFromChild(location)
+	location, err = app.buildLocationFromChild(location)
 	if err != nil {
 		return PostDTO{}, err
 	}
@@ -168,13 +159,13 @@ func (h *PostHandler) mapDBUserFeedPostToDTO(entity db.GetUserFeedRow) (PostDTO,
 	}, nil
 }
 
-func (h *PostHandler) GetUserPostsCount(c *gin.Context) {
+func (app *Application) getUserPostsCount(c *gin.Context) {
 	username := strings.ToLower(c.Query("username"))
 	if len(username) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Username cannot be empty"})
 	}
 
-	userPostsCount, err := h.Queries.GetUserPostsCount(c, &username)
+	userPostsCount, err := app.q.GetUserPostsCount(c, &username)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -183,23 +174,14 @@ func (h *PostHandler) GetUserPostsCount(c *gin.Context) {
 	c.JSON(200, gin.H{"count": userPostsCount})
 }
 
-func (h *PostHandler) DeletePost(c *gin.Context) {
-	postStringId := c.Param("id")
-	if len(postStringId) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Cannot delete post without ID"})
+func (app *Application) deletePost(c *gin.Context) {
+	postID, err := app.readIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
-	var (
-		postId int64
-		err    error
-	)
-	if postId, err = strconv.ParseInt(c.Param("id"), 10, 64); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Friendship ID must be numeric"})
-		return
-	}
-
-	err = h.Queries.DeletePost(c, postId)
+	err = app.q.DeletePost(c, postID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -208,25 +190,16 @@ func (h *PostHandler) DeletePost(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (h *PostHandler) IncreaseViewsByOne(c *gin.Context) {
-	postStringId := c.Param("id")
-	if len(postStringId) == 0 {
+func (app *Application) increaseViewsByOne(c *gin.Context) {
+	postID, err := app.readIDParam(c)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": "Cannot update post without ID"})
 		return
 	}
 
-	var (
-		postId int64
-		err    error
-	)
-	if postId, err = strconv.ParseInt(c.Param("id"), 10, 64); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Post ID must be numeric"})
-		return
-	}
-
-	err = h.Queries.IncreasePostViewsByOne(c, postId)
+	err = app.q.IncreasePostViewsByOne(c, postID)
 	if err != nil {
-		msg := fmt.Sprintf("Could not update post views, post ID %d", postId)
+		msg := fmt.Sprintf("Could not update post views, post ID %d", postID)
 		log.Debug().Ctx(c).Msg(msg)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": msg})
 		return
@@ -235,7 +208,7 @@ func (h *PostHandler) IncreaseViewsByOne(c *gin.Context) {
 	c.Status(200)
 }
 
-func (h *PostHandler) CreatePost(c *gin.Context) {
+func (app *Application) createPost(c *gin.Context) {
 	post := struct {
 		LocationID *int64 `json:"location_id"`
 		PostType   string `json:"post_type"`
@@ -249,15 +222,13 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		return
 	}
 
-	uid := c.GetString("tokenUID")
-	user, err := h.Queries.GetUserByUID(h.Ctx, &uid)
+	user, err := app.getUser(c)
 	if err != nil {
-		log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	postTypeId, err := h.Queries.GetPostTypeId(h.Ctx, post.PostType)
+	postTypeId, err := app.q.GetPostTypeId(app.ctx, post.PostType)
 	if err != nil {
 		log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -273,7 +244,7 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		return
 	}
 
-	err = h.Queries.CreatePost(h.Ctx, db.CreatePostParams{
+	err = app.q.CreatePost(app.ctx, db.CreatePostParams{
 		UserID:     user.ID,
 		LocationID: *post.LocationID,
 		PostTypeID: postTypeId,
@@ -285,7 +256,7 @@ func (h *PostHandler) CreatePost(c *gin.Context) {
 		return
 	}
 
-	err = h.Queries.UpdateUserLocation(h.Ctx, db.UpdateUserLocationParams{
+	err = app.q.UpdateUserLocation(app.ctx, db.UpdateUserLocationParams{
 		ID:                user.ID,
 		CurrentLocationID: post.LocationID,
 	})
