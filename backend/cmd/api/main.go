@@ -37,11 +37,13 @@ func main() {
 	}
 	logger.Info().Msg("DB connection established!")
 
+	logger.Info().Msg("Initialising Firebase App...")
 	opt := option.WithCredentialsFile("serviceAccountKey.json")
 	fb, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
 		panic(fmt.Errorf("error initializing firebaseApp: %v", err))
 	}
+	logger.Info().Msg("Firebase App initialised!")
 
 	app := api.New(c, &logger, ctx, fb, db)
 

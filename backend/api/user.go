@@ -40,11 +40,7 @@ func (app *Application) register(c *gin.Context) {
 }
 
 func (app *Application) updateUserRootLocation(c *gin.Context) {
-	var (
-		locationID int64
-		err        error
-	)
-	locationID, err = app.readIDParam(c)
+	locationID, err := app.readIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

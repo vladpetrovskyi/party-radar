@@ -175,13 +175,13 @@ func (app *Application) getUserPostsCount(c *gin.Context) {
 }
 
 func (app *Application) deletePost(c *gin.Context) {
-	postId, err := app.readIDParam(c)
+	postID, err := app.readIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
-	err = app.q.DeletePost(c, postId)
+	err = app.q.DeletePost(c, postID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
