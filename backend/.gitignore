@@ -17,9 +17,7 @@
 # Go workspace file
 go.work
 
-db/*.sql.go
-db/db.go
-db/models.go
+db/*.go
 .proxy/
 .db/
 serviceAccountKey.json
