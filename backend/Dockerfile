@@ -27,4 +27,4 @@ COPY ./db/seeds/ ./db/seeds/
 
 ENV IS_DOCKER_CONTAINER="true"
 
-CMD ["./run/api"]
+CMD ["./api"]
