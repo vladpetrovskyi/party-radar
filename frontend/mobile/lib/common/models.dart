@@ -7,9 +7,11 @@ class Location {
   final OnClickAction onClickAction;
   final List<Location> children;
   final int columnIndex;
+  final int rowIndex;
   final String? dialogName;
   final int? imageId;
   final bool? isCapacitySelectable;
+  final bool? isCloseable;
 
   const Location({
     required this.id,
@@ -19,10 +21,12 @@ class Location {
     this.enabled = true,
     this.onClickAction = OnClickAction.select,
     this.columnIndex = 0,
+    this.rowIndex = 0,
     this.children = const [],
     this.dialogName,
     this.imageId,
     this.isCapacitySelectable,
+    this.isCloseable,
   });
 
   Location.fromJson(Map<String, dynamic> json)
@@ -38,8 +42,10 @@ class Location {
             ? OnClickAction.fromJson(json['on_click_action'])
             : OnClickAction.select,
         columnIndex = json['column_index'] ?? 0,
+        rowIndex = json['row_index'] ?? 0,
         imageId = json['image_id'],
         isCapacitySelectable = json['is_capacity_selectable'],
+        isCloseable = null,
         children = (json['children'] ?? [])
             .map<Location>((e) => Location.fromJson(e))
             .toList();
@@ -55,6 +61,7 @@ class Location {
         'column_index': columnIndex,
         'is_capacity_selectable': isCapacitySelectable,
         'image_id': imageId,
+        'is_closeable': isCloseable,
         'children': children.map((e) => e.toJson()).toList(),
       };
 }
