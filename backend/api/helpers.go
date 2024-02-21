@@ -16,7 +16,7 @@ func (app *Application) readIDParam(c *gin.Context) (id int64, err error) {
 	return
 }
 
-func (app *Application) getUser(c *gin.Context) (db.User, error) {
+func (app *Application) getUserFromContext(c *gin.Context) (db.User, error) {
 	uid := c.GetString("tokenUID")
 	user, err := app.q.GetUserByUID(app.ctx, &uid)
 	if err != nil {

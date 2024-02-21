@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/services/image_service.dart';
+import 'package:party_radar/common/services/post_service.dart';
 import 'package:widget_zoom/widget_zoom.dart';
 
 class SimpleLocationDialog extends StatelessWidget {
@@ -8,20 +9,24 @@ class SimpleLocationDialog extends StatelessWidget {
     required this.locationName,
     this.imageId,
     this.username,
-    this.views,
     this.capacity,
+    this.postId,
   });
 
   final String locationName;
   final int? imageId;
   final String? username;
-  final int? views;
   final int? capacity;
+  final int? postId;
 
   @override
   Widget build(BuildContext context) {
     return SimpleDialog(title: _buildDialogTitle(context), children: [
-      if (capacity != null || views != null) _buildDescription(),
+      FutureBuilder(
+        future: PostService.getPostViewsCount(postId),
+        builder: (context, snapshot) =>
+            _buildDescription(capacity, snapshot.data),
+      ),
       _getDivider(),
       if (imageId != null) _buildImage(),
       _getDivider(),
@@ -37,14 +42,14 @@ class SimpleLocationDialog extends StatelessWidget {
         thickness: 0.5,
       );
 
-  Widget _buildBackButton(BuildContext context) => SimpleDialogOption(
-        child: const Center(
-          child: Text(
+  Widget _buildBackButton(BuildContext context) => Center(
+        child: SimpleDialogOption(
+          child: const Text(
             'BACK',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        onPressed: () => Navigator.of(context).pop(),
       );
 
   Widget _buildImage() => FutureBuilder(
@@ -62,7 +67,7 @@ class SimpleLocationDialog extends StatelessWidget {
         },
       );
 
-  Widget _buildDescription() => Row(
+  Widget _buildDescription(int? capacity, int? views) => Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (capacity != null)
@@ -75,7 +80,7 @@ class SimpleLocationDialog extends StatelessWidget {
               ' | ',
               style: TextStyle(color: Colors.white, fontSize: 16),
             ),
-          if (views != null)
+          if (capacity != null)
             Text(
               'Views: $views',
               textAlign: TextAlign.center,

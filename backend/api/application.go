@@ -53,6 +53,10 @@ func (app *Application) GetRouter() *gin.Engine {
 func (app *Application) setupRoutes() {
 	app.log.Info().Msg("Setting up router...")
 
+	if app.c.Server.Environment == "prod" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	router := gin.New()
 	router.Use(logger.SetLogger(logger.WithLogger(func(context *gin.Context, z zerolog.Logger) zerolog.Logger {
 		return *app.log
@@ -89,6 +93,7 @@ func (app *Application) setupRoutes() {
 	postGroup.GET("/count", app.authorizeViaFirebase("data", "read"), app.getUserPostsCount)
 	postGroup.POST("", app.authorizeViaFirebase("data", "write"), app.createPost)
 	postGroup.PUT("/:id/view", app.authorizeViaFirebase("data", "write"), app.increaseViewsByOne)
+	postGroup.GET("/:id/view", app.authorizeViaFirebase("data", "read"), app.getPostViewsCount)
 	postGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), app.deletePost)
 
 	friendshipGroup := v1.Group("/friendship")

@@ -121,12 +121,7 @@ func (app *Application) extractAndSaveImage(c *gin.Context, saveImage func(q *db
 		c.JSON(http.StatusInternalServerError, fmt.Sprintf("createImageInDB, could not begin the transaction: %v", err))
 		return
 	}
-	defer func() {
-		if deferredErr := tx.Rollback(); deferredErr != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": fmt.Sprintf("could not rollback a transaction: %v", deferredErr)})
-			return
-		}
-	}()
+	defer tx.Rollback()
 
 	img, err := c.FormFile("imageFile")
 	if err != nil {

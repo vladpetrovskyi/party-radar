@@ -93,6 +93,19 @@ class PostService {
     return response.ok;
   }
 
+  static Future<int> getPostViewsCount(int? postId) async {
+    Response response = await get(
+        Uri.parse('${FlavorConfig.instance.values.baseUrl}/post/$postId/view'),
+        headers: {
+          HttpHeaders.authorizationHeader:
+          'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+        });
+
+    if (!response.ok) throw Exception("Could not get post views count: \n${response.body}");
+
+    return jsonDecode(response.body)['count'];
+  }
+
   static Future<bool> deletePost(int postId) async {
     Response response = await delete(
         Uri.parse('${FlavorConfig.instance.values.baseUrl}/post/$postId'),
