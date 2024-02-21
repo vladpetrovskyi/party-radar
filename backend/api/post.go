@@ -75,7 +75,7 @@ func (app *Application) getFeed(c *gin.Context) {
 		return
 	}
 
-	user, err := app.getUser(c)
+	user, err := app.getUserFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No user found"})
 		return
