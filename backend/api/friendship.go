@@ -29,7 +29,7 @@ func (app *Application) getFriendships(c *gin.Context) {
 		return
 	}
 
-	user, err := app.getUser(c)
+	user, err := app.getUserFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -103,7 +103,7 @@ func (app *Application) getFriendshipsCount(c *gin.Context) {
 }
 
 func (app *Application) createFriendshipRequest(c *gin.Context) {
-	user, err := app.getUser(c)
+	user, err := app.getUserFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -195,7 +195,7 @@ func (app *Application) updateFriendship(c *gin.Context) {
 		return
 	}
 
-	updateSender, err := app.getUser(c)
+	updateSender, err := app.getUserFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

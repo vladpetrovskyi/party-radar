@@ -44,4 +44,9 @@ FROM post
 WHERE id = $1;
 
 -- name: IncreasePostViewsByOne :exec
-UPDATE post SET views = COALESCE(views, 0) + 1 WHERE id = $1;
+UPDATE post
+SET views = COALESCE(views, 0) + 1
+WHERE id = $1;
+
+-- name: GetPostViewsCount :one
+SELECT COALESCE(views, 0) FROM post WHERE id = $1;

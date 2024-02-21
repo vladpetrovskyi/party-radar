@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:intl/intl.dart';
 import 'package:party_radar/profile/tabs/widgets/not_found_widget.dart';
-import 'package:party_radar/common/post_widget.dart';
+import 'package:party_radar/common/post/post_widget.dart';
 import 'package:party_radar/common/models.dart';
 import 'package:party_radar/common/services/post_service.dart';
 import 'package:party_radar/common/services/user_service.dart';

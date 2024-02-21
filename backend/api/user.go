@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"net/http"
@@ -46,7 +45,7 @@ func (app *Application) updateUserRootLocation(c *gin.Context) {
 		return
 	}
 
-	user, err := app.getUser(c)
+	user, err := app.getUserFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -64,7 +63,7 @@ func (app *Application) updateUserRootLocation(c *gin.Context) {
 }
 
 func (app *Application) deleteUserLocation(c *gin.Context) {
-	user, err := app.getUser(c)
+	user, err := app.getUserFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -138,7 +137,7 @@ func (app *Application) getUserByUID(c *gin.Context) {
 
 	user, err := app.q.GetUserByUID(app.ctx, &userUID)
 	if err != nil {
-		log.Debug().Msgf("User by UID %s not found. Error: %v", userUID, err)
+		app.log.Debug().Msgf("User by UID %s not found. Error: %v", userUID, err)
 		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
 		return
 	}
@@ -154,12 +153,7 @@ func (app *Application) deleteUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
-	defer func() {
-		if deferredErr := tx.Rollback(); deferredErr != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": fmt.Sprintf("could not rollback a transaction: %v", deferredErr)})
-			return
-		}
-	}()
+	defer tx.Rollback()
 
 	user, err := app.q.WithTx(tx).DeleteUser(app.ctx, &uid)
 	if err != nil {

@@ -49,7 +49,8 @@ dependencies:
   flutter_native_splash: ^2.3.10
   device_info_plus: ^9.1.2
   url_launcher: ^6.2.4
-  freerasp: 6.4.0
+  freerasp: ^6.4.0
+  font_awesome_flutter: ^10.7.0
 
 dev_dependencies:
   flutter_test:

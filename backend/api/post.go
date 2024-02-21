@@ -208,6 +208,24 @@ func (app *Application) increaseViewsByOne(c *gin.Context) {
 	c.Status(200)
 }
 
+func (app *Application) getPostViewsCount(c *gin.Context) {
+	postID, err := app.readIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Cannot update post without ID"})
+		return
+	}
+
+	viewsCount, err := app.q.GetPostViewsCount(c, postID)
+	if err != nil {
+		msg := fmt.Sprintf("Could not get post views count, post ID %d", postID)
+		log.Debug().Ctx(c).Msg(msg)
+		c.JSON(http.StatusBadRequest, gin.H{"msg": msg})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"count": *viewsCount})
+}
+
 func (app *Application) createPost(c *gin.Context) {
 	post := struct {
 		LocationID *int64 `json:"location_id"`
@@ -222,7 +240,7 @@ func (app *Application) createPost(c *gin.Context) {
 		return
 	}
 
-	user, err := app.getUser(c)
+	user, err := app.getUserFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -244,23 +262,21 @@ func (app *Application) createPost(c *gin.Context) {
 		return
 	}
 
-	err = app.q.CreatePost(app.ctx, db.CreatePostParams{
+	if err := app.q.CreatePost(app.ctx, db.CreatePostParams{
 		UserID:     user.ID,
 		LocationID: *post.LocationID,
 		PostTypeID: postTypeId,
 		Capacity:   post.Capacity,
-	})
-	if err != nil {
+	}); err != nil {
 		log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = app.q.UpdateUserLocation(app.ctx, db.UpdateUserLocationParams{
+	if err := app.q.UpdateUserLocation(app.ctx, db.UpdateUserLocationParams{
 		ID:                user.ID,
 		CurrentLocationID: post.LocationID,
-	})
-	if err != nil {
+	}); err != nil {
 		log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
