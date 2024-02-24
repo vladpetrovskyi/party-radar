@@ -68,11 +68,11 @@ func main() {
 		}
 	}()
 
-	if err := goose.RunContext(context.Background(), command, database, *migrationsDir, args[1:]...); err != nil {
+	if err := goose.RunWithOptionsContext(context.Background(), command, database, *migrationsDir, args[1:], goose.WithAllowMissing()); err != nil {
 		logger.Fatal().Msgf("migrate %v: %v", command, err)
 	}
 
-	if err := goose.RunContext(context.Background(), command, database, *seedsDir, args[1:]...); err != nil {
+	if err := goose.RunWithOptionsContext(context.Background(), command, database, *seedsDir, args[1:], goose.WithAllowMissing()); err != nil {
 		logger.Fatal().Msgf("seeds %v: %v", command, err)
 	}
 
@@ -89,7 +89,7 @@ func main() {
 			logger.Fatal().Msgf("db/seeds/assets: %v", err)
 		}
 		fileName := info.Name()
-		imageId, err := strconv.ParseInt(strings.Split(fileName, "_")[0], 10, 64)
+		dialogSettingsID, err := strconv.ParseInt(strings.Split(fileName, "_")[0], 10, 64)
 		if err != nil {
 			logger.Fatal().Msgf("db/seeds/assets: %v", err)
 		}
@@ -99,19 +99,41 @@ func main() {
 			logger.Fatal().Msgf("db/seeds/assets: %v", err)
 		}
 
-		err = queries.UpsertImage(context.Background(), db.UpsertImageParams{
-			ID:       imageId,
-			FileName: fileName,
-			Content:  file,
-		})
+		imageID, err := queries.GetDialogSettingsImageID(context.Background(), dialogSettingsID)
 		if err != nil {
 			logger.Fatal().Msgf("db/seeds/assets: %v", err)
 		}
-	}
 
-	err = queries.ResetImageSequence(context.Background())
-	if err != nil {
-		logger.Fatal().Msgf("db/seeds/assets: %v", err)
+		if imageID != nil {
+			err = queries.UpsertImage(context.Background(), db.UpsertImageParams{
+				ID:       *imageID,
+				FileName: fileName,
+				Content:  file,
+			})
+			if err != nil {
+				logger.Fatal().Msgf("db/seeds/assets: %v", err)
+			}
+		} else {
+			imageID, err := queries.CreateImage(context.Background(), db.CreateImageParams{
+				FileName: fileName,
+				Content:  file,
+			})
+			if err != nil {
+				logger.Fatal().Msgf("db/seeds/assets: %v", err)
+			}
+
+			err = queries.UpdateDialogSettingsImage(context.Background(), db.UpdateDialogSettingsImageParams{
+				ID:      dialogSettingsID,
+				ImageID: &imageID,
+			})
+			if err != nil {
+				logger.Fatal().Msgf("db/seeds/assets: %v", err)
+			}
+		}
+		err = queries.ResetImageSequence(context.Background())
+		if err != nil {
+			logger.Fatal().Msgf("db/seeds/assets: %v", err)
+		}
 	}
 }
 

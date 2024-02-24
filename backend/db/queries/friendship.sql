@@ -27,7 +27,8 @@ FROM (SELECT f.id,
       WHERE (f.user_1_id = @userId::bigint
           OR f.user_2_id = @userId::bigint)
         AND f.status_id = 2) t
-         LEFT JOIN location l ON l.id = t.current_root_location_id;
+         LEFT JOIN location l ON l.id = t.current_root_location_id
+LIMIT $1 OFFSET $2;
 
 -- name: GetFriendshipRequestsByUser :many
 SELECT f.id, u.id AS user_id, u.username, u.image_id, fs.name AS friendship_status, f.created_at, f.updated_at

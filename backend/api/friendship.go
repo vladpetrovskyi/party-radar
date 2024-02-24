@@ -49,7 +49,11 @@ func (app *Application) getFriendships(c *gin.Context) {
 		c.JSON(http.StatusOK, friendshipRequests)
 		return
 	} else if status == "accepted" {
-		friends, err := app.q.GetFriendshipsByUser(app.ctx, user.ID)
+		friends, err := app.q.GetFriendshipsByUser(app.ctx, db.GetFriendshipsByUserParams{
+			Userid: user.ID,
+			Offset: int32(offset),
+			Limit:  int32(limit),
+		})
 		if err != nil {
 			log.Debug().Ctx(c).Err(err).Msg("Could not get friendships")
 			c.JSON(http.StatusInternalServerError, err.Error())

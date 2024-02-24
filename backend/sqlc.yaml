@@ -64,6 +64,16 @@ sql:
               type: "int64"
               pointer: true
             nullable: true
+          - column: "location.row_index"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "location.deleted_at"
+            go_type:
+              type: "time.Time"
+              pointer: true
+            nullable: true
           - column: "location.parent_id"
             go_type:
               type: "int64"
@@ -142,5 +152,10 @@ sql:
           - column: "post.views"
             go_type:
               type: "int64"
+              pointer: true
+            nullable: true
+          - column: "location_closing.closed_at"
+            go_type:
+              type: "time.Time"
               pointer: true
             nullable: true
