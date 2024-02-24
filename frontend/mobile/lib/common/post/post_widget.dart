@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/models.dart';
-import 'package:party_radar/common/post/header.dart';
 import 'package:party_radar/common/post/actions.dart';
+import 'package:party_radar/common/post/header.dart';
 
 class PostWidget extends StatefulWidget {
   const PostWidget({

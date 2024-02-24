@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth_pkg;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,7 +9,6 @@ import 'package:party_radar/feed/feed_page.dart';
 import 'package:party_radar/location/location_page.dart';
 import 'package:party_radar/login/login_widget.dart';
 import 'package:party_radar/profile/user_profile_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class PartyRadarApp extends StatefulWidget {
   const PartyRadarApp({super.key});
@@ -67,13 +64,11 @@ class _MainPageState extends State<MainPage> {
     if (locationId != null ||
         (userRootLocationId = (await UserService.getUser())?.rootLocationId) !=
             null) {
-      var sharedPreferences = await SharedPreferences.getInstance();
       var userLocation =
           await LocationService.getLocation(locationId ?? userRootLocationId);
       setState(() {
         rootLocation = userLocation;
       });
-      sharedPreferences.setString('club', jsonEncode(userLocation));
     } else {
       setState(() {
         rootLocation = null;

@@ -9,13 +9,13 @@ import 'package:party_radar/location/widgets/location_list_tile.dart';
 class LocationWidget extends StatelessWidget {
   const LocationWidget({
     super.key,
-    required this.club,
+    required this.rootLocation,
     required this.onChangedLocation,
     this.currentUserLocationId,
     this.canPostUpdates = false,
   });
 
-  final Location club;
+  final Location rootLocation;
   final Function() onChangedLocation;
   final int? currentUserLocationId;
   final bool canPostUpdates;
@@ -28,8 +28,8 @@ class LocationWidget extends StatelessWidget {
         onChangedLocation();
       },
       child: ListView(
-        children: club.elementType == ElementType.root
-            ? _getChildrenOfLocation(club.children)
+        children: rootLocation.elementType == ElementType.root
+            ? _getChildrenOfLocation(rootLocation.children)
             : [],
       ),
     );

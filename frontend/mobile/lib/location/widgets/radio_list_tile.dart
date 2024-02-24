@@ -6,6 +6,7 @@ class RadioListTileWidget extends StatelessWidget {
     required this.locationId,
     required this.locationName,
     required this.selectedValue,
+    required this.locationRowIndex,
     this.onChanged,
   });
 
@@ -13,6 +14,7 @@ class RadioListTileWidget extends StatelessWidget {
   final String locationName;
   final int? selectedValue;
   final Function(int? id)? onChanged;
+  final int locationRowIndex;
 
   @override
   Widget build(BuildContext context) {

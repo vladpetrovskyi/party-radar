@@ -1,89 +1,91 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:party_radar/common/models.dart';
-import 'package:party_radar/common/services/image_service.dart';
-import 'package:widget_zoom/widget_zoom.dart';
+import 'package:party_radar/common/post/dialogs/delete_post.dart';
+import 'package:party_radar/common/services/post_service.dart';
+import 'package:party_radar/common/simple_location_dialog.dart';
 
-class PostHeader extends StatelessWidget {
-  const PostHeader({
+class PostActions extends StatelessWidget {
+  const PostActions({
     super.key,
-    required this.showImage,
-    required this.title,
-    required this.subtitle,
     required this.post,
+    this.updateViewsCounter = false,
+    this.onDelete,
   });
 
-  final bool showImage;
-  final String title;
-  final String subtitle;
   final Post post;
+  final bool updateViewsCounter;
+  final Function()? onDelete;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: showImage ? _getLeadingImage(post.imageId, 40) : null,
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      subtitle: Text(subtitle),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
+    var openDialogLocation = _getOpenDialogLocation(post.location);
+    return Container(
+      margin: const EdgeInsets.only(right: 20, left: 20, bottom: 5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          Text(
-            _getLocationHeader(post),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            textAlign: TextAlign.end,
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(width: 0, color: Colors.transparent),
+            ),
+            onPressed: openDialogLocation != null &&
+                    openDialogLocation.children.isNotEmpty
+                ? () => _openPositionDialog(openDialogLocation, context)
+                : null,
+            child: const Icon(FontAwesomeIcons.locationArrow),
           ),
-          Text(
-            _getLocationSubheader(post),
-            style: const TextStyle(fontSize: 18),
-            textAlign: TextAlign.end,
-          ),
+          if (onDelete != null)
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(width: 0, color: Colors.transparent),
+              ),
+              onPressed: () => showDialog(
+                context: context,
+                builder: (context) =>
+                    DeletePostDialog(post: post, onDelete: onDelete!),
+              ),
+              child: const Icon(FontAwesomeIcons.trashCan),
+            ),
         ],
       ),
     );
   }
 
-  String _getLocationHeader(Post post) {
-    if (post.type == PostType.start) {
-      return 'ARRIVED';
+  Location? _getOpenDialogLocation(Location location) {
+    if (post.location.onClickAction == OnClickAction.openDialog) {
+      return location;
     }
-    if (post.type == PostType.ongoing) {
-      return '${post.location.children[0].name} ${post.location.children[0].emoji}';
+    for (Location child in location.children) {
+      if (child.onClickAction == OnClickAction.openDialog) {
+        return child;
+      }
+      var c = _getOpenDialogLocation(child);
+      if (c?.onClickAction == OnClickAction.openDialog) {
+        return c;
+      }
     }
-    if (post.type == PostType.end) {
-      return 'LEFT';
-    }
-    return '';
+    return null;
   }
 
-  String _getLocationSubheader(Post post) {
-    if (post.type == PostType.start) {
-      return '- - - -';
+  void _openPositionDialog(Location openDialogLocation, BuildContext context) {
+    if (updateViewsCounter) {
+      PostService.increaseViewCountByOne(post.id);
     }
-    if (post.type == PostType.ongoing &&
-        post.location.children[0].children.isNotEmpty) {
-      return '${post.location.children[0].children[0].name} ${post.location.children[0].children[0].emoji}';
-    }
-    if (post.type == PostType.end) {
-      return '- - - -';
-    }
-    return '';
-  }
 
-  Widget? _getLeadingImage(int? imageId, double size) => FutureBuilder(
-        future: ImageService.getImage(imageId, size: size),
-        builder: (context, snapshot) {
-          return snapshot.hasData
-              ? ClipOval(
-                  child: SizedBox(
-                    child: WidgetZoom(
-                        heroAnimationTag: 'tag-$imageId-${DateTime.now()}',
-                        zoomWidget: snapshot.data!),
-                  ),
-                )
-              : const SizedBox();
-        },
-      );
+    showDialog(
+      context: context,
+      builder: (context) {
+        return SimpleLocationDialog(
+          locationName: openDialogLocation.children[0].name,
+          imageId: openDialogLocation.imageId,
+          username: post.username,
+          capacity: openDialogLocation.isCapacitySelectable ?? false
+              ? post.capacity
+              : null,
+          postId: post.id,
+        );
+      },
+    );
+  }
 }

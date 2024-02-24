@@ -66,7 +66,8 @@ class PostService {
       Uri.parse('${FlavorConfig.instance.values.baseUrl}/post'),
       headers: {
         HttpHeaders.authorizationHeader:
-            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
+        HttpHeaders.contentTypeHeader: 'application/json'
       },
       body: jsonEncode({
         'location_id': locationId,

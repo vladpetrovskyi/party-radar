@@ -11,7 +11,8 @@ class Location {
   final String? dialogName;
   final int? imageId;
   final bool? isCapacitySelectable;
-  final bool? isCloseable;
+  final bool isCloseable;
+  final DateTime? deletedAt;
 
   const Location({
     required this.id,
@@ -26,7 +27,8 @@ class Location {
     this.dialogName,
     this.imageId,
     this.isCapacitySelectable,
-    this.isCloseable,
+    this.isCloseable = false,
+    this.deletedAt,
   });
 
   Location.fromJson(Map<String, dynamic> json)
@@ -44,8 +46,11 @@ class Location {
         columnIndex = json['column_index'] ?? 0,
         rowIndex = json['row_index'] ?? 0,
         imageId = json['image_id'],
+        deletedAt = json['deleted_at'] != null
+            ? DateTime.parse(json['deleted_at']).toLocal()
+            : null,
         isCapacitySelectable = json['is_capacity_selectable'],
-        isCloseable = null,
+        isCloseable = json['is_closeable'] ?? false,
         children = (json['children'] ?? [])
             .map<Location>((e) => Location.fromJson(e))
             .toList();
@@ -61,9 +66,16 @@ class Location {
         'column_index': columnIndex,
         'is_capacity_selectable': isCapacitySelectable,
         'image_id': imageId,
-        'is_closeable': isCloseable,
+        'deleted_at': deletedAt?.toUtc().toIso8601String(),
         'children': children.map((e) => e.toJson()).toList(),
       };
+}
+
+class LocationClosing {
+  final DateTime? closedAt;
+  final bool isCloseable;
+
+  LocationClosing({this.closedAt, required this.isCloseable});
 }
 
 class User {

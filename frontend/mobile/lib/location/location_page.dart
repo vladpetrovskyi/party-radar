@@ -6,7 +6,6 @@ import 'package:party_radar/location/location_widget.dart';
 import 'package:party_radar/common/services/post_service.dart';
 import 'package:party_radar/common/services/user_service.dart';
 import 'package:party_radar/profile/tabs/widgets/not_found_widget.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationPage extends StatefulWidget {
   const LocationPage({
@@ -109,7 +108,7 @@ class _LocationPageState extends State<LocationPage> {
               builder: (context, snapshot) {
                 return snapshot.hasData
                     ? LocationWidget(
-                        club: widget.rootLocation!,
+                        rootLocation: widget.rootLocation!,
                         currentUserLocationId: snapshot.data?.locationId,
                         onChangedLocation: () => _refresh(),
                         canPostUpdates: snapshot.data!.rootLocationId != null &&
@@ -211,9 +210,6 @@ class _LocationPageState extends State<LocationPage> {
   }
 
   void _cleanLocationView() {
-    SharedPreferences.getInstance().then((value) {
-      value.remove('club');
-    });
     widget.onQuitRootLocation?.call();
   }
 

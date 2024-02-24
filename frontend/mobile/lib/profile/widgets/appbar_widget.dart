@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:party_radar/login/login_widget.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 AppBar buildAppBar(BuildContext context) {
@@ -138,8 +137,6 @@ AppBar buildAppBar(BuildContext context) {
                     ElevatedButton(
                       child: const Icon(Icons.check),
                       onPressed: () {
-                        SharedPreferences.getInstance()
-                            .then((prefs) => prefs.remove('club'));
                         FirebaseAuth.instance.signOut();
                         Navigator.of(context).pop();
                         Navigator.of(context).pushReplacement(

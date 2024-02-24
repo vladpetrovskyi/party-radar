@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/models.dart';
+import 'package:party_radar/common/services/location_service.dart';
 import 'package:party_radar/location/dialogs/location_selection_dialog.dart';
 import 'package:party_radar/location/dialogs/builders/share_location_dialog_builder.dart';
 import 'package:party_radar/location/widgets/elapsed_time.dart';
@@ -25,12 +26,13 @@ class LocationCard extends StatefulWidget {
 
 class _LocationCardState extends State<LocationCard>
     with ShareLocationDialogBuilder {
-  bool _isCleaning = false;
+  LocationClosing? locationClosing;
 
   @override
   void initState() {
-    // TODO: fetch closing time from API
-    if (widget.location.isCloseable ?? false) _isCleaning = true;
+    if (widget.location.isCloseable) {
+      _loadLocationClosing();
+    }
 
     super.initState();
   }
@@ -45,92 +47,146 @@ class _LocationCardState extends State<LocationCard>
                 color: Theme.of(context).colorScheme.primary,
                 width: 2,
               ),
-              borderRadius: const BorderRadius.all(Radius.circular(10)))
+              borderRadius: const BorderRadius.all(Radius.circular(10)),
+            )
           : null,
       child: InkWell(
-        onLongPress: widget.location.isCloseable ?? false
-            ? () {
-                showDialog(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        icon: const Icon(Icons.warning_amber_rounded),
-                        title: const Text('Mark as closed location'),
-                        content: const Text(
-                            'Would you like to mark this location as temporarily closed?'),
-                        actions: <Widget>[
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: const Icon(Icons.close),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              _closeLocation(widget.location.id);
-                              Navigator.of(context).pop();
-                            },
-                            child: const Icon(Icons.check),
-                          ),
-                        ],
-                      );
-                    });
-              }
-            : null,
-        onTap: widget.isActive
-            ? () {
-                if (widget.location.onClickAction == OnClickAction.openDialog) {
-                  showDialog<void>(
-                      context: context,
-                      builder: (context) {
-                        return LocationSelectionDialog(
-                          context: context,
-                          locations: widget.location.children,
-                          dialogName: widget.location.dialogName,
-                          imageId: widget.location.imageId,
-                          parentLocationId: widget.location.id,
-                          onChangedLocation: widget.onChangedLocation,
-                          isCapacitySelectable:
-                              widget.location.isCapacitySelectable,
-                        );
-                      });
-                } else {
-                  buildShareLocationDialog(context, widget.location.id);
-                }
-              }
-            : () => _showErrorSnackBar(
-                'Please check in first by pressing play button', context),
-        child: Stack(alignment: AlignmentDirectional.center, children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (widget.location.emoji != null) _buildCardEmoji(),
-              _buildCardName(),
-              if (!_isCleaning) _buildOnlineStatusDots(),
-            ],
-          ),
-          if (_isCleaning)
-            Container(
-              decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
-            ),
-          if (_isCleaning)
-            const Column(
+        onLongPress: _getLongPressFunction(),
+        onTap: _getOnTapFunction(),
+        child: Stack(
+          alignment: AlignmentDirectional.center,
+          children: [
+            Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  'Cleaning',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                ElapsedTime(timestamp: '2024-02-19 14:24:18.895235'),
+                if (widget.location.emoji != null) _buildCardEmoji(),
+                _buildCardName(),
+                if (locationClosing?.closedAt == null) _buildOnlineStatusDots(),
               ],
             ),
-        ]),
+            if (locationClosing != null && locationClosing!.closedAt != null)
+              Container(
+                decoration:
+                    BoxDecoration(color: Colors.red.shade900.withOpacity(0.8)),
+              ),
+            if (locationClosing != null && locationClosing!.closedAt != null)
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Closed',
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black),
+                  ),
+                  ElapsedTime(timestamp: locationClosing!.closedAt!),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  void _closeLocation(int? locationId) {}
+  Function()? _getOnTapFunction() {
+    if (locationClosing != null && locationClosing!.closedAt != null) {
+      return () {
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Mark as opened'),
+              content: const Text(
+                  'This location has been temporarily closed. Is it available again? The result of this action will be visible to everyone!'),
+              actions: <Widget>[
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Icon(Icons.close),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    _openLocation(widget.location.id);
+                    Navigator.of(context).pop();
+                  },
+                  child: const Icon(Icons.check),
+                ),
+              ],
+            );
+          },
+        );
+      };
+    }
+    return widget.isActive
+        ? () {
+            if (widget.location.onClickAction == OnClickAction.openDialog) {
+              showDialog<void>(
+                context: context,
+                builder: (context) {
+                  return LocationSelectionDialog(
+                    context: context,
+                    locations: widget.location.children,
+                    dialogName: widget.location.dialogName,
+                    imageId: widget.location.imageId,
+                    parentLocationId: widget.location.id,
+                    onChangedLocation: widget.onChangedLocation,
+                    isCapacitySelectable: widget.location.isCapacitySelectable,
+                  );
+                },
+              );
+            } else {
+              buildShareLocationDialog(context, widget.location.id);
+            }
+          }
+        : () => _showErrorSnackBar(
+            'Please check in first by pressing play button', context);
+  }
+
+  Function()? _getLongPressFunction() {
+    if (locationClosing != null && locationClosing!.closedAt == null) {
+      return () {
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Mark as closed'),
+              content: const Text(
+                  'Would you like to mark this location as temporarily closed? The result of this action will be visible to everyone!'),
+              actions: <Widget>[
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Icon(Icons.close),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    _closeLocation(widget.location.id);
+                    Navigator.of(context).pop();
+                  },
+                  child: const Icon(Icons.check),
+                ),
+              ],
+            );
+          },
+        );
+      };
+    }
+    return null;
+  }
+
+  void _closeLocation(int locationId) {
+    LocationService.updateLocationClosing(locationId, DateTime.now())
+        .then((value) => _loadLocationClosing());
+  }
+
+  void _openLocation(int locationId) {
+    LocationService.updateLocationClosing(locationId, null)
+        .then((value) => _loadLocationClosing());
+  }
 
   void _showErrorSnackBar(String message, BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -172,6 +228,17 @@ class _LocationCardState extends State<LocationCard>
           alignment: WrapAlignment.center,
         ),
       );
+
+  void _loadLocationClosing() {
+    LocationService.getLocationClosing(widget.location.id)
+        .then((locationClosing) {
+      if (locationClosing.isCloseable) {
+        setState(() {
+          this.locationClosing = locationClosing;
+        });
+      }
+    });
+  }
 
   @override
   Function() get onLocationChanged => widget.onChangedLocation;

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/services/user_service.dart';
 import 'package:party_radar/login/login_widget.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class DeleteAccountDialog extends StatelessWidget {
   const DeleteAccountDialog({super.key});
@@ -24,8 +23,6 @@ class DeleteAccountDialog extends StatelessWidget {
                   _showErrorSnackBar('Could not delete account', context);
                   return;
                 }
-                SharedPreferences.getInstance()
-                    .then((prefs) => prefs.remove('club'));
                 Navigator.of(context).pop();
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(

@@ -29,8 +29,7 @@ class LocationService {
     if (locationId == null) return null;
 
     final response = await get(
-      Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/location/$locationId'),
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/location/$locationId'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -57,6 +56,48 @@ class LocationService {
     if (response.ok) {
       return jsonDecode(response.body)['count'];
     } else {
+      throw Exception('Failed to get user count at location: ${response.body}');
+    }
+  }
+
+  static Future<LocationClosing> getLocationClosing(int id) async {
+    final response = await get(
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/location/$id/closing'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+      },
+    );
+
+    if (response.statusCode == 404) {
+      return LocationClosing(isCloseable: false);
+    } else if (response.ok) {
+      String? closedAtString = jsonDecode(response.body)['closed_at'];
+      return LocationClosing(
+        isCloseable: true,
+        closedAt:
+            closedAtString != null ? DateTime.parse(closedAtString) : null,
+      );
+    }
+
+    throw Exception('Failed to get location closing: ${response.body}');
+  }
+
+  static Future<void> updateLocationClosing(
+      int id, DateTime? closingTime) async {
+    final response = await patch(
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/location/$id/closing'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
+        HttpHeaders.contentTypeHeader: 'application/json'
+      },
+      body: jsonEncode({
+        'closed_at': closingTime?.toUtc().toString(),
+      }),
+    );
+
+    if (!response.ok) {
       throw Exception('Failed to get user count at location: ${response.body}');
     }
   }

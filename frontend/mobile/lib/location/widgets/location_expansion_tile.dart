@@ -19,6 +19,9 @@ class LocationExpansionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    List visibleLocationChildren = location.children
+        .where((element) => element.deletedAt == null)
+        .toList();
     return ExpansionTile(
       title: _buildTitle(context),
       subtitle: UserDotsWidget(locationId: location.id),
@@ -32,15 +35,18 @@ class LocationExpansionTile extends StatelessWidget {
           shrinkWrap: true,
           physics: const ClampingScrollPhysics(),
           padding: const EdgeInsets.all(10.0),
-          itemCount: location.children.length,
+          itemCount: visibleLocationChildren.length,
           itemBuilder: (context, index) {
-            return LocationCard(
-              location: location.children[index],
-              onChangedLocation: onChangedLocation,
-              isSelected:
-                  _checkContainsSelectedLocation(location.children[index]),
-              isActive: canPostUpdates,
-            );
+            if (visibleLocationChildren[index].deletedAt == null) {
+              return LocationCard(
+                location: visibleLocationChildren[index],
+                onChangedLocation: onChangedLocation,
+                isSelected: _checkContainsSelectedLocation(
+                    visibleLocationChildren[index]),
+                isActive: canPostUpdates,
+              );
+            }
+            return Container();
           },
         )
       ],
