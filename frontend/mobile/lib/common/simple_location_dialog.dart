@@ -80,7 +80,7 @@ class SimpleLocationDialog extends StatelessWidget {
               ' | ',
               style: TextStyle(color: Colors.white, fontSize: 16),
             ),
-          if (capacity != null)
+          if (views != null)
             Text(
               'Views: $views',
               textAlign: TextAlign.center,
