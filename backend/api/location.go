@@ -167,7 +167,6 @@ func (app *Application) mapLocationChild(dbLocation db.GetLocationChildrenRow) L
 		IsCapacitySelectable: dbLocation.IsCapacitySelectable,
 		IsCloseable:          dbLocation.IsCloseable,
 		ImageID:              dbLocation.ImageID,
-		DeletedAt:            dbLocation.DeletedAt,
 		Children:             []Location{},
 	}
 }

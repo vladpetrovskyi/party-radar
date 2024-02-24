@@ -41,7 +41,6 @@ SELECT l.id,
        l.enabled,
        l.column_index,
        l.row_index,
-       l.deleted_at,
        et.name       AS element_type,
        oca.name      AS on_click_action,
        ds.name       AS dialog_name,
@@ -59,4 +58,5 @@ FROM location l
          LEFT JOIN dialog_settings ds ON l.dialog_settings_id = ds.id
          LEFT JOIN location_closing lc ON l.id = lc.location_id
 WHERE l.parent_id = $1
+  AND l.deleted_at IS NULL
 ORDER BY l.enabled DESC, l.name;
