@@ -91,62 +91,63 @@ class _LocationCardState extends State<LocationCard>
   }
 
   Function()? _getOnTapFunction() {
-    if (locationClosing != null && locationClosing!.closedAt != null) {
+    if (widget.isActive) {
+      if (locationClosing != null && locationClosing!.closedAt != null) {
+        return () {
+          showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Mark as opened'),
+                content: const Text(
+                    'This location has been temporarily closed. Is it available again? The result of this action will be visible to everyone!'),
+                actions: <Widget>[
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Icon(Icons.close),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      _openLocation(widget.location.id);
+                      Navigator.of(context).pop();
+                    },
+                    child: const Icon(Icons.check),
+                  ),
+                ],
+              );
+            },
+          );
+        };
+      }
       return () {
-        showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text('Mark as opened'),
-              content: const Text(
-                  'This location has been temporarily closed. Is it available again? The result of this action will be visible to everyone!'),
-              actions: <Widget>[
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Icon(Icons.close),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    _openLocation(widget.location.id);
-                    Navigator.of(context).pop();
-                  },
-                  child: const Icon(Icons.check),
-                ),
-              ],
-            );
-          },
-        );
+        if (widget.location.onClickAction == OnClickAction.openDialog) {
+          showDialog<void>(
+            context: context,
+            builder: (context) {
+              return LocationSelectionDialog(
+                context: context,
+                locations: widget.location.children,
+                dialogName: widget.location.dialogName,
+                imageId: widget.location.imageId,
+                parentLocationId: widget.location.id,
+                onChangedLocation: widget.onChangedLocation,
+                isCapacitySelectable: widget.location.isCapacitySelectable,
+              );
+            },
+          );
+        } else {
+          buildShareLocationDialog(context, widget.location.id);
+        }
       };
     }
-    return widget.isActive
-        ? () {
-            if (widget.location.onClickAction == OnClickAction.openDialog) {
-              showDialog<void>(
-                context: context,
-                builder: (context) {
-                  return LocationSelectionDialog(
-                    context: context,
-                    locations: widget.location.children,
-                    dialogName: widget.location.dialogName,
-                    imageId: widget.location.imageId,
-                    parentLocationId: widget.location.id,
-                    onChangedLocation: widget.onChangedLocation,
-                    isCapacitySelectable: widget.location.isCapacitySelectable,
-                  );
-                },
-              );
-            } else {
-              buildShareLocationDialog(context, widget.location.id);
-            }
-          }
-        : () => _showErrorSnackBar(
-            'Please check in first by pressing play button', context);
+    return () => _showErrorSnackBar(
+        'Please check in first by pressing play button', context);
   }
 
   Function()? _getLongPressFunction() {
-    if (locationClosing != null && locationClosing!.closedAt == null) {
+    if (widget.isActive && locationClosing != null && locationClosing!.closedAt == null) {
       return () {
         showDialog(
           context: context,
