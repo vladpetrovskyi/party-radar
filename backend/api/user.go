@@ -10,7 +10,8 @@ import (
 func (app *Application) register(c *gin.Context) {
 	var (
 		user = struct {
-			UID *string `json:"uid"`
+			UID      *string `json:"uid"`
+			FCMToken *string `json:"fcm_token"`
 		}{}
 		err error
 	)
@@ -25,7 +26,10 @@ func (app *Application) register(c *gin.Context) {
 		return
 	}
 
-	if err = app.q.CreateUser(app.ctx, user.UID); err != nil {
+	if err = app.q.CreateUser(app.ctx, db.CreateUserParams{
+		Uid:      user.UID,
+		FcmToken: user.FCMToken,
+	}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
@@ -181,4 +185,29 @@ func (app *Application) deleteUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"msg": "user has been deleted"})
+}
+
+func (app *Application) updateUserFCMToken(c *gin.Context) {
+	var user = struct {
+		FCMToken *string `json:"fcm_token"`
+	}{}
+
+	if err := c.BindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	uid := c.GetString("tokenUID")
+
+	if err := app.q.UpdateFCMToken(app.ctx, db.UpdateFCMTokenParams{
+		Uid:      &uid,
+		FcmToken: user.FCMToken,
+	}); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		return
+	}
+
+	app.log.Debug().Msgf("Updated user %s with new FCM token %v", uid, user.FCMToken)
+
+	c.JSON(http.StatusOK, gin.H{"msg": "FCM token updated"})
 }

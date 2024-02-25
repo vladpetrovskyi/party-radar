@@ -75,3 +75,11 @@ SELECT f.*, fs.name AS status
 FROM friendship f
          INNER JOIN friendship_status fs ON f.status_id = fs.id
 WHERE f.id = $1;
+
+-- name: GetUserFriendsFCMTokenIDs :many
+SELECT u.fcm_token
+FROM "user" u
+         LEFT JOIN friendship f ON f.user_1_id = u.id OR f.user_2_id = u.id
+WHERE u.id != $1
+  AND (f.user_1_id = $1 OR f.user_2_id = $1)
+  AND u.fcm_token IS NOT NULL;

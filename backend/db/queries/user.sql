@@ -38,13 +38,21 @@ SET image_id = $1
 WHERE id = $2;
 
 -- name: CreateUser :exec
-INSERT INTO "user" (uid)
-VALUES ($1);
+INSERT INTO "user" (uid, fcm_token)
+VALUES ($1, $2);
 
 -- name: UpdateUsername :exec
 UPDATE "user"
 SET username = $1
 WHERE uid = $2;
 
+-- name: UpdateFCMToken :exec
+UPDATE "user"
+SET fcm_token = $1
+WHERE uid = $2;
+
 -- name: DeleteUser :one
-DELETE FROM "user" WHERE uid = $1 RETURNING *;
+DELETE
+FROM "user"
+WHERE uid = $1
+RETURNING *;

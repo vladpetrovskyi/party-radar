@@ -1,9 +1,9 @@
 package api
 
 import (
+	"firebase.google.com/go/messaging"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"party-time/db"
 	"strconv"
@@ -200,7 +200,7 @@ func (app *Application) increaseViewsByOne(c *gin.Context) {
 	err = app.q.IncreasePostViewsByOne(c, postID)
 	if err != nil {
 		msg := fmt.Sprintf("Could not update post views, post ID %d", postID)
-		log.Debug().Ctx(c).Msg(msg)
+		app.log.Debug().Ctx(c).Msg(msg)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": msg})
 		return
 	}
@@ -218,7 +218,7 @@ func (app *Application) getPostViewsCount(c *gin.Context) {
 	viewsCount, err := app.q.GetPostViewsCount(c, postID)
 	if err != nil {
 		msg := fmt.Sprintf("Could not get post views count, post ID %d", postID)
-		log.Debug().Ctx(c).Msg(msg)
+		app.log.Debug().Ctx(c).Msg(msg)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": msg})
 		return
 	}
@@ -235,7 +235,7 @@ func (app *Application) createPost(c *gin.Context) {
 
 	err := c.BindJSON(&post)
 	if err != nil {
-		log.Err(err).Ctx(c)
+		app.log.Err(err).Ctx(c)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -248,7 +248,7 @@ func (app *Application) createPost(c *gin.Context) {
 
 	postTypeId, err := app.q.GetPostTypeId(app.ctx, post.PostType)
 	if err != nil {
-		log.Err(err)
+		app.log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -268,7 +268,7 @@ func (app *Application) createPost(c *gin.Context) {
 		PostTypeID: postTypeId,
 		Capacity:   post.Capacity,
 	}); err != nil {
-		log.Err(err)
+		app.log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -277,10 +277,35 @@ func (app *Application) createPost(c *gin.Context) {
 		ID:                user.ID,
 		CurrentLocationID: post.LocationID,
 	}); err != nil {
-		log.Err(err)
+		app.log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.Status(200)
+	userFriendsFCMTokenIDs, err := app.q.GetUserFriendsFCMTokenIDs(c, user.ID)
+	if err != nil {
+		app.log.Err(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	tokens := make([]string, 0)
+	for _, s := range userFriendsFCMTokenIDs {
+		tokens = append(tokens, *s)
+	}
+
+	response, err := app.msg.SendMulticast(c, &messaging.MulticastMessage{
+		Notification: &messaging.Notification{
+			Title: "New post",
+			Body:  *user.Username + " has added a new post!",
+		},
+		Tokens: tokens,
+	})
+	if err != nil {
+		app.log.Err(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	app.log.Debug().Msgf("Successfully sent message: %s", response)
+
+	c.Status(http.StatusOK)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	firebase "firebase.google.com/go"
+	"firebase.google.com/go/messaging"
 	"fmt"
 	sqladapter "github.com/Blank-Xu/sql-adapter"
 	"github.com/casbin/casbin/v2"
@@ -23,6 +24,7 @@ type Application struct {
 	db     *sql.DB
 	q      *sqlc.Queries
 	router *gin.Engine
+	msg    *messaging.Client
 }
 
 func New(c *config.Conf,
@@ -42,6 +44,12 @@ func New(c *config.Conf,
 
 	app.setupRBAC()
 	app.setupRoutes()
+
+	msg, err := fb.Messaging(ctx)
+	if err != nil {
+		panic(fmt.Errorf("error initializing Firebase Messaging: %v", err))
+	}
+	app.msg = msg
 
 	return &app
 }
@@ -81,6 +89,7 @@ func (app *Application) setupRoutes() {
 	userGroup.PUT("/username", app.authorizeViaFirebase("data", "write"), app.updateUsername)
 	userGroup.PUT("/root-location/:id", app.authorizeViaFirebase("data", "write"), app.updateUserRootLocation)
 	userGroup.DELETE("/location", app.authorizeViaFirebase("data", "write"), app.deleteUserLocation)
+	userGroup.PATCH("/fcm-token", app.authorizeViaFirebase("data", "write"), app.updateUserFCMToken)
 
 	locationGroup := v1.Group("/location")
 	locationGroup.GET("", app.authorizeViaFirebase("data", "read"), app.getLocations)
