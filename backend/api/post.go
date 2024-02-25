@@ -282,30 +282,30 @@ func (app *Application) createPost(c *gin.Context) {
 		return
 	}
 
-	userFriendsFCMTokenIDs, err := app.q.GetUserFriendsFCMTokenIDs(c, user.ID)
-	if err != nil {
-		app.log.Err(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	tokens := make([]string, 0)
-	for _, s := range userFriendsFCMTokenIDs {
-		tokens = append(tokens, *s)
-	}
+	go func() {
+		userFriendsFCMTokenIDs, err := app.q.GetUserFriendsFCMTokenIDs(c, user.ID)
+		if err != nil {
+			app.log.Err(err)
+			return
+		}
+		tokens := make([]string, 0)
+		for _, s := range userFriendsFCMTokenIDs {
+			tokens = append(tokens, *s)
+		}
 
-	response, err := app.msg.SendMulticast(c, &messaging.MulticastMessage{
-		Notification: &messaging.Notification{
-			Title: "New post",
-			Body:  *user.Username + " has added a new post!",
-		},
-		Tokens: tokens,
-	})
-	if err != nil {
-		app.log.Err(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	app.log.Debug().Msgf("Successfully sent message: %s", response)
+		response, err := app.msg.SendMulticast(c, &messaging.MulticastMessage{
+			Notification: &messaging.Notification{
+				Title: "New post",
+				Body:  *user.Username + " has added a new post!",
+			},
+			Tokens: tokens,
+		})
+		if err != nil {
+			app.log.Err(err)
+			return
+		}
+		app.log.Debug().Msgf("Successfully sent message: %s", response)
+	}()
 
 	c.Status(http.StatusOK)
 }
