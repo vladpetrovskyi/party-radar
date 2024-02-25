@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:intl/intl.dart';
@@ -53,6 +54,8 @@ class _UserPostsTabState extends State<UserPostsTab> {
 
   @override
   void initState() {
+    FirebaseAnalytics.instance.logScreenView(screenName: 'User Posts', screenClass: 'Tab');
+
     _postPagingController.addPageRequestListener((pageKey) async {
       try {
         var user = await UserService.getUser();

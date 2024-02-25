@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -31,9 +32,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   void initState() {
-    super.initState();
+    FirebaseAnalytics.instance.logScreenView(screenName: 'User Edit Profile Page', screenClass: 'Page');
+
     _usernameController = TextEditingController(text: user?.displayName);
     _emailController = TextEditingController(text: user?.email);
+
+    super.initState();
   }
 
   @override

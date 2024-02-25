@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_login/flutter_login.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,6 +13,8 @@ class LoginWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    FirebaseAnalytics.instance.logScreenView(screenName: 'Login Page', screenClass: 'Page');
+
     return Theme(
       data: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),

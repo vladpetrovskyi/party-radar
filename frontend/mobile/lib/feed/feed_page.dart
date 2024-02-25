@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:party_radar/common/models.dart';
@@ -33,6 +34,8 @@ class _FeedPageState extends State<FeedPage> {
 
   @override
   void initState() {
+    FirebaseAnalytics.instance.logScreenView(screenName: 'Feed Page', screenClass: 'Page');
+
     _feedPagingController.addPageRequestListener((pageKey) async {
       try {
         final newItems = await PostService.getFeed(

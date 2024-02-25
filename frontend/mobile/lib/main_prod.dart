@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:party_radar/app.dart';
@@ -27,7 +28,12 @@ void main() async {
 
   await Talsec.instance.start(config);
 
-  await Firebase.initializeApp(options: ProdFirebaseOptions.currentPlatform);
+  try {
+    await Firebase.initializeApp(options: ProdFirebaseOptions.currentPlatform);
+    FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
+  } catch (e) {
+    print("Failed to initialise Firebase: $e");
+  }
 
   FlavorConfig(
     flavor: Flavor.prod,

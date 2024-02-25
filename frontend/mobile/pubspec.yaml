@@ -50,6 +50,7 @@ dependencies:
   url_launcher: ^6.2.4
   freerasp: ^6.4.0
   font_awesome_flutter: ^10.7.0
+  firebase_analytics: ^10.8.6
 
 dev_dependencies:
   flutter_test:

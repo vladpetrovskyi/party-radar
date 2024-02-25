@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/models.dart';
@@ -25,6 +26,14 @@ class LocationPage extends StatefulWidget {
 
 class _LocationPageState extends State<LocationPage> {
   Future<User?> futureUser = UserService.getUser();
+
+
+  @override
+  void initState() {
+    FirebaseAnalytics.instance.logScreenView(screenName: 'Location Page', screenClass: 'Page');
+
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:party_radar/profile/tabs/widgets/not_found_widget.dart';
@@ -85,6 +86,8 @@ class _FriendsTabState extends State<FriendsTab> {
 
   @override
   void initState() {
+    FirebaseAnalytics.instance.logScreenView(screenName: 'Friends Tab', screenClass: 'Tab');
+
     _friendshipsPagingController.addPageRequestListener((pageKey) async {
       try {
         final newItems = await FriendshipService.getFriendships(

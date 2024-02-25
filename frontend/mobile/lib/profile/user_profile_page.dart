@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/flavors/flavor_config.dart';
@@ -22,7 +23,10 @@ class _UserProfilePageState extends State<UserProfilePage>
 
   @override
   void initState() {
+    FirebaseAnalytics.instance.logScreenView(screenName: 'User Profile Page', screenClass: 'Page');
+
     _tabController = TabController(length: 3, vsync: this, initialIndex: 0);
+
     super.initState();
   }
 
