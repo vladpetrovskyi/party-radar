@@ -23,7 +23,7 @@ class UserService {
     Response response;
     if (username != null && username.isNotEmpty) {
       response = await get(
-        Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/$username'),
+        Uri.parse('${FlavorConfig.instance.values.baseUrl}/user?username=$username'),
         headers: {
           HttpHeaders.authorizationHeader:
               'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -87,6 +87,19 @@ class UserService {
     return true;
   }
 
+  static Future<bool> updateFCMToken(String? token) async {
+    Response response = await patch(
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/fcm-token'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
+        HttpHeaders.contentTypeHeader: 'application/json'
+      },
+      body: jsonEncode({'fcm_token': token}),
+    );
+    return response.ok;
+  }
+
   static Future<bool> updateUserRootLocation(int locationId) async {
     Response response = await put(
       Uri.parse(
@@ -129,5 +142,46 @@ class UserService {
     }
 
     return true;
+  }
+
+  static Future<List<String>> getUserTopics() async {
+    Response response = await get(
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/topic'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+        'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
+        HttpHeaders.contentTypeHeader: 'application/json'
+      },
+    );
+    if (response.ok) {
+      return List<String>.from(jsonDecode(response.body)['topics']);
+    }
+    return [];
+  }
+
+  static Future<bool> subscribeToTopic(String topicName) async {
+    Response response = await post(
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/topic'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+        'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
+        HttpHeaders.contentTypeHeader: 'application/json'
+      },
+      body: jsonEncode({'topic_name': topicName}),
+    );
+    return response.ok;
+  }
+
+  static Future<bool> unsubscribeFromTopic(String topicName) async {
+    Response response = await delete(
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/topic'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+        'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
+        HttpHeaders.contentTypeHeader: 'application/json'
+      },
+      body: jsonEncode({'topic_name': topicName}),
+    );
+    return response.ok;
   }
 }

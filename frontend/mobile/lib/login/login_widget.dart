@@ -5,8 +5,8 @@ import 'package:party_radar/app.dart';
 import 'package:party_radar/common/services/auth_service.dart';
 import 'package:party_radar/common/util/validators.dart';
 
-class LoginWidget extends StatelessWidget {
-  const LoginWidget({super.key});
+class LoginPage extends StatelessWidget {
+  const LoginPage({super.key});
 
   Duration get loginTime => const Duration(milliseconds: 2250);
 

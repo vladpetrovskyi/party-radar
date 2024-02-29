@@ -108,22 +108,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         )
                       : const Text('Update account'),
                 ),
-                const SizedBox(height: 6),
-                OutlinedButton(
-                  onPressed: _isLoading
-                      ? null
-                      : () {
-                          showDialog(
-                              context: context,
-                              builder: (context) {
-                                return const DeleteAccountDialog();
-                              });
-                        },
-                  child: const Text(
-                    'Delete account',
-                    style: TextStyle(color: Colors.redAccent),
-                  ),
-                )
               ],
             ),
           ),

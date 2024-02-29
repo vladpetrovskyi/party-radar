@@ -29,6 +29,7 @@ class RadioListTileWidget extends StatelessWidget {
           value: locationId,
           groupValue: selectedValue,
           onChanged: onChanged,
+          toggleable: true,
         ),
         Text(locationName),
       ],
