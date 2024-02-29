@@ -254,15 +254,22 @@ func (app *Application) createPost(c *gin.Context) {
 	}
 
 	if post.LocationID == nil {
+		if user.CurrentRootLocationID == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		post.LocationID = user.CurrentRootLocationID
 	}
 
-	if post.LocationID == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	tx, err := app.db.BeginTx(app.ctx, nil)
+	if err != nil {
+		app.log.Err(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	defer tx.Rollback()
 
-	if err := app.q.CreatePost(app.ctx, db.CreatePostParams{
+	if err := app.q.WithTx(tx).CreatePost(app.ctx, db.CreatePostParams{
 		UserID:     user.ID,
 		LocationID: *post.LocationID,
 		PostTypeID: postTypeId,
@@ -273,10 +280,16 @@ func (app *Application) createPost(c *gin.Context) {
 		return
 	}
 
-	if err := app.q.UpdateUserLocation(app.ctx, db.UpdateUserLocationParams{
+	if err := app.q.WithTx(tx).UpdateUserLocation(app.ctx, db.UpdateUserLocationParams{
 		ID:                user.ID,
 		CurrentLocationID: post.LocationID,
 	}); err != nil {
+		app.log.Err(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
 		app.log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
