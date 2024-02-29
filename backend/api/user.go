@@ -115,38 +115,40 @@ func (app *Application) updateUsername(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "Username updated"})
 }
 
-func (app *Application) getUserByUsername(c *gin.Context) {
-	username := c.Param("username")
-
-	log.Debug().Msgf("Get user by username: %s", username)
-
-	user, err := app.q.GetUserByUsername(app.ctx, &username)
-	if err != nil {
-		log.Debug().Msgf("User by username %s not found. Error: %v", username, err)
-		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
-		return
-	}
-
-	if c.Request.Method == "HEAD" {
-		c.Status(http.StatusOK)
-	} else {
-		c.JSON(http.StatusOK, user)
-	}
-}
-
-func (app *Application) getUserByUID(c *gin.Context) {
+func (app *Application) getUser(c *gin.Context) {
+	username := c.Query("username")
 	userUID := c.Query("userUID")
+	if len(username) != 0 {
+		log.Debug().Msgf("Get user by username: %s", username)
 
-	app.log.Debug().Msgf("Get user by UID: %s", userUID)
+		user, err := app.q.GetUserByUsername(app.ctx, &username)
+		if err != nil {
+			log.Debug().Msgf("User by username %s not found. Error: %v", username, err)
+			c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
+			return
+		}
 
-	user, err := app.q.GetUserByUID(app.ctx, &userUID)
-	if err != nil {
-		app.log.Debug().Msgf("User by UID %s not found. Error: %v", userUID, err)
-		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
+		if c.Request.Method == "HEAD" {
+			c.Status(http.StatusOK)
+		} else {
+			c.JSON(http.StatusOK, user)
+		}
+		return
+	} else if len(userUID) != 0 {
+		app.log.Debug().Msgf("Get user by UID: %s", userUID)
+
+		user, err := app.q.GetUserByUID(app.ctx, &userUID)
+		if err != nil {
+			app.log.Debug().Msgf("User by UID %s not found. Error: %v", userUID, err)
+			c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, user)
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.Status(http.StatusBadRequest)
 }
 
 func (app *Application) deleteUser(c *gin.Context) {

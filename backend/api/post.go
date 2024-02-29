@@ -282,30 +282,43 @@ func (app *Application) createPost(c *gin.Context) {
 		return
 	}
 
-	go func() {
-		userFriendsFCMTokenIDs, err := app.q.GetUserFriendsFCMTokenIDs(c, user.ID)
-		if err != nil {
-			app.log.Err(err)
-			return
-		}
-		tokens := make([]string, 0)
-		for _, s := range userFriendsFCMTokenIDs {
-			tokens = append(tokens, *s)
-		}
-
-		response, err := app.msg.SendMulticast(c, &messaging.MulticastMessage{
-			Notification: &messaging.Notification{
-				Title: "New post",
-				Body:  *user.Username + " has added a new post!",
-			},
-			Tokens: tokens,
-		})
-		if err != nil {
-			app.log.Err(err)
-			return
-		}
-		app.log.Debug().Msgf("Successfully sent message: %s", response)
-	}()
+	go app.sendNewPostNotification(user.ID, *user.Username)
 
 	c.Status(http.StatusOK)
+}
+
+func (app *Application) sendNewPostNotification(userID int64, username string) {
+	userFriendsFCMTokenIDs, err := app.q.GetUserFriendsFCMTokenIDsForTopic(app.ctx, db.GetUserFriendsFCMTokenIDsForTopicParams{
+		ID:   userID,
+		Name: "new-posts",
+	})
+	if err != nil {
+		app.log.Err(err)
+		return
+	}
+
+	messages := make([]*messaging.Message, 0)
+	for _, token := range userFriendsFCMTokenIDs {
+
+		message := messaging.Message{
+			Notification: &messaging.Notification{
+				Title: "New post",
+				Body:  username + " has updated their location",
+			},
+			Data: map[string]string{
+				"view": "posts",
+			},
+			Token: *token,
+		}
+
+		messages = append(messages, &message)
+	}
+
+	response, err := app.msg.SendAll(app.ctx, messages)
+	if err != nil {
+		app.log.Err(err)
+		return
+	}
+
+	app.log.Debug().Msgf("Successfully sent %v / %v new post messages", response.SuccessCount, len(response.Responses))
 }
