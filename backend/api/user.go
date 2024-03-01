@@ -209,7 +209,7 @@ func (app *Application) updateUserFCMToken(c *gin.Context) {
 		return
 	}
 
-	app.log.Debug().Msgf("Updated user %s with new FCM token %v", uid, user.FCMToken)
+	app.log.Debug().Msgf("Updated user %s with new FCM token %v", uid, *user.FCMToken)
 
 	c.JSON(http.StatusOK, gin.H{"msg": "FCM token updated"})
 }
