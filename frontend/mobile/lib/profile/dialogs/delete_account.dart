@@ -26,7 +26,7 @@ class DeleteAccountDialog extends StatelessWidget {
                 Navigator.of(context).pop();
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
-                    builder: (context) => const LoginWidget(),
+                    builder: (context) => const LoginPage(),
                   ),
                 );
               });

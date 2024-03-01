@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth_pkg;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:party_radar/common/flavors/flavor_banner.dart';
@@ -35,7 +36,7 @@ class _PartyRadarAppState extends State<PartyRadarApp> {
             .apply(displayColor: Colors.white, bodyColor: Colors.white),
       ),
       themeMode: ThemeMode.dark,
-      home: getUserData() != null ? const MainPage() : const LoginWidget(),
+      home: getUserData() != null ? const MainPage() : const LoginPage(),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -50,30 +51,17 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _currentPageIndex = 1;
+  int _initialTabIndex = 0;
 
   Location? rootLocation;
 
   @override
   void initState() {
-    _initClub(null);
-    super.initState();
-  }
+    initClub(null);
 
-  void _initClub(int? locationId) async {
-    int? userRootLocationId;
-    if (locationId != null ||
-        (userRootLocationId = (await UserService.getUser())?.rootLocationId) !=
-            null) {
-      var userLocation =
-          await LocationService.getLocation(locationId ?? userRootLocationId);
-      setState(() {
-        rootLocation = userLocation;
-      });
-    } else {
-      setState(() {
-        rootLocation = null;
-      });
-    }
+    setupInteractedMessage();
+
+    super.initState();
   }
 
   @override
@@ -91,9 +79,12 @@ class _MainPageState extends State<MainPage> {
               _currentPageIndex = 1;
               rootLocation = null;
             }),
-            onChangeLocation: (locationId) => _initClub(locationId),
+            onChangeLocation: (locationId) => initClub(locationId),
           ),
-          const UserProfilePage(),
+          UserProfilePage(
+            initialTabIndex: _initialTabIndex,
+            onTabChanged: (index) => _initialTabIndex = index,
+          ),
         ][_currentPageIndex],
         bottomNavigationBar: NavigationBar(
           height: 65,
@@ -122,5 +113,57 @@ class _MainPageState extends State<MainPage> {
         ),
       ),
     );
+  }
+
+  void initClub(int? locationId) async {
+    int? userRootLocationId;
+    if (locationId != null ||
+        (userRootLocationId = (await UserService.getUser())?.rootLocationId) !=
+            null) {
+      var userLocation =
+      await LocationService.getLocation(locationId ?? userRootLocationId);
+      setState(() {
+        rootLocation = userLocation;
+      });
+    } else {
+      setState(() {
+        rootLocation = null;
+      });
+    }
+  }
+
+  Future<void> setupInteractedMessage() async {
+    RemoteMessage? initialMessage =
+        await FirebaseMessaging.instance.getInitialMessage();
+
+    if (initialMessage != null) {
+      _handleMessage(initialMessage);
+    }
+
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
+  }
+
+  void _handleMessage(RemoteMessage? message) {
+    if (message != null) {
+      if (message.data['view'] == 'friendship-requests') {
+        setState(() {
+          _currentPageIndex = 2;
+          _initialTabIndex = 2;
+        });
+      } else if (message.data['view'] == 'posts' && rootLocation != null) {
+        setState(() {
+          _currentPageIndex = 0;
+        });
+      } else if (message.data['view'] == 'post-tag' && rootLocation != null) {
+        setState(() {
+          _currentPageIndex = 0;
+          // TODO open dialog window with exact location
+        });
+      } else if (message.data['view'] == 'location') {
+        setState(() {
+          _currentPageIndex = 1;
+        });
+      }
+    }
   }
 }

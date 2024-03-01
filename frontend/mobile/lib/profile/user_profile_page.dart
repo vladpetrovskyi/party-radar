@@ -10,7 +10,14 @@ import 'package:party_radar/common/services/image_service.dart';
 import 'package:party_radar/common/services/user_service.dart';
 
 class UserProfilePage extends StatefulWidget {
-  const UserProfilePage({super.key});
+  const UserProfilePage({
+    super.key,
+    this.initialTabIndex = 0,
+    this.onTabChanged
+  });
+
+  final int initialTabIndex;
+  final Function(int)? onTabChanged;
 
   @override
   State<UserProfilePage> createState() => _UserProfilePageState();
@@ -22,7 +29,10 @@ class _UserProfilePageState extends State<UserProfilePage>
 
   @override
   void initState() {
-    _tabController = TabController(length: 3, vsync: this, initialIndex: 0);
+    _tabController = TabController(length: 3, vsync: this, initialIndex: widget.initialTabIndex);
+    _tabController.addListener(() {
+      widget.onTabChanged?.call(_tabController.index);
+    });
     super.initState();
   }
 

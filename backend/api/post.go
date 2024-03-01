@@ -1,9 +1,9 @@
 package api
 
 import (
+	"firebase.google.com/go/messaging"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"party-time/db"
 	"strconv"
@@ -200,7 +200,7 @@ func (app *Application) increaseViewsByOne(c *gin.Context) {
 	err = app.q.IncreasePostViewsByOne(c, postID)
 	if err != nil {
 		msg := fmt.Sprintf("Could not update post views, post ID %d", postID)
-		log.Debug().Ctx(c).Msg(msg)
+		app.log.Debug().Ctx(c).Msg(msg)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": msg})
 		return
 	}
@@ -218,7 +218,7 @@ func (app *Application) getPostViewsCount(c *gin.Context) {
 	viewsCount, err := app.q.GetPostViewsCount(c, postID)
 	if err != nil {
 		msg := fmt.Sprintf("Could not get post views count, post ID %d", postID)
-		log.Debug().Ctx(c).Msg(msg)
+		app.log.Debug().Ctx(c).Msg(msg)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": msg})
 		return
 	}
@@ -235,7 +235,7 @@ func (app *Application) createPost(c *gin.Context) {
 
 	err := c.BindJSON(&post)
 	if err != nil {
-		log.Err(err).Ctx(c)
+		app.log.Err(err).Ctx(c)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -248,39 +248,90 @@ func (app *Application) createPost(c *gin.Context) {
 
 	postTypeId, err := app.q.GetPostTypeId(app.ctx, post.PostType)
 	if err != nil {
-		log.Err(err)
+		app.log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if post.LocationID == nil {
+		if user.CurrentRootLocationID == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		post.LocationID = user.CurrentRootLocationID
 	}
 
-	if post.LocationID == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	tx, err := app.db.BeginTx(app.ctx, nil)
+	if err != nil {
+		app.log.Err(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	defer tx.Rollback()
 
-	if err := app.q.CreatePost(app.ctx, db.CreatePostParams{
+	if err := app.q.WithTx(tx).CreatePost(app.ctx, db.CreatePostParams{
 		UserID:     user.ID,
 		LocationID: *post.LocationID,
 		PostTypeID: postTypeId,
 		Capacity:   post.Capacity,
 	}); err != nil {
-		log.Err(err)
+		app.log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := app.q.UpdateUserLocation(app.ctx, db.UpdateUserLocationParams{
+	if err := app.q.WithTx(tx).UpdateUserLocation(app.ctx, db.UpdateUserLocationParams{
 		ID:                user.ID,
 		CurrentLocationID: post.LocationID,
 	}); err != nil {
-		log.Err(err)
+		app.log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.Status(200)
+	if err = tx.Commit(); err != nil {
+		app.log.Err(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	go app.sendNewPostNotification(user.ID, *user.Username)
+
+	c.Status(http.StatusOK)
+}
+
+func (app *Application) sendNewPostNotification(userID int64, username string) {
+	userFriends, err := app.q.GetUserFriendsByRootLocationIDAndTopicName(app.ctx, db.GetUserFriendsByRootLocationIDAndTopicNameParams{
+		ID:   userID,
+		Name: "new-posts",
+	})
+	if err != nil {
+		app.log.Err(err)
+		return
+	}
+
+	messages := make([]*messaging.Message, 0)
+	for _, userFriend := range userFriends {
+		if userFriend.FcmToken != nil {
+			message := messaging.Message{
+				Notification: &messaging.Notification{
+					Title: "New post",
+					Body:  username + " has updated their location",
+				},
+				Data: map[string]string{
+					"view": "posts",
+				},
+				Token: *userFriend.FcmToken,
+			}
+			messages = append(messages, &message)
+		}
+	}
+
+	response, err := app.msg.SendAll(app.ctx, messages)
+	if err != nil {
+		app.log.Err(err)
+		return
+	}
+
+	app.log.Debug().Msgf("Successfully sent %v / %v new post messages", response.SuccessCount, len(response.Responses))
 }

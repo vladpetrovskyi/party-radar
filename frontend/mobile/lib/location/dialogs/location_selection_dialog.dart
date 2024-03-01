@@ -89,12 +89,6 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
                 Navigator.of(context).pop();
               }),
           _getLoadingButton(
-              icon: Icons.delete_forever_outlined,
-              onPressedFunction: () => setState(() {
-                selectedRadio = null;
-                _currentSliderValue = null;
-              })),
-          _getLoadingButton(
               icon: Icons.check,
               onPressedFunction: _isRegistrationFinished()
                   ? () =>

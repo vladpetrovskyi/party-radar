@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	firebase "firebase.google.com/go"
+	"firebase.google.com/go/messaging"
 	"fmt"
 	sqladapter "github.com/Blank-Xu/sql-adapter"
 	"github.com/casbin/casbin/v2"
@@ -23,6 +24,7 @@ type Application struct {
 	db     *sql.DB
 	q      *sqlc.Queries
 	router *gin.Engine
+	msg    *messaging.Client
 }
 
 func New(c *config.Conf,
@@ -43,6 +45,12 @@ func New(c *config.Conf,
 	app.setupRBAC()
 	app.setupRoutes()
 
+	msg, err := fb.Messaging(ctx)
+	if err != nil {
+		panic(fmt.Errorf("error initializing Firebase Messaging: %v", err))
+	}
+	app.msg = msg
+
 	return &app
 }
 
@@ -62,7 +70,10 @@ func (app *Application) setupRoutes() {
 		return *app.log
 	})))
 
-	v1 := router.Group("/api/v1")
+	api := router.Group("/api")
+
+	v1 := api.Group("/v1")
+	v2 := api.Group("/v2")
 
 	v1.GET("/healthcheck", app.healthcheckHandler)
 
@@ -72,22 +83,30 @@ func (app *Application) setupRoutes() {
 	imageGroup.POST("", app.authorizeViaFirebase("data", "write"), app.createImage)
 	imageGroup.PUT("/:id", app.authorizeViaFirebase("data", "write"), app.updateImage)
 
-	userGroup := v1.Group("/user")
-	userGroup.POST("/registration", app.register)
-	userGroup.HEAD("/:username", app.authorizeViaFirebase("data", "read"), app.getUserByUsername)
-	userGroup.GET("/:username", app.authorizeViaFirebase("data", "read"), app.getUserByUsername)
-	userGroup.GET("", app.authorizeViaFirebase("data", "read"), app.getUserByUID)
-	userGroup.DELETE("", app.authorizeViaFirebase("data", "write"), app.deleteUser)
-	userGroup.PUT("/username", app.authorizeViaFirebase("data", "write"), app.updateUsername)
-	userGroup.PUT("/root-location/:id", app.authorizeViaFirebase("data", "write"), app.updateUserRootLocation)
-	userGroup.DELETE("/location", app.authorizeViaFirebase("data", "write"), app.deleteUserLocation)
+	userGroupV1 := v1.Group("/user")
+	userGroupV1.POST("/registration", app.register)
+	userGroupV1.HEAD("/:username", app.authorizeViaFirebase("data", "read"), app.getUserByUsername)
+	userGroupV1.GET("/:username", app.authorizeViaFirebase("data", "read"), app.getUserByUsername)
+	userGroupV1.GET("", app.authorizeViaFirebase("data", "read"), app.getUserByUID)
+	userGroupV1.DELETE("", app.authorizeViaFirebase("data", "write"), app.deleteUser)
+	userGroupV1.PUT("/username", app.authorizeViaFirebase("data", "write"), app.updateUsername)
+	userGroupV1.PUT("/root-location/:id", app.authorizeViaFirebase("data", "write"), app.updateUserRootLocation)
+	userGroupV1.DELETE("/location", app.authorizeViaFirebase("data", "write"), app.deleteUserLocation)
+	userGroupV1.PATCH("/fcm-token", app.authorizeViaFirebase("data", "write"), app.updateUserFCMToken)
+	userGroupV1.GET("/topic", app.authorizeViaFirebase("data", "write"), app.getUserTopics)
+	userGroupV1.POST("/topic", app.authorizeViaFirebase("data", "write"), app.subscribeToTopic)
+	userGroupV1.DELETE("/topic", app.authorizeViaFirebase("data", "write"), app.unsubscribeFromTopic)
+
+	userGroupV2 := v2.Group("/user")
+	userGroupV2.HEAD("", app.authorizeViaFirebase("data", "read"), app.getUser)
+	userGroupV2.GET("", app.authorizeViaFirebase("data", "read"), app.getUser)
 
 	locationGroup := v1.Group("/location")
 	locationGroup.GET("", app.authorizeViaFirebase("data", "read"), app.getLocations)
 	locationGroup.GET("/:id", app.authorizeViaFirebase("data", "read"), app.getLocation)
 	locationGroup.GET("/:id/user/count", app.authorizeViaFirebase("data", "read"), app.getLocationUserCount)
-	locationGroup.GET("/:id/closing", app.authorizeViaFirebase("data", "read"), app.getLocationClosing)
-	locationGroup.PATCH("/:id/closing", app.authorizeViaFirebase("data", "read"), app.updateLocationClosing)
+	locationGroup.GET("/:id/availability", app.authorizeViaFirebase("data", "read"), app.getLocationAvailability)
+	locationGroup.PATCH("/:id/availability", app.authorizeViaFirebase("data", "read"), app.updateLocationAvailability)
 
 	postGroup := v1.Group("/post")
 	postGroup.GET("", app.authorizeViaFirebase("data", "read"), app.getPosts)

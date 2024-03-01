@@ -29,6 +29,11 @@ sql:
               type: "string"
               pointer: true
             nullable: true
+          - column: "user.fcm_token"
+            go_type:
+              type: "string"
+              pointer: true
+            nullable: true
           - column: "user.uid"
             go_type:
               type: "string"

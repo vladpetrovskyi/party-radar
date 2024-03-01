@@ -31,7 +31,43 @@
               "client_type": 3
             },
             {
-              "client_id": "458837589684-h88r0k51rchrn0otpm4m587m0c3brh2g.apps.googleusercontent.com",
+              "client_id": "458837589684-5pjg36btvrn9q0kn4urugnbhcnr84jam.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "app.party-radar.dev.ios"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:458837589684:android:dfd75e80e71b7170f8a1e1",
+        "android_client_info": {
+          "package_name": "app.party_radar.local"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "458837589684-e166lagtp3s7p69u4pc049mo473fuk0j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDplo5mcz__uah8HEcFwQ_iQcCBctoUP4U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "458837589684-e166lagtp3s7p69u4pc049mo473fuk0j.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "458837589684-5pjg36btvrn9q0kn4urugnbhcnr84jam.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "app.party-radar.dev.ios"

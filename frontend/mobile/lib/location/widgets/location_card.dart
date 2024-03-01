@@ -26,7 +26,7 @@ class LocationCard extends StatefulWidget {
 
 class _LocationCardState extends State<LocationCard>
     with ShareLocationDialogBuilder {
-  LocationClosing? locationClosing;
+  LocationAvailability? locationClosing;
 
   @override
   void initState() {
@@ -180,12 +180,12 @@ class _LocationCardState extends State<LocationCard>
   }
 
   void _closeLocation(int locationId) {
-    LocationService.updateLocationClosing(locationId, DateTime.now())
+    LocationService.updateLocationAvailability(locationId, DateTime.now())
         .then((value) => _loadLocationClosing());
   }
 
   void _openLocation(int locationId) {
-    LocationService.updateLocationClosing(locationId, null)
+    LocationService.updateLocationAvailability(locationId, null)
         .then((value) => _loadLocationClosing());
   }
 
@@ -231,7 +231,7 @@ class _LocationCardState extends State<LocationCard>
       );
 
   void _loadLocationClosing() {
-    LocationService.getLocationClosing(widget.location.id)
+    LocationService.getLocationAvailability(widget.location.id)
         .then((locationClosing) {
       if (locationClosing.isCloseable) {
         setState(() {

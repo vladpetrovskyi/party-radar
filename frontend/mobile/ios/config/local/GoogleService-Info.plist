@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>458837589684-h88r0k51rchrn0otpm4m587m0c3brh2g.apps.googleusercontent.com</string>
+	<string>458837589684-gsf52e30l8e5iuomkheq23t9hiev9df9.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.458837589684-h88r0k51rchrn0otpm4m587m0c3brh2g</string>
+	<string>com.googleusercontent.apps.458837589684-gsf52e30l8e5iuomkheq23t9hiev9df9</string>
 	<key>API_KEY</key>
 	<string>AIzaSyBaim2dFzJMG-FoVo8uAXkZIgnRGT6KwSs</string>
 	<key>GCM_SENDER_ID</key>
@@ -13,7 +13,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>app.party-radar.dev.ios</string>
+	<string>app.party-radar.local</string>
 	<key>PROJECT_ID</key>
 	<string>party-radar-dev</string>
 	<key>STORAGE_BUCKET</key>
@@ -29,6 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:458837589684:ios:048473fead7448eef8a1e1</string>
+	<string>1:458837589684:ios:2aba38254d8cff1ff8a1e1</string>
 </dict>
 </plist>

@@ -1,12 +1,14 @@
 package api
 
 import (
+	"firebase.google.com/go/messaging"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"party-time/db"
 	"strconv"
+	"strings"
 )
 
 func (app *Application) getFriendships(c *gin.Context) {
@@ -59,6 +61,21 @@ func (app *Application) getFriendships(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
+
+		username := c.Query("username")
+		if len(username) > 0 {
+			friendsNames := make([]string, 0)
+
+			for _, f := range friends {
+				if strings.Contains(f.Username.(string), username) {
+					friendsNames = append(friendsNames, f.Username.(string))
+				}
+			}
+
+			c.JSON(http.StatusOK, friendsNames)
+			return
+		}
+
 		c.JSON(http.StatusOK, friends)
 		return
 	}
@@ -103,11 +120,11 @@ func (app *Application) getFriendshipsCount(c *gin.Context) {
 		}
 	}
 
-	c.JSON(200, gin.H{"count": friendshipsCount})
+	c.JSON(http.StatusOK, gin.H{"count": friendshipsCount})
 }
 
 func (app *Application) createFriendshipRequest(c *gin.Context) {
-	user, err := app.getUserFromContext(c)
+	userFrom, err := app.getUserFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -122,32 +139,34 @@ func (app *Application) createFriendshipRequest(c *gin.Context) {
 		return
 	}
 
-	userByUsername, err := app.q.GetUserByUsername(app.ctx, requestUser.Username)
+	userTo, err := app.q.GetUserByUsername(app.ctx, requestUser.Username)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
 		return
 	}
 
-	if userByUsername.ID == user.ID {
+	if userTo.ID == userFrom.ID {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "friendship request cannot be sent to the person same as sender"})
 		return
 	}
 
 	friendship, err := app.q.GetFriendshipByUserIds(c, db.GetFriendshipByUserIdsParams{
-		User1ID: user.ID,
-		User2ID: userByUsername.ID,
+		User1ID: userFrom.ID,
+		User2ID: userTo.ID,
 	})
 	if err != nil {
 		err = app.q.CreateFriendshipRequest(app.ctx, db.CreateFriendshipRequestParams{
-			User1ID: user.ID,
-			User2ID: userByUsername.ID,
+			User1ID: userFrom.ID,
+			User2ID: userTo.ID,
 		})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		c.JSON(200, nil)
+		go app.sendFriendshipRequestNotification(userFrom, userTo)
+
+		c.Status(http.StatusOK)
 		return
 	}
 
@@ -158,8 +177,8 @@ func (app *Application) createFriendshipRequest(c *gin.Context) {
 
 	err = app.q.UpdateFriendship(app.ctx, db.UpdateFriendshipParams{
 		ID:       friendship.ID,
-		User1ID:  user.ID,
-		User2ID:  userByUsername.ID,
+		User1ID:  userFrom.ID,
+		User2ID:  userTo.ID,
 		StatusID: 1,
 	})
 	if err != nil {
@@ -167,7 +186,36 @@ func (app *Application) createFriendshipRequest(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, nil)
+	go app.sendFriendshipRequestNotification(userFrom, userTo)
+
+	c.Status(http.StatusOK)
+}
+
+func (app *Application) sendFriendshipRequestNotification(userFrom db.User, userTo db.User) {
+	hasUserTopic, err := app.q.HasUserTopic(app.ctx, userTo.ID)
+	if err != nil {
+		app.log.Err(err)
+		return
+	}
+
+	if userTo.FcmToken != nil && hasUserTopic {
+		response, err := app.msg.Send(app.ctx, &messaging.Message{
+			Notification: &messaging.Notification{
+				Title: "New friend request",
+				Body:  *userFrom.Username + " sent you a friend request",
+			},
+			Data: map[string]string{
+				"view": "friendship-requests",
+			},
+			Token: *userTo.FcmToken,
+		})
+		if err != nil {
+			app.log.Err(err)
+			return
+		}
+		app.log.Debug().Msgf("Successfully sent friendship request message: %s", response)
+	}
+
 }
 
 func (app *Application) updateFriendship(c *gin.Context) {
@@ -223,7 +271,7 @@ func (app *Application) updateFriendship(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, nil)
+	c.Status(http.StatusOK)
 }
 
 func (app *Application) deleteFriendship(c *gin.Context) {
@@ -239,5 +287,5 @@ func (app *Application) deleteFriendship(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, nil)
+	c.Status(http.StatusOK)
 }

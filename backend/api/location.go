@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"errors"
+	"firebase.google.com/go/messaging"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"party-time/db"
@@ -192,7 +193,7 @@ func (app *Application) mapLocation(dbLocation db.GetLocationRow) Location {
 	}
 }
 
-func (app *Application) getLocationClosing(c *gin.Context) {
+func (app *Application) getLocationAvailability(c *gin.Context) {
 	locationID, err := app.readIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -208,7 +209,7 @@ func (app *Application) getLocationClosing(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"closed_at": closingTime})
 }
 
-func (app *Application) updateLocationClosing(c *gin.Context) {
+func (app *Application) updateLocationAvailability(c *gin.Context) {
 	locationID, err := app.readIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -244,5 +245,48 @@ func (app *Application) updateLocationClosing(c *gin.Context) {
 		}
 	}
 
+	go app.sendLocationAvailabilityUpdateNotification(locationID)
+
 	c.Status(http.StatusOK)
+}
+
+func (app *Application) sendLocationAvailabilityUpdateNotification(locationID int64) {
+
+	location, err := app.q.GetLocation(app.ctx, locationID)
+	if err != nil {
+		app.log.Err(err)
+		return
+	}
+
+	users, err := app.q.GetUsersByRootLocationID(app.ctx, location.RootLocationID)
+	if err != nil {
+		app.log.Err(err)
+		return
+	}
+
+	messages := make([]*messaging.Message, 0)
+	for _, user := range users {
+		if user.FcmToken != nil {
+			message := messaging.Message{
+				Notification: &messaging.Notification{
+					Title: "Location status changed",
+					Body:  "There are new location availability updates",
+				},
+				Data: map[string]string{
+					"view": "location",
+				},
+				Token: *user.FcmToken,
+			}
+
+			messages = append(messages, &message)
+		}
+	}
+
+	response, err := app.msg.SendAll(app.ctx, messages)
+	if err != nil {
+		app.log.Err(err)
+		return
+	}
+
+	app.log.Debug().Msgf("Successfully sent %v / %v new post messages", response.SuccessCount, len(response.Responses))
 }

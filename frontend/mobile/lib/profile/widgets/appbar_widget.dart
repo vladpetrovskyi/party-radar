@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:party_radar/login/login_widget.dart';
+import 'package:party_radar/profile/settings_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 AppBar buildAppBar(BuildContext context) {
@@ -86,19 +88,23 @@ AppBar buildAppBar(BuildContext context) {
                     child: const Center(
                       child: Text(
                         'SEND A FEEDBACK',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),
-                    onPressed: () => launchUrl(Uri.parse('https://www.party-radar.app/contact')),
+                    onPressed: () => launchUrl(
+                        Uri.parse('https://www.party-radar.app/contact')),
                   ),
                   SimpleDialogOption(
                     child: const Center(
                       child: Text(
                         'REPORT AN ERROR',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.red),
                       ),
                     ),
-                    onPressed: () => launchUrl(Uri.parse('https://www.party-radar.app/contact')),
+                    onPressed: () => launchUrl(
+                        Uri.parse('https://www.party-radar.app/contact')),
                   ),
                   SimpleDialogOption(
                     child: const Center(
@@ -115,6 +121,10 @@ AppBar buildAppBar(BuildContext context) {
       },
     ),
     actions: [
+      IconButton(
+          onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const SettingsPage())),
+          icon: const Icon(Icons.settings)),
       IconButton(
         icon: const Icon(Icons.logout),
         onPressed: () {
@@ -138,10 +148,11 @@ AppBar buildAppBar(BuildContext context) {
                       child: const Icon(Icons.check),
                       onPressed: () {
                         FirebaseAuth.instance.signOut();
+                        FirebaseMessaging.instance.deleteToken();
                         Navigator.of(context).pop();
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
-                            builder: (context) => const LoginWidget(),
+                            builder: (context) => const LoginPage(),
                           ),
                         );
                       },

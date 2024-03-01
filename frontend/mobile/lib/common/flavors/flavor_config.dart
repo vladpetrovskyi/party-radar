@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 enum Flavor { local, dev, prod }
 
 class FlavorValues {
-  FlavorValues({required this.baseUrl});
+  FlavorValues({required String baseUrl}) : _baseUrl = baseUrl;
 
-  final String baseUrl;
+  final String _baseUrl;
+
+  String get apiV1 => '$_baseUrl/v1';
+
+  String get apiV2 => '$_baseUrl/v2';
 }
 
 class FlavorConfig {
