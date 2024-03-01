@@ -295,7 +295,14 @@ func (app *Application) createPost(c *gin.Context) {
 		return
 	}
 
-	go app.sendNewPostNotification(user.ID, *user.Username, user.CurrentRootLocationID)
+	var currentRootLocationID *int64
+	if user.CurrentRootLocationID != nil {
+		currentRootLocationID = user.CurrentRootLocationID
+	} else {
+		currentRootLocationID = post.LocationID
+	}
+
+	go app.sendNewPostNotification(user.ID, *user.Username, currentRootLocationID)
 
 	c.Status(http.StatusOK)
 }
