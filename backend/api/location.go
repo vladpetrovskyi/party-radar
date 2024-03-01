@@ -225,11 +225,14 @@ func (app *Application) updateLocationAvailability(c *gin.Context) {
 		return
 	}
 
+	var locationStatus string
+
 	if location.ClosedAt == nil {
 		if err := app.q.OpenLocationByID(c, locationID); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		locationStatus = "closed"
 	} else {
 		if closingTime, err := app.q.GetLocationClosingTimeByLocationID(c, locationID); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -243,14 +246,16 @@ func (app *Application) updateLocationAvailability(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+
+		locationStatus = "opened"
 	}
 
-	go app.sendLocationAvailabilityUpdateNotification(locationID)
+	go app.sendLocationAvailabilityUpdateNotification(locationID, locationStatus)
 
 	c.Status(http.StatusOK)
 }
 
-func (app *Application) sendLocationAvailabilityUpdateNotification(locationID int64) {
+func (app *Application) sendLocationAvailabilityUpdateNotification(locationID int64, locationStatus string) {
 
 	location, err := app.q.GetLocation(app.ctx, locationID)
 	if err != nil {
@@ -270,7 +275,7 @@ func (app *Application) sendLocationAvailabilityUpdateNotification(locationID in
 			message := messaging.Message{
 				Notification: &messaging.Notification{
 					Title: "Location status changed",
-					Body:  "There are new location availability updates",
+					Body:  "One of the locations has been " + locationStatus,
 				},
 				Data: map[string]string{
 					"view": "location",
