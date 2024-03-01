@@ -12,7 +12,7 @@ class PostService {
       int offset, int limit, String username, int? rootLocationId) async {
     Response response = await get(
       Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/post/feed?offset=$offset&limit=$limit&username=$username&rootLocationId=${rootLocationId ?? ''}'),
+          '${FlavorConfig.instance.values.apiV1}/post/feed?offset=$offset&limit=$limit&username=$username&rootLocationId=${rootLocationId ?? ''}'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -30,7 +30,7 @@ class PostService {
       int offset, int limit, int? userId) async {
     Response response = await get(
       Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/post?offset=$offset&limit=$limit&userId=$userId'),
+          '${FlavorConfig.instance.values.apiV1}/post?offset=$offset&limit=$limit&userId=$userId'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -47,7 +47,7 @@ class PostService {
   static Future<int?> getPostCount(String? username) async {
     Response response = await get(
       Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/post/count?username=${username ?? ''}'),
+          '${FlavorConfig.instance.values.apiV1}/post/count?username=${username ?? ''}'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -63,7 +63,7 @@ class PostService {
   static Future<bool> createPost(
       int? locationId, PostType postType, int? capacity) async {
     Response response = await post(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/post'),
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/post'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
@@ -83,7 +83,7 @@ class PostService {
 
   static Future<bool> increaseViewCountByOne(int? postId) async {
     Response response = await put(
-        Uri.parse('${FlavorConfig.instance.values.baseUrl}/post/$postId/view'),
+        Uri.parse('${FlavorConfig.instance.values.apiV1}/post/$postId/view'),
         headers: {
           HttpHeaders.authorizationHeader:
           'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -96,7 +96,7 @@ class PostService {
 
   static Future<int> getPostViewsCount(int? postId) async {
     Response response = await get(
-        Uri.parse('${FlavorConfig.instance.values.baseUrl}/post/$postId/view'),
+        Uri.parse('${FlavorConfig.instance.values.apiV1}/post/$postId/view'),
         headers: {
           HttpHeaders.authorizationHeader:
           'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -109,7 +109,7 @@ class PostService {
 
   static Future<bool> deletePost(int postId) async {
     Response response = await delete(
-        Uri.parse('${FlavorConfig.instance.values.baseUrl}/post/$postId'),
+        Uri.parse('${FlavorConfig.instance.values.apiV1}/post/$postId'),
         headers: {
           HttpHeaders.authorizationHeader:
               'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'

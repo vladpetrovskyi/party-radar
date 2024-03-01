@@ -56,7 +56,7 @@ class AuthService {
     };
 
     Response response = await post(
-        Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/registration'),
+        Uri.parse('${FlavorConfig.instance.values.apiV1}/user/registration'),
         body: jsonEncode(registrationData),
         headers: {HttpHeaders.contentTypeHeader: 'application/json'});
 

@@ -213,3 +213,37 @@ func (app *Application) updateUserFCMToken(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"msg": "FCM token updated"})
 }
+
+func (app *Application) getUserByUsername(c *gin.Context) {
+	username := c.Param("username")
+
+	log.Debug().Msgf("Get user by username: %s", username)
+
+	user, err := app.q.GetUserByUsername(app.ctx, &username)
+	if err != nil {
+		log.Debug().Msgf("User by username %s not found. Error: %v", username, err)
+		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
+		return
+	}
+
+	if c.Request.Method == "HEAD" {
+		c.Status(http.StatusOK)
+	} else {
+		c.JSON(http.StatusOK, user)
+	}
+}
+
+func (app *Application) getUserByUID(c *gin.Context) {
+	userUID := c.Query("userUID")
+
+	app.log.Debug().Msgf("Get user by UID: %s", userUID)
+
+	user, err := app.q.GetUserByUID(app.ctx, &userUID)
+	if err != nil {
+		app.log.Debug().Msgf("User by UID %s not found. Error: %v", userUID, err)
+		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}

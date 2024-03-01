@@ -33,7 +33,7 @@ void main() async {
   FlavorConfig(
     flavor: Flavor.prod,
     values: FlavorValues(
-      baseUrl: "https://party-radar.app/api/v1",
+      baseUrl: "https://party-radar.app/api",
     ),
   );
 

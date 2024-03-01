@@ -10,7 +10,7 @@ import 'package:party_radar/common/util/extensions.dart';
 class UserService {
   static Future<bool> userExists(String username) async {
     Response response = await head(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/$username'),
+      Uri.parse('${FlavorConfig.instance.values.apiV2}/user?username=$username'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -23,7 +23,7 @@ class UserService {
     Response response;
     if (username != null && username.isNotEmpty) {
       response = await get(
-        Uri.parse('${FlavorConfig.instance.values.baseUrl}/user?username=$username'),
+        Uri.parse('${FlavorConfig.instance.values.apiV2}/user?username=$username'),
         headers: {
           HttpHeaders.authorizationHeader:
               'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -32,7 +32,7 @@ class UserService {
     } else {
       response = await get(
         Uri.parse(
-            '${FlavorConfig.instance.values.baseUrl}/user?userUID=${FirebaseAuth.instance.currentUser?.uid}'),
+            '${FlavorConfig.instance.values.apiV2}/user?userUID=${FirebaseAuth.instance.currentUser?.uid}'),
         headers: {
           HttpHeaders.authorizationHeader:
               'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -51,7 +51,7 @@ class UserService {
     });
 
     Response response = await put(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/username'),
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/user/username'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -89,7 +89,7 @@ class UserService {
 
   static Future<bool> updateFCMToken(String? token) async {
     Response response = await patch(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/fcm-token'),
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/user/fcm-token'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
@@ -103,7 +103,7 @@ class UserService {
   static Future<bool> updateUserRootLocation(int locationId) async {
     Response response = await put(
       Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/user/root-location/$locationId'),
+          '${FlavorConfig.instance.values.apiV1}/user/root-location/$locationId'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -114,7 +114,7 @@ class UserService {
 
   static Future<bool> deleteUserLocation() async {
     Response response = await delete(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/location'),
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/user/location'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -125,7 +125,7 @@ class UserService {
 
   static Future<bool> deleteUser() async {
     Response response = await delete(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user'),
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/user'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -146,7 +146,7 @@ class UserService {
 
   static Future<List<String>> getUserTopics() async {
     Response response = await get(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/topic'),
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/user/topic'),
       headers: {
         HttpHeaders.authorizationHeader:
         'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
@@ -161,7 +161,7 @@ class UserService {
 
   static Future<bool> subscribeToTopic(String topicName) async {
     Response response = await post(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/topic'),
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/user/topic'),
       headers: {
         HttpHeaders.authorizationHeader:
         'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
@@ -174,7 +174,7 @@ class UserService {
 
   static Future<bool> unsubscribeFromTopic(String topicName) async {
     Response response = await delete(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/user/topic'),
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/user/topic'),
       headers: {
         HttpHeaders.authorizationHeader:
         'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',

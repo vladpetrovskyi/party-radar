@@ -70,7 +70,10 @@ func (app *Application) setupRoutes() {
 		return *app.log
 	})))
 
-	v1 := router.Group("/api/v1")
+	api := router.Group("/api")
+
+	v1 := api.Group("/v1")
+	v2 := api.Group("/v2")
 
 	v1.GET("/healthcheck", app.healthcheckHandler)
 
@@ -80,18 +83,23 @@ func (app *Application) setupRoutes() {
 	imageGroup.POST("", app.authorizeViaFirebase("data", "write"), app.createImage)
 	imageGroup.PUT("/:id", app.authorizeViaFirebase("data", "write"), app.updateImage)
 
-	userGroup := v1.Group("/user")
-	userGroup.POST("/registration", app.register)
-	userGroup.HEAD("", app.authorizeViaFirebase("data", "read"), app.getUser)
-	userGroup.GET("", app.authorizeViaFirebase("data", "read"), app.getUser)
-	userGroup.DELETE("", app.authorizeViaFirebase("data", "write"), app.deleteUser)
-	userGroup.PUT("/username", app.authorizeViaFirebase("data", "write"), app.updateUsername)
-	userGroup.PUT("/root-location/:id", app.authorizeViaFirebase("data", "write"), app.updateUserRootLocation)
-	userGroup.DELETE("/location", app.authorizeViaFirebase("data", "write"), app.deleteUserLocation)
-	userGroup.PATCH("/fcm-token", app.authorizeViaFirebase("data", "write"), app.updateUserFCMToken)
-	userGroup.GET("/topic", app.authorizeViaFirebase("data", "write"), app.getUserTopics)
-	userGroup.POST("/topic", app.authorizeViaFirebase("data", "write"), app.subscribeToTopic)
-	userGroup.DELETE("/topic", app.authorizeViaFirebase("data", "write"), app.unsubscribeFromTopic)
+	userGroupV1 := v1.Group("/user")
+	userGroupV1.POST("/registration", app.register)
+	userGroupV1.HEAD("/:username", app.authorizeViaFirebase("data", "read"), app.getUserByUsername)
+	userGroupV1.GET("/:username", app.authorizeViaFirebase("data", "read"), app.getUserByUsername)
+	userGroupV1.GET("", app.authorizeViaFirebase("data", "read"), app.getUserByUID)
+	userGroupV1.DELETE("", app.authorizeViaFirebase("data", "write"), app.deleteUser)
+	userGroupV1.PUT("/username", app.authorizeViaFirebase("data", "write"), app.updateUsername)
+	userGroupV1.PUT("/root-location/:id", app.authorizeViaFirebase("data", "write"), app.updateUserRootLocation)
+	userGroupV1.DELETE("/location", app.authorizeViaFirebase("data", "write"), app.deleteUserLocation)
+	userGroupV1.PATCH("/fcm-token", app.authorizeViaFirebase("data", "write"), app.updateUserFCMToken)
+	userGroupV1.GET("/topic", app.authorizeViaFirebase("data", "write"), app.getUserTopics)
+	userGroupV1.POST("/topic", app.authorizeViaFirebase("data", "write"), app.subscribeToTopic)
+	userGroupV1.DELETE("/topic", app.authorizeViaFirebase("data", "write"), app.unsubscribeFromTopic)
+
+	userGroupV2 := v2.Group("/user")
+	userGroupV2.HEAD("", app.authorizeViaFirebase("data", "read"), app.getUser)
+	userGroupV2.GET("", app.authorizeViaFirebase("data", "read"), app.getUser)
 
 	locationGroup := v1.Group("/location")
 	locationGroup.GET("", app.authorizeViaFirebase("data", "read"), app.getLocations)

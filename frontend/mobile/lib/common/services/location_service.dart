@@ -11,7 +11,7 @@ class LocationService {
   static Future<List<Location>?> getLocations(ElementType elementType) async {
     final response = await get(
       Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/location?type=${elementType.name}'),
+          '${FlavorConfig.instance.values.apiV1}/location?type=${elementType.name}'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -29,7 +29,7 @@ class LocationService {
     if (locationId == null) return null;
 
     final response = await get(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/location/$locationId'),
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/location/$locationId'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -46,7 +46,7 @@ class LocationService {
   static Future<int?> getLocationUserCount(int id) async {
     final response = await get(
       Uri.parse(
-          '${FlavorConfig.instance.values.baseUrl}/location/$id/user/count'),
+          '${FlavorConfig.instance.values.apiV1}/location/$id/user/count'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -62,7 +62,7 @@ class LocationService {
 
   static Future<LocationAvailability> getLocationAvailability(int id) async {
     final response = await get(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/location/$id/availability'),
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/location/$id/availability'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -86,7 +86,7 @@ class LocationService {
   static Future<void> updateLocationAvailability(
       int id, DateTime? closingTime) async {
     final response = await patch(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/location/$id/availability'),
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/location/$id/availability'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
