@@ -13,7 +13,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/pressly/goose/v3 v3.18.0
 	github.com/rs/zerolog v1.32.0
-	google.golang.org/api v0.165.0
+	google.golang.org/api v0.167.0
 )
 
 require (
