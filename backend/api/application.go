@@ -97,8 +97,8 @@ func (app *Application) setupRoutes() {
 	locationGroup.GET("", app.authorizeViaFirebase("data", "read"), app.getLocations)
 	locationGroup.GET("/:id", app.authorizeViaFirebase("data", "read"), app.getLocation)
 	locationGroup.GET("/:id/user/count", app.authorizeViaFirebase("data", "read"), app.getLocationUserCount)
-	locationGroup.GET("/:id/closing", app.authorizeViaFirebase("data", "read"), app.getLocationClosing)
-	locationGroup.PATCH("/:id/closing", app.authorizeViaFirebase("data", "read"), app.updateLocationClosing)
+	locationGroup.GET("/:id/availability", app.authorizeViaFirebase("data", "read"), app.getLocationAvailability)
+	locationGroup.PATCH("/:id/availability", app.authorizeViaFirebase("data", "read"), app.updateLocationAvailability)
 
 	postGroup := v1.Group("/post")
 	postGroup.GET("", app.authorizeViaFirebase("data", "read"), app.getPosts)

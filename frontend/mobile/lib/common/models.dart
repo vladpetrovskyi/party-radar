@@ -71,11 +71,11 @@ class Location {
       };
 }
 
-class LocationClosing {
+class LocationAvailability {
   final DateTime? closedAt;
   final bool isCloseable;
 
-  LocationClosing({this.closedAt, required this.isCloseable});
+  LocationAvailability({this.closedAt, required this.isCloseable});
 }
 
 class User {

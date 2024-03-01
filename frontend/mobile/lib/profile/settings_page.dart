@@ -40,9 +40,9 @@ class _SettingsPageState extends State<SettingsPage> {
               trailing: getSwitch('friendship-requests', true),
             ),
             ListTile(
-              title: const Text("Location updates"),
+              title: const Text("Location availability updates"),
               subtitle: const Text("Get notifications when locations are marked as closed / opened"),
-              trailing: getSwitch('location-closed', true),
+              trailing: getSwitch('location-availability', true),
             ),
             ListTile(
               title: const Text("New posts"),

@@ -3,7 +3,7 @@
 INSERT INTO topic (name)
 VALUES ('friendship-requests'),
        ('new-posts'),
-       ('location-closed'),
+       ('location-availability'),
        ('post-tags');
 -- +goose StatementEnd
 
@@ -11,5 +11,5 @@ VALUES ('friendship-requests'),
 -- +goose StatementBegin
 DELETE
 FROM topic
-WHERE name IN ('friendship-requests', 'new-posts', 'location-closed', 'post-tags');
+WHERE name IN ('friendship-requests', 'new-posts', 'location-availability', 'post-tags');
 -- +goose StatementEnd

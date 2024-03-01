@@ -301,7 +301,7 @@ func (app *Application) createPost(c *gin.Context) {
 }
 
 func (app *Application) sendNewPostNotification(userID int64, username string) {
-	userFriendsFCMTokenIDs, err := app.q.GetUserFriendsFCMTokenIDsForTopic(app.ctx, db.GetUserFriendsFCMTokenIDsForTopicParams{
+	userFriends, err := app.q.GetUserFriendsByRootLocationIDAndTopicName(app.ctx, db.GetUserFriendsByRootLocationIDAndTopicNameParams{
 		ID:   userID,
 		Name: "new-posts",
 	})
@@ -311,20 +311,20 @@ func (app *Application) sendNewPostNotification(userID int64, username string) {
 	}
 
 	messages := make([]*messaging.Message, 0)
-	for _, token := range userFriendsFCMTokenIDs {
-
-		message := messaging.Message{
-			Notification: &messaging.Notification{
-				Title: "New post",
-				Body:  username + " has updated their location",
-			},
-			Data: map[string]string{
-				"view": "posts",
-			},
-			Token: *token,
+	for _, userFriend := range userFriends {
+		if userFriend.FcmToken != nil {
+			message := messaging.Message{
+				Notification: &messaging.Notification{
+					Title: "New post",
+					Body:  username + " has updated their location",
+				},
+				Data: map[string]string{
+					"view": "posts",
+				},
+				Token: *userFriend.FcmToken,
+			}
+			messages = append(messages, &message)
 		}
-
-		messages = append(messages, &message)
 	}
 
 	response, err := app.msg.SendAll(app.ctx, messages)

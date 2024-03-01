@@ -60,9 +60,9 @@ class LocationService {
     }
   }
 
-  static Future<LocationClosing> getLocationClosing(int id) async {
+  static Future<LocationAvailability> getLocationAvailability(int id) async {
     final response = await get(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/location/$id/closing'),
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/location/$id/availability'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -70,10 +70,10 @@ class LocationService {
     );
 
     if (response.statusCode == 404) {
-      return LocationClosing(isCloseable: false);
+      return LocationAvailability(isCloseable: false);
     } else if (response.ok) {
       String? closedAtString = jsonDecode(response.body)['closed_at'];
-      return LocationClosing(
+      return LocationAvailability(
         isCloseable: true,
         closedAt:
             closedAtString != null ? DateTime.parse(closedAtString) : null,
@@ -83,10 +83,10 @@ class LocationService {
     throw Exception('Failed to get location closing: ${response.body}');
   }
 
-  static Future<void> updateLocationClosing(
+  static Future<void> updateLocationAvailability(
       int id, DateTime? closingTime) async {
     final response = await patch(
-      Uri.parse('${FlavorConfig.instance.values.baseUrl}/location/$id/closing'),
+      Uri.parse('${FlavorConfig.instance.values.baseUrl}/location/$id/availability'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',

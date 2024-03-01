@@ -76,8 +76,8 @@ FROM friendship f
          INNER JOIN friendship_status fs ON f.status_id = fs.id
 WHERE f.id = $1;
 
--- name: GetUserFriendsFCMTokenIDsForTopic :many
-SELECT u.fcm_token
+-- name: GetUserFriendsByRootLocationIDAndTopicName :many
+SELECT u.*
 FROM "user" u
          LEFT JOIN friendship f ON f.user_1_id = u.id OR f.user_2_id = u.id
          LEFT JOIN user_topic ut ON u.id = ut.user_id
@@ -85,4 +85,5 @@ FROM "user" u
 WHERE u.id != $1
   AND (f.user_1_id = $1 OR f.user_2_id = $1)
   AND u.fcm_token IS NOT NULL
+  AND u.current_root_location_id = (SELECT current_root_location_id FROM "user" WHERE id = $1)
   AND t.name = $2;

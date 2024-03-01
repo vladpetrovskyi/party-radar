@@ -157,10 +157,14 @@ class _MainPageState extends State<MainPage> {
         setState(() {
           _currentPageIndex = 0;
         });
-      } else if (message.from == 'post-tag' && rootLocation != null) {
+      } else if (message.data['view'] == 'post-tag' && rootLocation != null) {
         setState(() {
           _currentPageIndex = 0;
           // TODO open dialog window with exact location
+        });
+      } else if (message.data['view'] == 'location') {
+        setState(() {
+          _currentPageIndex = 1;
         });
       }
     }

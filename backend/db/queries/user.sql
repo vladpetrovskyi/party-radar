@@ -56,3 +56,6 @@ DELETE
 FROM "user"
 WHERE uid = $1
 RETURNING *;
+
+-- name: GetUsersByRootLocationID :many
+SELECT * FROM "user" WHERE current_root_location_id = $1;
