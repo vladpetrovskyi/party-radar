@@ -232,7 +232,7 @@ func (app *Application) updateLocationAvailability(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		locationStatus = "closed"
+		locationStatus = "opened"
 	} else {
 		if closingTime, err := app.q.GetLocationClosingTimeByLocationID(c, locationID); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -247,7 +247,7 @@ func (app *Application) updateLocationAvailability(c *gin.Context) {
 			return
 		}
 
-		locationStatus = "opened"
+		locationStatus = "closed"
 	}
 
 	go app.sendLocationAvailabilityUpdateNotification(locationID, locationStatus)
