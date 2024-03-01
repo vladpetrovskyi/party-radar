@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:party_radar/profile/dialogs/delete_account.dart';
 import 'package:party_radar/profile/widgets/profile_widget.dart';
 import 'package:party_radar/common/services/image_service.dart';
 import 'package:party_radar/common/services/user_service.dart';

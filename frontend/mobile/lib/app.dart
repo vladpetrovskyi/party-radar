@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth_pkg;
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:party_radar/common/flavors/flavor_banner.dart';
