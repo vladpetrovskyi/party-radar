@@ -295,15 +295,16 @@ func (app *Application) createPost(c *gin.Context) {
 		return
 	}
 
-	go app.sendNewPostNotification(user.ID, *user.Username)
+	go app.sendNewPostNotification(user.ID, *user.Username, user.CurrentRootLocationID)
 
 	c.Status(http.StatusOK)
 }
 
-func (app *Application) sendNewPostNotification(userID int64, username string) {
+func (app *Application) sendNewPostNotification(userID int64, username string, currentRootLocationID *int64) {
 	userFriends, err := app.q.GetUserFriendsByRootLocationIDAndTopicName(app.ctx, db.GetUserFriendsByRootLocationIDAndTopicNameParams{
-		ID:   userID,
-		Name: "new-posts",
+		ID:                    userID,
+		Name:                  "new-posts",
+		CurrentRootLocationID: currentRootLocationID,
 	})
 	if err != nil {
 		app.log.Err(err)

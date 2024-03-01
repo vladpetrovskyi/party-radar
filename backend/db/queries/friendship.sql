@@ -85,5 +85,5 @@ FROM "user" u
 WHERE u.id != $1
   AND (f.user_1_id = $1 OR f.user_2_id = $1)
   AND u.fcm_token IS NOT NULL
-  AND u.current_root_location_id = (SELECT current_root_location_id FROM "user" WHERE id = $1)
+  AND u.current_root_location_id = $3
   AND t.name = $2;
