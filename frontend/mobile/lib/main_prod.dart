@@ -41,7 +41,7 @@ void main() async {
 }
 
 Future<void> _initFCM() async {
-  await FirebaseMessaging.instance.requestPermission(provisional: true);
+  await FirebaseMessaging.instance.requestPermission();
 
   await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
     alert: true,
