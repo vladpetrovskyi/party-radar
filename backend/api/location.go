@@ -250,12 +250,12 @@ func (app *Application) updateLocationAvailability(c *gin.Context) {
 		locationStatus = "closed"
 	}
 
-	go app.sendLocationAvailabilityUpdateNotification(locationID, locationStatus)
+	go app.sendLocationAvailabilityUpdateNotification(locationID, locationStatus, c)
 
 	c.Status(http.StatusOK)
 }
 
-func (app *Application) sendLocationAvailabilityUpdateNotification(locationID int64, locationStatus string) {
+func (app *Application) sendLocationAvailabilityUpdateNotification(locationID int64, locationStatus string, c *gin.Context) {
 
 	location, err := app.q.GetLocation(app.ctx, locationID)
 	if err != nil {
@@ -269,9 +269,15 @@ func (app *Application) sendLocationAvailabilityUpdateNotification(locationID in
 		return
 	}
 
+	reportingUser, err := app.getUserFromContext(c)
+	if err != nil {
+		app.log.Err(err)
+		return
+	}
+
 	messages := make([]*messaging.Message, 0)
 	for _, user := range users {
-		if user.FcmToken != nil {
+		if user.FcmToken != nil && (reportingUser.FcmToken == nil || *reportingUser.FcmToken != *user.FcmToken) {
 			message := messaging.Message{
 				Notification: &messaging.Notification{
 					Title: "Location status changed",
