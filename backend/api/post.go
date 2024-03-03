@@ -22,6 +22,12 @@ type PostDTO struct {
 	Capacity  *int64    `json:"capacity"`
 }
 
+type incomingPostDTO struct {
+	LocationID *int64 `json:"location_id"`
+	Type       string `json:"post_type"`
+	Capacity   *int64 `json:"capacity"`
+}
+
 func (app *Application) getPosts(c *gin.Context) {
 	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
 	if err != nil {
@@ -227,11 +233,7 @@ func (app *Application) getPostViewsCount(c *gin.Context) {
 }
 
 func (app *Application) createPost(c *gin.Context) {
-	post := struct {
-		LocationID *int64 `json:"location_id"`
-		PostType   string `json:"post_type"`
-		Capacity   *int64 `json:"capacity"`
-	}{}
+	var post incomingPostDTO
 
 	err := c.BindJSON(&post)
 	if err != nil {
@@ -246,7 +248,7 @@ func (app *Application) createPost(c *gin.Context) {
 		return
 	}
 
-	postTypeId, err := app.q.GetPostTypeId(app.ctx, post.PostType)
+	postTypeId, err := app.q.GetPostTypeId(app.ctx, post.Type)
 	if err != nil {
 		app.log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -302,12 +304,12 @@ func (app *Application) createPost(c *gin.Context) {
 		currentRootLocationID = post.LocationID
 	}
 
-	go app.sendNewPostNotification(user.ID, *user.Username, currentRootLocationID)
+	go app.sendNewPostNotification(user.ID, *user.Username, currentRootLocationID, post)
 
 	c.Status(http.StatusOK)
 }
 
-func (app *Application) sendNewPostNotification(userID int64, username string, currentRootLocationID *int64) {
+func (app *Application) sendNewPostNotification(userID int64, username string, currentRootLocationID *int64, post incomingPostDTO) {
 	userFriends, err := app.q.GetUserFriendsByRootLocationIDAndTopicName(app.ctx, db.GetUserFriendsByRootLocationIDAndTopicNameParams{
 		ID:                    userID,
 		Name:                  "new-posts",
@@ -318,13 +320,38 @@ func (app *Application) sendNewPostNotification(userID int64, username string, c
 		return
 	}
 
+	var body string
+	if post.Type == "start" {
+		body = "Arrived at the club!"
+	} else if post.Type == "end" {
+		body = "Left the club"
+	} else {
+		location, err := app.getAndMapLocationFromDb(*post.LocationID)
+		if err != nil {
+			app.log.Err(err)
+			return
+		}
+
+		parentLocation, err := app.buildLocationFromChild(location)
+		if err != nil {
+			app.log.Err(err)
+			return
+		}
+
+		if parentLocation.ParentID == nil {
+			parentLocation = parentLocation.Children[0]
+		}
+
+		body = parentLocation.Name + ": " + parentLocation.Children[0].Name + " " + *parentLocation.Children[0].Emoji
+	}
+
 	messages := make([]*messaging.Message, 0)
 	for _, userFriend := range userFriends {
 		if userFriend.FcmToken != nil {
 			message := messaging.Message{
 				Notification: &messaging.Notification{
-					Title: "New post",
-					Body:  username + " has updated their location",
+					Title: username,
+					Body:  body,
 				},
 				Data: map[string]string{
 					"view": "posts",
