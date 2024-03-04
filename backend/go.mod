@@ -6,7 +6,7 @@ require (
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/Blank-Xu/sql-adapter v1.0.0
 	github.com/casbin/casbin/v2 v2.82.0
-	github.com/gin-contrib/logger v1.0.0
+	github.com/gin-contrib/logger v1.1.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/jackc/pgx/v5 v5.5.3
 	github.com/joeshaw/envdecode v0.0.0-20200121155833-099f1fc765bd
@@ -24,7 +24,7 @@ require (
 	cloud.google.com/go/iam v1.1.6 // indirect
 	cloud.google.com/go/longrunning v0.5.5 // indirect
 	cloud.google.com/go/storage v1.38.0 // indirect
-	github.com/bytedance/sonic v1.11.0 // indirect
+	github.com/bytedance/sonic v1.11.2 // indirect
 	github.com/casbin/govaluate v1.1.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.1 // indirect
@@ -47,7 +47,7 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20231201235250-de7065d80cb9 // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.6 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/kr/text v0.1.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -67,7 +67,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.23.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.7.0 // indirect
-	golang.org/x/crypto v0.19.0 // indirect
+	golang.org/x/crypto v0.20.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/oauth2 v0.17.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
