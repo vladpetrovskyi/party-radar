@@ -5,7 +5,7 @@ go 1.22
 require (
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/Blank-Xu/sql-adapter v1.0.0
-	github.com/casbin/casbin/v2 v2.82.0
+	github.com/casbin/casbin/v2 v2.85.0
 	github.com/gin-contrib/logger v1.0.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/jackc/pgx/v5 v5.5.3
