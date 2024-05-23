@@ -17,6 +17,8 @@ services:
       - ./config/promtail.yaml:/etc/promtail/docker-config.yaml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock
+      - /home/deployer/grafana/data:/var/lib/grafana
+      - /home/deployer/grafana/conf:/etc/grafana
     command: -config.file=/etc/promtail/docker-config.yaml
     depends_on:
       - loki
