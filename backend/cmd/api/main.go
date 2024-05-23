@@ -28,6 +28,9 @@ func main() {
 	defer stop()
 
 	var logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.TimeOnly})
+	if c.Server.Debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
 
 	logger.Info().Msg("Connecting to DB...")
 	psqlInfo := fmt.Sprintf(dmtDBString, c.DB.Host, c.DB.Port, c.DB.Username, c.DB.Password, c.DB.DBName)
