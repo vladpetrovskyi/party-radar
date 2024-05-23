@@ -4,7 +4,6 @@ import (
 	"firebase.google.com/go/messaging"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"party-time/db"
 	"strconv"
@@ -14,19 +13,19 @@ import (
 func (app *Application) getFriendships(c *gin.Context) {
 	status := c.Query("status")
 	if len(status) == 0 {
-		log.Debug().Ctx(c).Msg("Empty friendship status")
+		app.log.Debug().Ctx(c).Msg("Empty friendship status")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Status cannot be empty"})
 		return
 	}
 	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
 	if err != nil {
-		log.Debug().Ctx(c).Msg("Offset is not parsable")
+		app.log.Debug().Ctx(c).Msg("Offset is not parsable")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	if err != nil {
-		log.Debug().Ctx(c).Msg("Limit is not parsable")
+		app.log.Debug().Ctx(c).Msg("Limit is not parsable")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -44,7 +43,7 @@ func (app *Application) getFriendships(c *gin.Context) {
 			Limit:   int32(limit),
 		})
 		if err != nil {
-			log.Debug().Ctx(c).Err(err).Msg("Could not get friendship requests")
+			app.log.Debug().Ctx(c).Err(err).Msg("Could not get friendship requests")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -57,7 +56,7 @@ func (app *Application) getFriendships(c *gin.Context) {
 			Limit:  int32(limit),
 		})
 		if err != nil {
-			log.Debug().Ctx(c).Err(err).Msg("Could not get friendships")
+			app.log.Debug().Ctx(c).Err(err).Msg("Could not get friendships")
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -80,7 +79,7 @@ func (app *Application) getFriendships(c *gin.Context) {
 		return
 	}
 
-	log.Debug().Ctx(c).Msg("Unknown friendship status")
+	app.log.Debug().Ctx(c).Msg("Unknown friendship status")
 	c.JSON(http.StatusBadRequest, gin.H{"message": "Friendship status unrecognized"})
 }
 

@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"party-time/db"
 )
@@ -119,11 +118,11 @@ func (app *Application) getUser(c *gin.Context) {
 	username := c.Query("username")
 	userUID := c.Query("userUID")
 	if len(username) != 0 {
-		log.Debug().Msgf("Get user by username: %s", username)
+		app.log.Debug().Msgf("Get user by username: %s", username)
 
 		user, err := app.q.GetUserByUsername(app.ctx, &username)
 		if err != nil {
-			log.Debug().Msgf("User by username %s not found. Error: %v", username, err)
+			app.log.Debug().Msgf("User by username %s not found. Error: %v", username, err)
 			c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
 			return
 		}
@@ -217,11 +216,11 @@ func (app *Application) updateUserFCMToken(c *gin.Context) {
 func (app *Application) getUserByUsername(c *gin.Context) {
 	username := c.Param("username")
 
-	log.Debug().Msgf("Get user by username: %s", username)
+	app.log.Debug().Msgf("Get user by username: %s", username)
 
 	user, err := app.q.GetUserByUsername(app.ctx, &username)
 	if err != nil {
-		log.Debug().Msgf("User by username %s not found. Error: %v", username, err)
+		app.log.Debug().Msgf("User by username %s not found. Error: %v", username, err)
 		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
 		return
 	}

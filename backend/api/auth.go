@@ -10,7 +10,11 @@ import (
 
 func (app *Application) authorizeViaFirebase(obj, act string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token := app.verifyToken(c)
+		token, verified := app.verifyToken(c)
+		if !verified {
+			app.respondWithError(http.StatusUnauthorized, "Unauthorized", c)
+			return
+		}
 
 		ok, err := app.enforce(token.UID, obj, act)
 		if err != nil {
@@ -32,7 +36,7 @@ func (app *Application) authenticateViaFirebase() gin.HandlerFunc {
 	}
 }
 
-func (app *Application) verifyToken(c *gin.Context) (token *auth.Token) {
+func (app *Application) verifyToken(c *gin.Context) (token *auth.Token, verified bool) {
 	authHeader := strings.SplitN(c.GetHeader("Authorization"), " ", 2)
 	if len(authHeader) != 2 || authHeader[0] != "Bearer" {
 		app.respondWithError(http.StatusUnauthorized, "Unauthorized", c)
@@ -52,7 +56,7 @@ func (app *Application) verifyToken(c *gin.Context) (token *auth.Token) {
 	}
 
 	c.Set("tokenUID", token.UID)
-	return
+	return token, true
 }
 
 func (app *Application) enforce(sub string, obj string, act string) (bool, error) {

@@ -2,7 +2,7 @@ FROM golang:alpine AS builder
 LABEL authors="vlad.petrovskyi"
 WORKDIR /go/src/app
 
-RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.25.0
 
 COPY go.mod .
 COPY go.sum .
