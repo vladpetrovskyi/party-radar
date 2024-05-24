@@ -16,7 +16,7 @@ type ConfServer struct {
 	TimeoutRead  time.Duration `env:"SERVER_TIMEOUT_READ,default=5s"`
 	TimeoutWrite time.Duration `env:"SERVER_TIMEOUT_WRITE,default=10s"`
 	TimeoutIdle  time.Duration `env:"SERVER_TIMEOUT_IDLE,default=60s"`
-	Debug        bool          `env:"SERVER_DEBUG"`
+	Debug        bool          `env:"SERVER_DEBUG,default=false"`
 	Environment  string        `env:"SERVER_ENVIRONMENT,default=local"`
 }
 
