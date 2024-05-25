@@ -34,7 +34,9 @@ A Flutter application for Android and iOS devices.
 
 ### Startup
 
-To start the application run the [local docker-compose file](./backend/docker-compose.local.yaml)
+To start the application locally:
+1. run the [local docker-compose file](./backend/docker-compose.local.yaml)
+2. run the [main_local.dart](./frontend/mobile/lib/main_local.dart) on the device of your choice
 
 ### Deployment
 
