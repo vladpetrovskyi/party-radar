@@ -10,6 +10,7 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-contrib/logger"
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
 	"party-time/config"
 	sqlc "party-time/db"
@@ -44,6 +45,7 @@ func New(c *config.Conf,
 
 	app.setupRBAC()
 	app.setupRoutes()
+	app.setupAutoLogout()
 
 	msg, err := fb.Messaging(ctx)
 	if err != nil {
@@ -169,4 +171,84 @@ func (app *Application) setupRBAC() {
 	app.log.Info().Msg("RBAC set up finished!")
 
 	app.n4cer = enforcer
+}
+
+func (app *Application) setupAutoLogout() {
+	app.log.Info().Msg("Creating a scheduled auto logout task...")
+
+	c := cron.New()
+	_, err := c.AddFunc("0 0 * * 3", func() {
+		app.log.Info().Msg("Starting scheduled auto logout task...")
+
+		rootLocationType := "root"
+		rootLocations, err := app.q.GetLocationsByElementType(app.ctx, &rootLocationType)
+		if err != nil {
+			app.log.Err(err).Msg("Could not get root locations by element type while executing scheduled auto logout task")
+			return
+		}
+
+		postTypeId, err := app.q.GetPostTypeId(app.ctx, "end")
+		if err != nil {
+			app.log.Err(err).Msgf("Could not get post type ID while executing scheduled auto logout task")
+			return
+		}
+
+		tx, err := app.db.BeginTx(app.ctx, nil)
+		if err != nil {
+			app.log.Err(err).Msg("Could not create a transaction while executing scheduled auto logout task")
+			return
+		}
+		defer tx.Rollback()
+		withTx := app.q.WithTx(tx)
+
+		for _, location := range rootLocations {
+			users, err := app.q.GetUsersByRootLocationID(app.ctx, &location.ID)
+			if err != nil {
+				app.log.Err(err).Msg("Could not get users by root location ID while executing scheduled auto logout task")
+				return
+			}
+
+			for _, user := range users {
+				if err := withTx.UpdateUserLocation(app.ctx, sqlc.UpdateUserLocationParams{
+					ID:                user.ID,
+					CurrentLocationID: nil,
+				}); err != nil {
+					app.log.Err(err).Msgf("Could not update location of user with ID = %v while executing scheduled auto logout task", user.ID)
+					return
+				}
+
+				if err = withTx.UpdateUserRootLocation(app.ctx, sqlc.UpdateUserRootLocationParams{
+					ID:                    user.ID,
+					CurrentRootLocationID: nil,
+				}); err != nil {
+					app.log.Err(err).Msgf("Could not update root location of user with ID = %v while executing scheduled auto logout task", user.ID)
+					return
+				}
+
+				if err := withTx.CreatePost(app.ctx, sqlc.CreatePostParams{
+					UserID:     user.ID,
+					LocationID: location.ID,
+					PostTypeID: postTypeId,
+				}); err != nil {
+					app.log.Err(err).Msgf("Could not create logout post for user with ID = %v while executing scheduled auto logout task", user.ID)
+					return
+				}
+			}
+		}
+
+		if err = tx.Commit(); err != nil {
+			app.log.Err(err).Msg("Could not commit a transaction while executing scheduled auto logout task")
+			return
+		}
+
+		app.log.Info().Msg("Scheduled auto logout task successfully completed!")
+	})
+	if err != nil {
+		app.log.Err(err).Msg("Could not create a scheduled auto logout task")
+		return
+	}
+
+	c.Start()
+
+	app.log.Info().Msg("Auto logout task successfully created!")
 }
