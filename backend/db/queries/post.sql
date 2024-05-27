@@ -5,7 +5,7 @@ FROM post p
          INNER JOIN location l ON p.location_id = l.id
          LEFT JOIN "user" u ON p.user_id = u.id
 WHERE ((l.root_location_id = $1 AND p.post_type_id = 2) OR (l.id = $1 AND p.post_type_id IN (1, 3)))
-  AND p.timestamp >= now() - INTERVAL '3 DAYS'
+  -- AND p.timestamp >= now() - INTERVAL '3 DAYS' -- this adds a 3 day limit for posts in feed
   AND p.user_id IN (SELECT fs1.user_1_id AS user_id
                     FROM friendship fs1
                     WHERE fs1.user_2_id = $2
