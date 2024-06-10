@@ -5,13 +5,14 @@ go 1.22
 require (
 	firebase.google.com/go v3.13.0+incompatible
 	github.com/Blank-Xu/sql-adapter v1.0.0
-	github.com/casbin/casbin/v2 v2.89.0
+	github.com/casbin/casbin/v2 v2.95.0
 	github.com/gin-contrib/logger v1.1.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/joeshaw/envdecode v0.0.0-20200121155833-099f1fc765bd
 	github.com/lib/pq v1.10.9
 	github.com/pressly/goose/v3 v3.20.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/zerolog v1.33.0
 	google.golang.org/api v0.181.0
 )
@@ -58,7 +59,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/sethvargo/go-retry v0.2.4 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
