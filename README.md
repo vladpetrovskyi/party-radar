@@ -4,7 +4,7 @@
 ## Project purpose
 
 This app is a project in production, thus available to download 
-from the official stores (currently only AppStore supported). 
+from the official stores (AppStore and Play Store). 
 It is supposed to help people who go to parties at bigger clubs 
 find each other.
 
