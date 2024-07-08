@@ -51,7 +51,7 @@ jobs:
           dir: "backend/"
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5.3.0
+        uses: docker/build-push-action@v6.3.0
         with:
           context: ./backend
           push: true
