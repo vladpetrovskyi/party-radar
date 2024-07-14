@@ -24,9 +24,12 @@ type Location struct {
 	ImageID              *int64     `json:"image_id"`
 	IsCapacitySelectable *bool      `json:"is_capacity_selectable"`
 	IsCloseable          bool       `json:"is_closeable"`
+	ClosedAt             *time.Time `json:"closed_at"`
 	DeletedAt            *time.Time `json:"deleted_at"`
 	Children             []Location `json:"children"`
 	ParentID             *int64     `json:"-"`
+	CreatedBy            *string    `json:"created_by"`
+	IsOfficial           bool       `json:"is_official"`
 }
 
 func (app *Application) getLocations(c *gin.Context) {
@@ -44,7 +47,9 @@ func (app *Application) getLocations(c *gin.Context) {
 	c.JSON(200, locations)
 }
 
-func (app *Application) getLocation(c *gin.Context) {
+// Deprecated
+// No children should be returned with location, there is another endpoint for it
+func (app *Application) getLocationByID(c *gin.Context) {
 	locationId, err := app.readIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
@@ -53,19 +58,80 @@ func (app *Application) getLocation(c *gin.Context) {
 
 	rootLocationRow, err := app.getAndMapLocationFromDb(locationId)
 	if err != nil {
-		app.log.Debug().AnErr("[ERROR] getLocation -> getAndMapLocationFromDb", err)
+		app.log.Debug().AnErr("[ERROR] getLocationByID -> getAndMapLocationFromDb", err)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
 	rootLocation, err := app.buildLocationFromParent(rootLocationRow)
 	if err != nil {
-		app.log.Debug().AnErr("[ERROR] getLocation -> buildLocationFromParent", err)
+		app.log.Debug().AnErr("[ERROR] getLocationByID -> buildLocationFromParent", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, rootLocation)
+}
+
+func (app *Application) getSelectedLocationIDs(c *gin.Context) {
+	user, err := app.getUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
+		return
+	}
+
+	if user.CurrentLocationID == nil {
+		c.JSON(http.StatusNoContent, gin.H{"msg": "user is not at any location currently"})
+		return
+	}
+
+	location, err := app.q.GetLocation(c, *user.CurrentLocationID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		return
+	}
+
+	idArr, err := app.buildUpstreamIDListFromLocation(location, []int64{location.ID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, idArr)
+}
+
+func (app *Application) getLocationByIDV2(c *gin.Context) {
+	locationId, err := app.readIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
+		return
+	}
+
+	rootLocation, err := app.q.GetLocation(app.ctx, locationId)
+	if err != nil {
+		app.log.Debug().AnErr("[ERROR] getLocationByID -> getAndMapLocationFromDb", err)
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, rootLocation)
+}
+
+func (app *Application) getLocationChildren(c *gin.Context) {
+	locationId, err := app.readIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
+		return
+	}
+
+	locationChildren, err := app.q.GetLocationChildren(c, &locationId)
+	if err != nil {
+		app.log.Debug().AnErr("[ERROR] getLocationChildren", err)
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, locationChildren)
 }
 
 func (app *Application) getLocationUserCount(c *gin.Context) {
@@ -153,6 +219,20 @@ func (app *Application) buildLocationFromChild(location Location) (Location, err
 	return parentLocation, err
 }
 
+func (app *Application) buildUpstreamIDListFromLocation(location db.GetLocationRow, idArr []int64) ([]int64, error) {
+	if location.ParentID == nil {
+		return idArr, nil
+	}
+	parentLocationRow, err := app.q.GetLocation(app.ctx, *location.ParentID)
+	if err != nil {
+		return idArr, err
+	}
+
+	idArr = append(idArr, parentLocationRow.ID)
+	idArr, err = app.buildUpstreamIDListFromLocation(parentLocationRow, idArr)
+	return idArr, err
+}
+
 func (app *Application) mapLocationChild(dbLocation db.GetLocationChildrenRow) Location {
 	return Location{
 		ID:                   dbLocation.ID,
@@ -165,10 +245,13 @@ func (app *Application) mapLocationChild(dbLocation db.GetLocationChildrenRow) L
 		RowIndex:             dbLocation.RowIndex,
 		ColumnsNumber:        dbLocation.ColumnsNumber,
 		DialogName:           dbLocation.DialogName,
+		ImageID:              dbLocation.ImageID,
 		IsCapacitySelectable: dbLocation.IsCapacitySelectable,
 		IsCloseable:          dbLocation.IsCloseable,
-		ImageID:              dbLocation.ImageID,
+		ClosedAt:             dbLocation.ClosedAt,
+		DeletedAt:            dbLocation.DeletedAt,
 		Children:             []Location{},
+		ParentID:             dbLocation.ParentID,
 	}
 }
 
@@ -187,12 +270,17 @@ func (app *Application) mapLocation(dbLocation db.GetLocationRow) Location {
 		ImageID:              dbLocation.ImageID,
 		IsCapacitySelectable: dbLocation.IsCapacitySelectable,
 		IsCloseable:          dbLocation.IsCloseable,
+		ClosedAt:             dbLocation.ClosedAt,
 		DeletedAt:            dbLocation.DeletedAt,
 		Children:             []Location{},
 		ParentID:             dbLocation.ParentID,
+		CreatedBy:            dbLocation.CreatedBy,
+		IsOfficial:           dbLocation.IsOfficial,
 	}
 }
 
+// Deprecated
+// TODO: GetLocationByID shall be used instead
 func (app *Application) getLocationAvailability(c *gin.Context) {
 	locationID, err := app.readIDParam(c)
 	if err != nil {
@@ -209,6 +297,8 @@ func (app *Application) getLocationAvailability(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"closed_at": closingTime})
 }
 
+// Deprecated
+// TODO: UpdateLocation shall be used instead!
 func (app *Application) updateLocationAvailability(c *gin.Context) {
 	locationID, err := app.readIDParam(c)
 	if err != nil {
@@ -256,7 +346,6 @@ func (app *Application) updateLocationAvailability(c *gin.Context) {
 }
 
 func (app *Application) sendLocationAvailabilityUpdateNotification(locationID int64, locationStatus string, c *gin.Context) {
-
 	location, err := app.q.GetLocation(app.ctx, locationID)
 	if err != nil {
 		app.log.Err(err)

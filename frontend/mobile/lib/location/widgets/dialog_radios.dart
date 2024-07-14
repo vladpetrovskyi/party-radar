@@ -23,7 +23,7 @@ class DialogRadiosWidget extends StatelessWidget {
     for (int i = 0; i < locations.length; i++) {
       columnList.elementAt(locations[i].columnIndex).add(
             RadioListTileWidget(
-              locationId: locations[i].id,
+              locationId: locations[i].id!,
               locationName: locations[i].name,
               selectedValue: selectedRadio,
               onChanged: onChangeSelectedRadio,

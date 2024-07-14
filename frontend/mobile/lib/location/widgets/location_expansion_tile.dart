@@ -1,92 +1,130 @@
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/models.dart';
+import 'package:party_radar/common/services/location_service.dart';
+import 'package:party_radar/location/location_page.dart';
+import 'package:party_radar/location/widgets/editable_location_list_tile.dart';
 import 'package:party_radar/location/widgets/location_card.dart';
-import 'package:party_radar/location/widgets/user_dots_widget.dart';
 
-class LocationExpansionTile extends StatelessWidget {
+class LocationExpansionTile extends EditableLocationListTile {
   const LocationExpansionTile({
     super.key,
-    required this.location,
-    required this.onChangedLocation,
-    this.currentUserLocationId,
-    this.canPostUpdates = false,
+    required super.location,
+    required super.title,
+    super.isEditMode = false,
+    super.textEditingController,
   });
-
-  final Location location;
-  final Function() onChangedLocation;
-  final int? currentUserLocationId;
-  final bool canPostUpdates;
 
   @override
   Widget build(BuildContext context) {
-    List visibleLocationChildren = location.children
-        .where((element) => element.deletedAt == null)
-        .toList();
+    final TextEditingController newLocationNameFieldController =
+        TextEditingController();
+
     return ExpansionTile(
-      title: _buildTitle(context),
-      subtitle: UserDotsWidget(locationId: location.id),
+      title: getTitle(),
+      subtitle: getSubtitle(),
+      trailing: getTrailing(),
       children: [
-        GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 2.0,
-            childAspectRatio: 1.5,
-          ),
-          shrinkWrap: true,
-          physics: const ClampingScrollPhysics(),
-          padding: const EdgeInsets.all(10.0),
-          itemCount: visibleLocationChildren.length,
-          itemBuilder: (context, index) {
-            if (visibleLocationChildren[index].deletedAt == null) {
-              return LocationCard(
-                location: visibleLocationChildren[index],
-                onChangedLocation: onChangedLocation,
-                isSelected: _checkContainsSelectedLocation(
-                    visibleLocationChildren[index]),
-                isActive: canPostUpdates,
-              );
+        FutureBuilder(
+          future: LocationService.getLocationChildren(location.id,
+              visibleOnly: true),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const Text("Could not build locations, an error occurred");
             }
-            return Container();
+            if (snapshot.hasData) {
+              return _getGridView(
+                  snapshot.data!, newLocationNameFieldController);
+            }
+            return const CircularProgressIndicator();
           },
         )
       ],
     );
   }
 
-  Widget _buildTitle(BuildContext context) {
-    bool containsSelectedLocation = _checkContainsSelectedLocation(location);
+  Widget _getGridView(List<Location> locationChildren,
+          TextEditingController newLocationNameFieldController) =>
+      GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 2.0,
+          childAspectRatio: 1.5,
+        ),
+        shrinkWrap: true,
+        physics: const ClampingScrollPhysics(),
+        padding: const EdgeInsets.all(10.0),
+        itemCount: isEditMode
+            ? (locationChildren.length + 1)
+            : locationChildren.length,
+        itemBuilder: (context, index) {
+          if (isEditMode && index == locationChildren.length) {
+            return EditableLocationCard(
+                newLocationNameFieldController: newLocationNameFieldController);
+          }
 
-    return Text(
-      location.emoji != null
-          ? "${location.emoji} ${location.name}"
-          : location.name,
-      style: TextStyle(
-        fontSize: 28,
-        color: containsSelectedLocation
-            ? Theme.of(context).colorScheme.primary
-            : null,
-        fontWeight: containsSelectedLocation ? FontWeight.bold : null,
+          if (locationChildren[index].deletedAt == null) {
+            return LocationCard(
+              location: locationChildren[index],
+              isEditMode: isEditMode,
+            );
+          }
+          return Container();
+        },
+      );
+
+  @override
+  Widget? getTrailing() => isEditMode
+      ? Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [const Icon(Icons.arrow_drop_down), popupMenu],
+        )
+      : null;
+}
+
+class EditableLocationCard extends StatelessWidget {
+  const EditableLocationCard(
+      {super.key, required this.newLocationNameFieldController});
+
+  final TextEditingController newLocationNameFieldController;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.hardEdge,
+      child: InkWell(
+        onTap: () => showDialog(
+          context: context,
+          builder: (context) => PartyStateDialog(
+            onAccept: () {},
+            title: "Add location card",
+            content: _createNewLocationDialogContent(),
+          ),
+        ),
+        child: _buildCardName(),
       ),
     );
   }
 
-  bool _checkContainsSelectedLocation(Location location) {
-    if (location.id == currentUserLocationId) {
-      return true;
-    }
+  Widget _buildCardName() => const Padding(
+        padding: EdgeInsets.only(left: 5, right: 5, top: 2, bottom: 5),
+        child: Icon(Icons.add),
+      );
 
-    for (Location child in location.children) {
-      if (child.children.isNotEmpty) {
-        if (_checkContainsSelectedLocation(child)) {
-          return true;
-        }
-      } else if (child.id == currentUserLocationId) {
-        return true;
-      }
-    }
-
-    return false;
-  }
+  Widget _createNewLocationDialogContent() => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text("Please provide a name for your new location card"),
+          const SizedBox(height: 12),
+          Form(
+            child: TextFormField(
+              controller: newLocationNameFieldController,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              decoration: const InputDecoration(
+                label: Text('Name'),
+                border: OutlineInputBorder(),
+              ),
+            ),
+          )
+        ],
+      );
 }
-
-//

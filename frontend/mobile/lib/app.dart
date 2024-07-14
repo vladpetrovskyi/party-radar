@@ -3,13 +3,12 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:party_radar/common/flavors/flavor_banner.dart';
-import 'package:party_radar/common/models.dart';
-import 'package:party_radar/common/services/location_service.dart';
-import 'package:party_radar/common/services/user_service.dart';
+import 'package:party_radar/common/providers.dart';
 import 'package:party_radar/feed/feed_page.dart';
 import 'package:party_radar/location/location_page.dart';
 import 'package:party_radar/login/login_widget.dart';
 import 'package:party_radar/profile/user_profile_page.dart';
+import 'package:provider/provider.dart';
 
 class PartyRadarApp extends StatefulWidget {
   const PartyRadarApp({super.key});
@@ -53,11 +52,9 @@ class _MainPageState extends State<MainPage> {
   int _currentPageIndex = 1;
   int _initialTabIndex = 0;
 
-  Location? rootLocation;
-
   @override
   void initState() {
-    initClub(null);
+    Provider.of<LocationProvider>(context, listen: false).updateLocation(null);
 
     setupInteractedMessage();
 
@@ -67,69 +64,46 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return FlavorBanner(
-      child: Scaffold(
-        body: [
-          if (rootLocation != null)
-            FeedPage(locationId: rootLocation!.id)
-          else
-            Container(),
-          LocationPage(
-            rootLocation: rootLocation,
-            onQuitRootLocation: () => setState(() {
-              _currentPageIndex = 1;
-              rootLocation = null;
-            }),
-            onChangeLocation: (locationId) => initClub(locationId),
-          ),
-          UserProfilePage(
-            initialTabIndex: _initialTabIndex,
-            onTabChanged: (index) => _initialTabIndex = index,
-          ),
-        ][_currentPageIndex],
-        bottomNavigationBar: NavigationBar(
-          height: 65,
-          onDestinationSelected: (int index) {
-            setState(() {
-              _currentPageIndex = index;
-            });
-          },
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: <Widget>[
-            NavigationDestination(
-              icon: const Icon(Icons.history),
-              label: 'Feed',
-              enabled: rootLocation != null,
+      child: Consumer<LocationProvider>(
+        builder: (BuildContext context, LocationProvider provider, Widget? child) => Scaffold(
+          body: [
+            provider.rootLocation != null
+                ? FeedPage(locationId: provider.rootLocation!.id!)
+                : Container(),
+            LocationPage(provider.rootLocation),
+            UserProfilePage(
+              initialTabIndex: _initialTabIndex,
+              onTabChanged: (index) => _initialTabIndex = index,
             ),
-            const NavigationDestination(
-              icon: Icon(Icons.share_location_outlined),
-              label: 'Location',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              label: 'Profile',
-            )
-          ],
-          selectedIndex: _currentPageIndex,
+          ][_currentPageIndex],
+          bottomNavigationBar: NavigationBar(
+            height: 65,
+            onDestinationSelected: (int index) {
+              setState(() {
+                _currentPageIndex = index;
+              });
+            },
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            destinations: <Widget>[
+              NavigationDestination(
+                icon: const Icon(Icons.history),
+                label: 'Feed',
+                enabled: provider.rootLocation != null,
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.share_location_outlined),
+                label: 'Location',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.person_outline),
+                label: 'Profile',
+              )
+            ],
+            selectedIndex: _currentPageIndex,
+          ),
         ),
       ),
     );
-  }
-
-  void initClub(int? locationId) async {
-    int? userRootLocationId;
-    if (locationId != null ||
-        (userRootLocationId = (await UserService.getUser())?.rootLocationId) !=
-            null) {
-      var userLocation =
-      await LocationService.getLocation(locationId ?? userRootLocationId);
-      setState(() {
-        rootLocation = userLocation;
-      });
-    } else {
-      setState(() {
-        rootLocation = null;
-      });
-    }
   }
 
   Future<void> setupInteractedMessage() async {
@@ -145,6 +119,7 @@ class _MainPageState extends State<MainPage> {
 
   void _handleMessage(RemoteMessage? message) {
     if (message != null) {
+      var rootLocation = Provider.of<LocationProvider>(context, listen: false).rootLocation;
       if (message.data['view'] == 'friendship-requests') {
         setState(() {
           _currentPageIndex = 2;

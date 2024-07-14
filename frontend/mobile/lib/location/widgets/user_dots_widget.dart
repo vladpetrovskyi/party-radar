@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:party_radar/common/services/location_service.dart';
 
 class UserDotsWidget extends StatefulWidget {
-  const UserDotsWidget(
-      {super.key,
-        required this.locationId,
-        this.alignment = WrapAlignment.start});
+  const UserDotsWidget({
+    super.key,
+    required this.locationId,
+    this.alignment = WrapAlignment.start,
+  });
 
   final int locationId;
   final WrapAlignment alignment;
@@ -21,9 +22,7 @@ class _UserDotsWidgetState extends State<UserDotsWidget> {
       future: LocationService.getLocationUserCount(widget.locationId),
       builder: (context, snapshot) {
         return snapshot.hasData
-            ? UserDots(
-            userCount: snapshot.data!,
-            alignment: widget.alignment)
+            ? UserDots(userCount: snapshot.data!, alignment: widget.alignment)
             : Container();
       },
     );
@@ -42,7 +41,7 @@ class UserDots extends StatelessWidget {
       alignment: alignment ?? WrapAlignment.start,
       children: List.generate(
         userCount,
-            (index) => Padding(
+        (index) => Padding(
           padding: const EdgeInsets.all(1.0),
           child: Icon(
             Icons.circle,

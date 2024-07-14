@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:party_radar/app.dart';
 import 'package:party_radar/common/flavors/flavor_config.dart';
 import 'package:party_radar/firebase_options_dev.dart';
+import 'package:provider/provider.dart';
 
+import 'common/providers.dart';
 import 'common/services/user_service.dart';
 
 void main() async {
@@ -20,11 +22,20 @@ void main() async {
     flavor: Flavor.local,
     color: Colors.deepPurpleAccent,
     values: FlavorValues(
-      baseUrl: "http://${Platform.isAndroid ? '10.0.2.2' : 'localhost'}:8080/api",
+      baseUrl:
+          "http://${Platform.isAndroid ? '10.0.2.2' : 'localhost'}:8080/api",
     ),
   );
 
-  runApp(const PartyRadarApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => LocationProvider()),
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+      ],
+      child: const PartyRadarApp(),
+    ),
+  );
 }
 
 Future<void> _initFCM() async {

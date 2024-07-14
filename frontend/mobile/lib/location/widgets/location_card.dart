@@ -1,24 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/models.dart';
+import 'package:party_radar/common/providers.dart';
 import 'package:party_radar/common/services/location_service.dart';
 import 'package:party_radar/location/dialogs/location_selection_dialog.dart';
 import 'package:party_radar/location/dialogs/builders/share_location_dialog_builder.dart';
 import 'package:party_radar/location/widgets/elapsed_time.dart';
 import 'package:party_radar/location/widgets/user_dots_widget.dart';
+import 'package:provider/provider.dart';
 
 class LocationCard extends StatefulWidget {
-  const LocationCard({
-    super.key,
-    required this.location,
-    required this.onChangedLocation,
-    this.isSelected = false,
-    this.isActive = false,
-  });
+  const LocationCard(
+      {super.key, required this.location, this.isEditMode = false});
 
   final Location location;
-  final Function() onChangedLocation;
-  final bool isSelected;
-  final bool isActive;
+  final bool isEditMode;
 
   @override
   State<LocationCard> createState() => _LocationCardState();
@@ -26,30 +21,23 @@ class LocationCard extends StatefulWidget {
 
 class _LocationCardState extends State<LocationCard>
     with ShareLocationDialogBuilder {
-  LocationAvailability? locationClosing;
+  late Location _location;
 
   @override
   void initState() {
-    if (widget.location.isCloseable) {
-      _loadLocationClosing();
-    }
-
     super.initState();
+    _location = widget.location;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.hardEdge,
-      shape: widget.isSelected
-          ? RoundedRectangleBorder(
-              side: BorderSide(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2,
-              ),
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-            )
-          : null,
+    return Consumer<UserProvider>(
+      builder: (BuildContext context, UserProvider provider, Widget? child) =>
+          Card(
+        clipBehavior: Clip.hardEdge,
+        shape: getShape(provider),
+        child: child,
+      ),
       child: InkWell(
         onLongPress: _getLongPressFunction(),
         onTap: _getOnTapFunction(),
@@ -60,17 +48,18 @@ class _LocationCardState extends State<LocationCard>
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                if (widget.location.emoji != null) _buildCardEmoji(),
+                if (_location.emoji != null) _buildCardEmoji(),
                 _buildCardName(),
-                if (locationClosing?.closedAt == null) _buildOnlineStatusDots(),
+                if (_location.closedAt == null)
+                  _buildOnlineStatusDots() ?? Container(),
               ],
             ),
-            if (locationClosing != null && locationClosing!.closedAt != null)
+            if (_location.isCloseable && _location.closedAt != null)
               Container(
                 decoration:
                     BoxDecoration(color: Colors.red.shade900.withOpacity(0.8)),
               ),
-            if (locationClosing != null && locationClosing!.closedAt != null)
+            if (_location.isCloseable && _location.closedAt != null)
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -81,7 +70,7 @@ class _LocationCardState extends State<LocationCard>
                         fontWeight: FontWeight.bold,
                         color: Colors.black),
                   ),
-                  ElapsedTime(timestamp: locationClosing!.closedAt!),
+                  ElapsedTime(timestamp: _location.closedAt!),
                 ],
               ),
           ],
@@ -90,72 +79,38 @@ class _LocationCardState extends State<LocationCard>
     );
   }
 
-  Function()? _getOnTapFunction() {
-    if (widget.isActive) {
-      if (locationClosing != null && locationClosing!.closedAt != null) {
-        return () {
-          showDialog(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text('Mark as opened'),
-                content: const Text(
-                    'This location has been temporarily closed. Is it available again? The result of this action will be visible to everyone!'),
-                actions: <Widget>[
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: const Icon(Icons.close),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      _openLocation(widget.location.id);
-                      Navigator.of(context).pop();
-                    },
-                    child: const Icon(Icons.check),
-                  ),
-                ],
-              );
-            },
-          );
-        };
-      }
-      return () {
-        if (widget.location.onClickAction == OnClickAction.openDialog) {
-          showDialog<void>(
-            context: context,
-            builder: (context) {
-              return LocationSelectionDialog(
-                context: context,
-                locations: widget.location.children,
-                dialogName: widget.location.dialogName,
-                imageId: widget.location.imageId,
-                parentLocationId: widget.location.id,
-                onChangedLocation: widget.onChangedLocation,
-                isCapacitySelectable: widget.location.isCapacitySelectable,
-              );
-            },
-          );
-        } else {
-          buildShareLocationDialog(context, widget.location.id);
-        }
-      };
+  ShapeBorder? getShape(UserProvider provider) {
+    if (widget.isEditMode) {
+      return null;
     }
-    return () => _showErrorSnackBar(
-        'Please check in first by pressing play button', context);
+    return provider.currentLocationTree.contains(_location.id)
+        ? RoundedRectangleBorder(
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.primary,
+              width: 2,
+            ),
+            borderRadius: const BorderRadius.all(
+              Radius.circular(10),
+            ),
+          )
+        : null;
   }
 
-  Function()? _getLongPressFunction() {
-    if (widget.isActive && locationClosing != null && locationClosing!.closedAt == null) {
+  Function()? _getOnTapFunction() {
+    if (!_isActive()) {
+      return () => _showErrorSnackBar(
+          'Please check in first by pressing play button', context);
+    }
+
+    if (_location.isCloseable && _location.closedAt != null) {
       return () {
         showDialog(
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: const Text('Mark as closed'),
+              title: const Text('Mark as opened'),
               content: const Text(
-                  'Would you like to mark this location as temporarily closed? The result of this action will be visible to everyone!'),
+                  'This _location has been temporarily closed. Is it available again? The result of this action will be visible to everyone!'),
               actions: <Widget>[
                 ElevatedButton(
                   onPressed: () {
@@ -165,7 +120,7 @@ class _LocationCardState extends State<LocationCard>
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    _closeLocation(widget.location.id);
+                    _openLocation(_location.id);
                     Navigator.of(context).pop();
                   },
                   child: const Icon(Icons.check),
@@ -176,18 +131,89 @@ class _LocationCardState extends State<LocationCard>
         );
       };
     }
-    return null;
+
+    return () {
+      if (_location.id == null) return;
+
+      if (_location.onClickAction != OnClickAction.openDialog) {
+        buildShareLocationDialog(context, _location.id);
+        return;
+      }
+
+      showDialog<void>(
+        context: context,
+        builder: (context) {
+          return LocationSelectionDialog(
+            context: context,
+            dialogName: _location.dialogName,
+            imageId: _location.imageId,
+            parentLocationId: _location.id!,
+            isCapacitySelectable: _location.isCapacitySelectable,
+          );
+        },
+      );
+    };
   }
 
-  void _closeLocation(int locationId) {
+  Function()? _getLongPressFunction() {
+    if (!_isActive() || !_location.isCloseable || _location.closedAt != null) {
+      return null;
+    }
+
+    return () {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Mark as closed'),
+            content: const Text(
+                'Would you like to mark this _location as temporarily closed? The result of this action will be visible to everyone!'),
+            actions: <Widget>[
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Icon(Icons.close),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  _closeLocation(_location.id);
+                  Navigator.of(context).pop();
+                },
+                child: const Icon(Icons.check),
+              ),
+            ],
+          );
+        },
+      );
+    };
+  }
+
+  void _closeLocation(int? locationId) {
+    if (locationId == null) return;
+
     LocationService.updateLocationAvailability(locationId, DateTime.now())
-        .then((value) => _loadLocationClosing());
+        .then((value) => reloadLocation());
   }
 
-  void _openLocation(int locationId) {
+  void _openLocation(int? locationId) {
+    if (locationId == null) return;
+
     LocationService.updateLocationAvailability(locationId, null)
-        .then((value) => _loadLocationClosing());
+        .then((value) => reloadLocation());
   }
+
+  void reloadLocation() async =>
+      LocationService.getLocation(_location.id).then((l) {
+        if (l != null) {
+          setState(() {
+            _location = l;
+          });
+        } else {
+          _showErrorSnackBar(
+              "Could not update the view - service unavailable", context);
+        }
+      });
 
   void _showErrorSnackBar(String message, BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -201,7 +227,7 @@ class _LocationCardState extends State<LocationCard>
   Widget _buildCardName() => Padding(
         padding: const EdgeInsets.only(left: 5, right: 5, top: 2, bottom: 5),
         child: Text(
-          widget.location.name,
+          _location.name,
           style: const TextStyle(
             fontSize: 20,
             height: 1.2,
@@ -213,7 +239,7 @@ class _LocationCardState extends State<LocationCard>
   Widget _buildCardEmoji() => Padding(
         padding: const EdgeInsets.only(left: 5, right: 5, bottom: 2),
         child: Text(
-          widget.location.emoji ?? '',
+          _location.emoji ?? '',
           style: const TextStyle(
             fontSize: 20,
             height: 1.2,
@@ -222,25 +248,21 @@ class _LocationCardState extends State<LocationCard>
         ),
       );
 
-  Widget _buildOnlineStatusDots() => Padding(
-        padding: const EdgeInsets.only(left: 5, right: 5, top: 5),
-        child: UserDotsWidget(
-          locationId: widget.location.id,
-          alignment: WrapAlignment.center,
-        ),
-      );
+  Widget? _buildOnlineStatusDots() => _location.id != null
+      ? Padding(
+          padding: const EdgeInsets.only(left: 5, right: 5, top: 5),
+          child: UserDotsWidget(
+            locationId: _location.id!,
+            alignment: WrapAlignment.center,
+          ),
+        )
+      : null;
 
-  void _loadLocationClosing() {
-    LocationService.getLocationAvailability(widget.location.id)
-        .then((locationClosing) {
-      if (locationClosing.isCloseable) {
-        setState(() {
-          this.locationClosing = locationClosing;
-        });
-      }
-    });
+  bool _isActive() {
+    var rootLocation =
+        Provider.of<LocationProvider>(context, listen: false).rootLocation;
+    var userRootLocationId =
+        Provider.of<UserProvider>(context, listen: false).user?.rootLocationId;
+    return userRootLocationId != null && userRootLocationId == rootLocation?.id;
   }
-
-  @override
-  Function() get onLocationChanged => widget.onChangedLocation;
 }

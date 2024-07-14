@@ -8,7 +8,30 @@ import 'package:party_radar/common/models.dart';
 import 'package:party_radar/common/util/extensions.dart';
 
 class LocationService {
-  static Future<List<Location>?> getLocations(ElementType elementType) async {
+  static void createLocation() {}
+
+  static void updateLocation() {}
+
+  static void deleteLocation() {}
+
+  static Future<List<int>> getSelectedLocationIds() async {
+    final response = await get(
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/location/selected-ids'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+      },
+    );
+
+    if (response.ok) {
+      return List<int>.from(
+          jsonDecode(response.body).map((model) => model as int)).toList();
+    }
+    throw Exception('Request failed: ${response.body}');
+  }
+
+  static Future<List<Location>?> getLocations(ElementType elementType,
+      {bool checkEnabled = false}) async {
     final response = await get(
       Uri.parse(
           '${FlavorConfig.instance.values.apiV1}/location?type=${elementType.name}'),
@@ -19,8 +42,32 @@ class LocationService {
     );
 
     if (response.ok) {
-      return List<Location>.from(
-          jsonDecode(response.body).map((model) => Location.fromJson(model)));
+      return List<Location>.from(jsonDecode(response.body)
+              .map((model) => Location.fromJson(model)))
+          .where((location) => checkEnabled ? location.enabled : true)
+          .toList();
+    }
+    throw Exception('Request failed: ${response.body}');
+  }
+
+  static Future<List<Location>?> getLocationChildren(int? locationId,
+      {bool visibleOnly = false}) async {
+    if (locationId == null) return null;
+
+    final response = await get(
+      Uri.parse(
+          '${FlavorConfig.instance.values.apiV1}/location/$locationId/children'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+      },
+    );
+
+    if (response.ok) {
+      return List<Location>.from(jsonDecode(response.body)
+              .map((model) => Location.fromJson(model)))
+          .where((element) => visibleOnly ? element.deletedAt == null : true)
+          .toList();
     }
     throw Exception('Request failed: ${response.body}');
   }
@@ -60,33 +107,11 @@ class LocationService {
     }
   }
 
-  static Future<LocationAvailability> getLocationAvailability(int id) async {
-    final response = await get(
-      Uri.parse('${FlavorConfig.instance.values.apiV1}/location/$id/availability'),
-      headers: {
-        HttpHeaders.authorizationHeader:
-            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
-      },
-    );
-
-    if (response.statusCode == 404) {
-      return LocationAvailability(isCloseable: false);
-    } else if (response.ok) {
-      String? closedAtString = jsonDecode(response.body)['closed_at'];
-      return LocationAvailability(
-        isCloseable: true,
-        closedAt:
-            closedAtString != null ? DateTime.parse(closedAtString) : null,
-      );
-    }
-
-    throw Exception('Failed to get location closing: ${response.body}');
-  }
-
   static Future<void> updateLocationAvailability(
       int id, DateTime? closingTime) async {
     final response = await patch(
-      Uri.parse('${FlavorConfig.instance.values.apiV1}/location/$id/availability'),
+      Uri.parse(
+          '${FlavorConfig.instance.values.apiV1}/location/$id/availability'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',

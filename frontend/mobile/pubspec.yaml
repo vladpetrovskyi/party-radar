@@ -33,7 +33,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   widget_zoom: ^0.0.3
   http: any
-  provider: ^6.1.1
+  provider: ^6.1.2
   flutter_login: ^5.0.0
   google_fonts: ^6.1.0
   intl: ^0.19.0

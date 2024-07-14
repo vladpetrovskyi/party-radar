@@ -2,28 +2,27 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/flavors/flavor_config.dart';
 import 'package:party_radar/common/models.dart';
+import 'package:party_radar/common/providers.dart';
+import 'package:party_radar/common/services/location_service.dart';
 import 'package:party_radar/location/widgets/dialog_radios.dart';
 import 'package:party_radar/common/services/image_service.dart';
 import 'package:party_radar/common/services/post_service.dart';
+import 'package:provider/provider.dart';
 import 'package:widget_zoom/widget_zoom.dart';
 
 class LocationSelectionDialog extends StatefulWidget {
   const LocationSelectionDialog({
     super.key,
     required this.context,
-    required this.locations,
     this.dialogName,
     this.imageId,
     required this.parentLocationId,
-    required this.onChangedLocation,
     this.isCapacitySelectable,
   });
 
   final BuildContext context;
-  final List<Location> locations;
   final String? dialogName;
   final int? imageId;
-  final Function() onChangedLocation;
   final int parentLocationId;
   final bool? isCapacitySelectable;
 
@@ -59,11 +58,22 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
                   },
                 ),
               const SizedBox(height: 10),
-              DialogRadiosWidget(
-                locations: widget.locations,
-                onChangeSelectedRadio: (locationId) =>
-                    setState(() => selectedRadio = locationId),
-                selectedRadio: selectedRadio,
+              FutureBuilder(
+                future: LocationService.getLocationChildren(widget.parentLocationId),
+                builder: (BuildContext context, AsyncSnapshot<List<Location>?> snapshot) {
+                  if (snapshot.hasError) {
+                    return Container();
+                  }
+                  if (snapshot.hasData) {
+                    return  DialogRadiosWidget(
+                      locations: snapshot.data!,
+                      onChangeSelectedRadio: (locationId) =>
+                          setState(() => selectedRadio = locationId),
+                      selectedRadio: selectedRadio,
+                    );
+                  }
+                  return const Center(child: CircularProgressIndicator());
+                },
               ),
               if (widget.isCapacitySelectable ?? false)
                 Slider(
@@ -123,8 +133,8 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
           content: Text('Your current location has been posted'),
         ),
       );
+      Provider.of<UserProvider>(context, listen: false).updateUser();
       Navigator.of(context).pop();
-      widget.onChangedLocation();
     }).onError((error, stackTrace) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

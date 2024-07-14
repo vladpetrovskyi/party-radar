@@ -6,7 +6,9 @@ import 'package:party_radar/app.dart';
 import 'package:party_radar/common/flavors/flavor_config.dart';
 import 'package:freerasp/freerasp.dart';
 import 'package:party_radar/firebase_options_prod.dart';
+import 'package:provider/provider.dart';
 
+import 'common/providers.dart';
 import 'common/services/user_service.dart';
 
 void main() async {
@@ -37,7 +39,15 @@ void main() async {
     ),
   );
 
-  runApp(const PartyRadarApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => LocationProvider()),
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+      ],
+      child: const PartyRadarApp(),
+    ),
+  );
 }
 
 Future<void> _initFCM() async {

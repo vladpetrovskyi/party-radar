@@ -49,12 +49,13 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: const Text("Get notifications about new posts at the club you're currently at"),
               trailing: getSwitch('new-posts', true),
             ),
-            ListTile(
-              enabled: false,
-              title: const Text("Tags"),
-              subtitle: const Text("Get notifications when you are tagged in posts"),
-              trailing: getSwitch('post-tags', false),
-            ),
+            // TODO: activate after this function is available
+            // ListTile(
+            //   enabled: false,
+            //   title: const Text("Tags"),
+            //   subtitle: const Text("Get notifications when you are tagged in posts"),
+            //   trailing: getSwitch('post-tags', false),
+            // ),
             const SizedBox(height: 24),
             OutlinedButton(
               onPressed: () {

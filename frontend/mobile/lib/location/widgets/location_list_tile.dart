@@ -1,36 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:party_radar/common/models.dart';
 import 'package:party_radar/location/dialogs/builders/share_location_dialog_builder.dart';
-import 'package:party_radar/location/widgets/user_dots_widget.dart';
+import 'package:party_radar/location/widgets/editable_location_list_tile.dart';
 
-class LocationListTile extends StatelessWidget with ShareLocationDialogBuilder {
-  const LocationListTile(
-      {super.key, required this.onChangedLocation, required this.location});
-
-  final Function() onChangedLocation;
-  final Location location;
+class LocationListTile extends EditableLocationListTile
+    with ShareLocationDialogBuilder {
+  const LocationListTile({
+    super.key,
+    required super.location,
+    super.isEditMode,
+    super.textEditingController,
+    required super.title,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      enabled: location.enabled,
-      onTap: () {
-        buildShareLocationDialog(context, location.id);
-      },
-      title: Text(
-        location.emoji != null
-            ? "${location.emoji} ${location.name}"
-            : location.name,
-        style: const TextStyle(
-          fontSize: 28,
-          // fontWeight: FontWeight.bold,
-        ),
-      ),
-      subtitle:
-      location.enabled ? UserDotsWidget(locationId: location.id) : null,
+      enabled: isEditMode ? true : location.enabled,
+      onTap: getOnTapFunction(context),
+      title: getTitle(),
+      subtitle: getSubtitle(),
+      trailing: getTrailing(),
     );
   }
 
-  @override
-  Function() get onLocationChanged => onChangedLocation;
+  Function() getOnTapFunction(BuildContext context) =>
+      () => isEditMode ? null : buildShareLocationDialog(context, location.id);
 }

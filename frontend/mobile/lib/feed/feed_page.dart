@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
+import 'package:intl/intl.dart';
 import 'package:party_radar/common/models.dart';
 import 'package:party_radar/common/post/post_widget.dart';
 import 'package:party_radar/common/services/post_service.dart';
@@ -84,7 +85,9 @@ class _FeedPageState extends State<FeedPage> {
 
   String _getTimestampString(DateTime dateTime) {
     Duration postTime = DateTime.now().difference(dateTime.toLocal());
-    if (postTime.inMinutes > 60) {
+    if (postTime.inDays > 3) {
+      return DateFormat("MMM d").format(dateTime.toLocal());
+    } else if (postTime.inMinutes > 60) {
       return "${postTime.inHours} hour${postTime.inHours == 1 ? '' : 's'} ago";
     } else if (postTime.inMinutes > 0) {
       return '${postTime.inMinutes} min. ago';
@@ -100,7 +103,7 @@ class _FeedPageState extends State<FeedPage> {
             : _feedPagingController.itemList?.isNotEmpty ?? false,
         controller: _textEditingController,
         style: const TextStyle(color: Colors.white),
-        onSubmitted: (value) {
+        onChanged: (value) {
           _usernameQuery = value;
           _feedPagingController.refresh();
         },

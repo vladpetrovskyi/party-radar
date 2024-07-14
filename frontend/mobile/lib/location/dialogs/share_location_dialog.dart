@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/models.dart';
+import 'package:party_radar/common/providers.dart';
 import 'package:party_radar/common/services/post_service.dart';
+import 'package:provider/provider.dart';
 
 class ShareLocationDialog extends StatefulWidget {
   const ShareLocationDialog({
     super.key,
-    required this.onCurrentLocationChanged,
     required this.locationId,
   });
 
-  final Function() onCurrentLocationChanged;
   final int locationId;
 
   @override
@@ -56,7 +56,7 @@ class _ShareLocationDialogState extends State<ShareLocationDialog> {
           content: Text('Your current location has been posted'),
         ),
       );
-      widget.onCurrentLocationChanged();
+      Provider.of<UserProvider>(context, listen: false).updateUser();
       Navigator.of(context).pop();
     }).onError((error, stackTrace) {
       ScaffoldMessenger.of(context).showSnackBar(
