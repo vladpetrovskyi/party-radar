@@ -111,6 +111,7 @@ func (app *Application) setupRoutes() {
 	locationGroup.GET("/:id/availability", app.authorizeViaFirebase("data", "read"), app.getLocationAvailability)
 	locationGroup.PATCH("/:id/availability", app.authorizeViaFirebase("data", "read"), app.updateLocationAvailability)
 	locationGroup.GET("/selected-ids", app.authorizeViaFirebase("data", "read"), app.getSelectedLocationIDs)
+	locationGroup.POST("", app.authorizeViaFirebase("data", "write"), app.createLocation)
 
 	locationGroupV2 := v2.Group("/location")
 	locationGroupV2.GET("/:id", app.getLocationByIDV2)

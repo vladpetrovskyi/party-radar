@@ -92,7 +92,7 @@ func (app *Application) addDialogSettingsImage(c *gin.Context, dialogSettingsId 
 		var imageId *int64
 		if imageId, err = app.createImageInDB(fileName, content, q); err == nil {
 			err = q.UpdateDialogSettingsImage(app.ctx, db.UpdateDialogSettingsImageParams{
-				ID:      dialogSettingsId,
+				ID:      &dialogSettingsId,
 				ImageID: imageId,
 			})
 		}

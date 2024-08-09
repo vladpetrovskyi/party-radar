@@ -11,25 +11,67 @@ import (
 )
 
 type Location struct {
-	ID                   int64      `json:"id"`
-	Name                 string     `json:"name"`
-	Emoji                *string    `json:"emoji"`
-	Enabled              bool       `json:"enabled"`
-	ElementType          *string    `json:"element_type"`
-	OnClickAction        *string    `json:"on_click_action"`
-	ColumnIndex          *int64     `json:"column_index"`
-	RowIndex             *int64     `json:"row_index"`
-	ColumnsNumber        *int64     `json:"columns_number"`
-	DialogName           *string    `json:"dialog_name"`
-	ImageID              *int64     `json:"image_id"`
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	// Deprecated, shall be part of name
+	Emoji         *string `json:"emoji"`
+	Enabled       bool    `json:"enabled"`
+	ElementType   *string `json:"element_type"`
+	OnClickAction *string `json:"on_click_action"`
+	ColumnIndex   *int64  `json:"column_index"`
+	RowIndex      *int64  `json:"row_index"`
+	// Deprecated, now in DialogSettings
+	ColumnsNumber *int64 `json:"columns_number"`
+	// Deprecated, now in DialogSettings
+	DialogName *string `json:"dialog_name"`
+	// Deprecated, now in DialogSettings
+	ImageID          *int64 `json:"image_id"`
+	DialogSettingsID *int64 `json:"dialog_settings_id"`
+	RootLocationID   *int64 `json:"root_location_id"`
+	// Deprecated, now in DialogSettings
 	IsCapacitySelectable *bool      `json:"is_capacity_selectable"`
 	IsCloseable          bool       `json:"is_closeable"`
 	ClosedAt             *time.Time `json:"closed_at"`
 	DeletedAt            *time.Time `json:"deleted_at"`
 	Children             []Location `json:"children"`
-	ParentID             *int64     `json:"-"`
+	ParentID             *int64     `json:"parent_id"`
 	CreatedBy            *string    `json:"created_by"`
 	IsOfficial           bool       `json:"is_official"`
+}
+
+func (app *Application) createLocation(c *gin.Context) {
+	var location *Location
+	err := c.Bind(location)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse location", "err": err.Error()})
+		return
+	}
+
+	user, err := app.getUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not get context user", "err": err.Error()})
+		return
+	}
+
+	createdLocation, err := app.q.CreateLocation(c, db.CreateLocationParams{
+		Name:              &location.Name,
+		Enabled:           false,
+		ElementTypeName:   *location.ElementType,
+		OnClickActionName: location.OnClickAction,
+		ColumnIndex:       location.ColumnIndex,
+		RowIndex:          location.RowIndex,
+		DialogSettingsID:  location.DialogSettingsID,
+		ParentID:          location.ParentID,
+		RootLocationID:    location.RootLocationID,
+		IsOfficial:        &location.IsOfficial,
+		OwnerID:           &user.ID,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create location", "err": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, createdLocation)
 }
 
 func (app *Application) getLocations(c *gin.Context) {

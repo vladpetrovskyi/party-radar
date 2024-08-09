@@ -164,3 +164,18 @@ sql:
               type: "time.Time"
               pointer: true
             nullable: true
+          - column: "location.is_official"
+            go_type:
+              type: "bool"
+              pointer: true
+            nullable: true
+          - column: "dialog_settings.id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: false
+          - column: "location.owner_id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true

@@ -1,3 +1,11 @@
+-- name: CreateLocation :one
+INSERT INTO location (name, enabled, element_type_id, dialog_settings_id, on_click_action_id, column_index,
+                      parent_id, root_location_id, row_index, owner_id, is_official)
+VALUES ($1, $2, (SELECT et.id FROM element_type et WHERE et.name = @element_type_name::text), $3,
+        (SELECT oca.id FROM on_click_action oca WHERE oca.name = sqlc.narg('on_click_action_name')), $4, $5, $6, $7, $8,
+        $9)
+RETURNING *;
+
 -- name: GetLocation :one
 SELECT l.id,
        l.name,
@@ -10,6 +18,7 @@ SELECT l.id,
        l.root_location_id,
        et.name       AS element_type,
        oca.name      AS on_click_action,
+       ds.id         AS dialog_id,
        ds.name       AS dialog_name,
        ds.columns_number,
        ds.image_id,
@@ -64,6 +73,7 @@ SELECT l.id,
        l.root_location_id,
        et.name       AS element_type,
        oca.name      AS on_click_action,
+       ds.id         AS dialog_id,
        ds.name       AS dialog_name,
        ds.columns_number,
        ds.image_id,

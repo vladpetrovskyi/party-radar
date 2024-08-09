@@ -99,7 +99,7 @@ func main() {
 			logger.Fatal().Msgf("db/seeds/assets: %v", err)
 		}
 
-		imageID, err := queries.GetDialogSettingsImageID(context.Background(), dialogSettingsID)
+		imageID, err := queries.GetDialogSettingsImageID(context.Background(), &dialogSettingsID)
 		if err != nil {
 			logger.Fatal().Msgf("db/seeds/assets: %v", err)
 		}
@@ -123,7 +123,7 @@ func main() {
 			}
 
 			err = queries.UpdateDialogSettingsImage(context.Background(), db.UpdateDialogSettingsImageParams{
-				ID:      dialogSettingsID,
+				ID:      &dialogSettingsID,
 				ImageID: &imageID,
 			})
 			if err != nil {
