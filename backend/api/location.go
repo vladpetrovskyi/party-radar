@@ -1,21 +1,18 @@
 package api
 
 import (
-	"database/sql"
-	"errors"
-	"firebase.google.com/go/messaging"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"party-time/db"
+	"strconv"
 	"time"
 )
 
 type Location struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
-	// Deprecated, shall be part of name
+	ID            *int64  `json:"id"`
+	Name          string  `json:"name"`
 	Emoji         *string `json:"emoji"`
-	Enabled       bool    `json:"enabled"`
+	Enabled       *bool   `json:"enabled"`
 	ElementType   *string `json:"element_type"`
 	OnClickAction *string `json:"on_click_action"`
 	ColumnIndex   *int64  `json:"column_index"`
@@ -40,47 +37,69 @@ type Location struct {
 }
 
 func (app *Application) createLocation(c *gin.Context) {
-	var location *Location
-	err := c.Bind(location)
+	var location Location
+	err := c.BindJSON(&location)
 	if err != nil {
+		app.log.Debug().Err(err).Msg("Could not bind JSON to create location")
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse location", "err": err.Error()})
 		return
 	}
 
 	user, err := app.getUserFromContext(c)
 	if err != nil {
+		app.log.Debug().Err(err).Msg("Could not get user from context to create location")
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not get context user", "err": err.Error()})
 		return
 	}
 
+	enabled := false
+	if location.Enabled != nil {
+		enabled = *location.Enabled
+	}
+
 	createdLocation, err := app.q.CreateLocation(c, db.CreateLocationParams{
 		Name:              &location.Name,
-		Enabled:           false,
-		ElementTypeName:   *location.ElementType,
+		Emoji:             location.Emoji,
+		Enabled:           &enabled,
+		ElementTypeName:   location.ElementType,
 		OnClickActionName: location.OnClickAction,
 		ColumnIndex:       location.ColumnIndex,
 		RowIndex:          location.RowIndex,
-		DialogSettingsID:  location.DialogSettingsID,
 		ParentID:          location.ParentID,
 		RootLocationID:    location.RootLocationID,
 		IsOfficial:        &location.IsOfficial,
 		OwnerID:           &user.ID,
 	})
 	if err != nil {
+		app.log.Error().Err(err).Msg("Could not create location")
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create location", "err": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, createdLocation)
+	c.JSON(http.StatusCreated, createdLocation)
 }
 
 func (app *Application) getLocations(c *gin.Context) {
-	elementType := c.Query("type")
-	if len(elementType) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Element type cannot be empty"})
+	query := &struct {
+		Type    *string `json:"type"`
+		Enabled *bool   `json:"enabled"`
+	}{}
+	if err := c.BindQuery(query); err != nil {
+		app.log.Error().Err(err).Msg("Could not bind query")
+		return
 	}
 
-	locations, err := app.q.GetLocationsByElementType(c, &elementType)
+	user, err := app.getUserFromContext(c)
+	if err != nil {
+		app.log.Error().Err(err).Msg("Could not get user from context")
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+
+	locations, err := app.q.GetLocations(c, db.GetLocationsParams{
+		ElementTypeName: query.Type,
+		UserID:          user.ID,
+	})
 	if err != nil {
 		c.JSON(http.StatusNotFound, nil)
 		return
@@ -159,6 +178,97 @@ func (app *Application) getLocationByIDV2(c *gin.Context) {
 	c.JSON(http.StatusOK, rootLocation)
 }
 
+func (app *Application) updateLocation(c *gin.Context) {
+	locationId, err := app.readIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
+		return
+	}
+
+	var location Location
+	if err = c.BindJSON(&location); err != nil {
+		app.log.Debug().Err(err).Msg("Could not bind JSON to update location")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse location", "err": err.Error()})
+		return
+	}
+
+	if location.Enabled != nil && !*location.Enabled {
+		usersByRootLocationID, err := app.q.GetUsersByRootLocationID(c, &locationId)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "Could not get users at root location with ID=" + strconv.FormatInt(locationId, 10), "err": err.Error()})
+			return
+		}
+
+		for _, user := range usersByRootLocationID {
+			if err = app.deleteUserLocations(user); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "Could not check out user with ID=" + strconv.FormatInt(user.ID, 10), "err": err.Error()})
+				return
+			}
+
+			if err = app.createPostForUser(user, locationId, "end", nil); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "Could not post checkout for user with ID=" + strconv.FormatInt(user.ID, 10), "err": err.Error()})
+				return
+			}
+		}
+	}
+
+	updatedLocation, err := app.q.UpdateLocation(c, db.UpdateLocationParams{
+		Name:              &location.Name,
+		ID:                locationId,
+		Emoji:             location.Emoji,
+		Enabled:           location.Enabled,
+		ElementTypeName:   location.ElementType,
+		OnClickActionName: location.OnClickAction,
+		ColumnIndex:       location.ColumnIndex,
+		RowIndex:          location.RowIndex,
+		ParentID:          location.ParentID,
+		RootLocationID:    location.RootLocationID,
+	})
+	if err != nil {
+		app.log.Error().Err(err).Msg("Could not update location")
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create location", "err": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, updatedLocation)
+}
+
+func (app *Application) deleteLocation(c *gin.Context) {
+	locationId, err := app.readIDParam(c)
+	if err != nil {
+		app.log.Debug().Err(err).Msg("Could not read ID param to delete a location")
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
+		return
+	}
+
+	postsCount, err := app.q.GetLocationPostsCount(c, locationId)
+	if err != nil {
+		app.log.Debug().AnErr("[ERROR] deleteLocation -> GetLocationPostsCount", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		return
+	}
+
+	if postsCount == 0 {
+		err = app.q.DeleteLocation(app.ctx, locationId)
+		if err != nil {
+			app.log.Debug().Err(err).Msg("[ERROR] deleteLocation -> DeleteLocation")
+			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+			return
+		}
+		c.Status(http.StatusOK)
+		return
+	}
+
+	err = app.q.SetLocationDeletedAt(app.ctx, locationId)
+	if err != nil {
+		app.log.Debug().AnErr("[ERROR] deleteLocation -> SetLocationDeletedAt", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
 func (app *Application) getLocationChildren(c *gin.Context) {
 	locationId, err := app.readIDParam(c)
 	if err != nil {
@@ -231,7 +341,7 @@ func (app *Application) getAndMapLocationFromDb(locationId int64) (Location, err
 }
 
 func (app *Application) buildLocationFromParent(location Location) (Location, error) {
-	locations, err := app.q.GetLocationChildren(app.ctx, &location.ID)
+	locations, err := app.q.GetLocationChildren(app.ctx, location.ID)
 	if err != nil {
 		return location, err
 	} else if len(locations) > 0 {
@@ -277,7 +387,7 @@ func (app *Application) buildUpstreamIDListFromLocation(location db.GetLocationR
 
 func (app *Application) mapLocationChild(dbLocation db.GetLocationChildrenRow) Location {
 	return Location{
-		ID:                   dbLocation.ID,
+		ID:                   &dbLocation.ID,
 		Name:                 *dbLocation.Name,
 		Emoji:                dbLocation.Emoji,
 		Enabled:              dbLocation.Enabled,
@@ -299,7 +409,7 @@ func (app *Application) mapLocationChild(dbLocation db.GetLocationChildrenRow) L
 
 func (app *Application) mapLocation(dbLocation db.GetLocationRow) Location {
 	return Location{
-		ID:                   dbLocation.ID,
+		ID:                   &dbLocation.ID,
 		Name:                 *dbLocation.Name,
 		Emoji:                dbLocation.Emoji,
 		Enabled:              dbLocation.Enabled,
@@ -319,116 +429,4 @@ func (app *Application) mapLocation(dbLocation db.GetLocationRow) Location {
 		CreatedBy:            dbLocation.CreatedBy,
 		IsOfficial:           dbLocation.IsOfficial,
 	}
-}
-
-// Deprecated
-// TODO: GetLocationByID shall be used instead
-func (app *Application) getLocationAvailability(c *gin.Context) {
-	locationID, err := app.readIDParam(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	closingTime, err := app.q.GetLocationClosingTimeByLocationID(c, locationID)
-	if errors.Is(err, sql.ErrNoRows) {
-		c.Status(http.StatusNotFound)
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"closed_at": closingTime})
-}
-
-// Deprecated
-// TODO: UpdateLocation shall be used instead!
-func (app *Application) updateLocationAvailability(c *gin.Context) {
-	locationID, err := app.readIDParam(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	location := struct {
-		ClosedAt *string `json:"closed_at"`
-	}{}
-	err = c.Bind(&location)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	var locationStatus string
-
-	if location.ClosedAt == nil {
-		if err := app.q.OpenLocationByID(c, locationID); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		locationStatus = "opened"
-	} else {
-		if closingTime, err := app.q.GetLocationClosingTimeByLocationID(c, locationID); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		} else if closingTime != nil {
-			c.Status(http.StatusAlreadyReported)
-			return
-		}
-
-		if err := app.q.CloseLocationByID(c, locationID); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		locationStatus = "closed"
-	}
-
-	go app.sendLocationAvailabilityUpdateNotification(locationID, locationStatus, c)
-
-	c.Status(http.StatusOK)
-}
-
-func (app *Application) sendLocationAvailabilityUpdateNotification(locationID int64, locationStatus string, c *gin.Context) {
-	location, err := app.q.GetLocation(app.ctx, locationID)
-	if err != nil {
-		app.log.Err(err)
-		return
-	}
-
-	users, err := app.q.GetUsersByRootLocationID(app.ctx, location.RootLocationID)
-	if err != nil {
-		app.log.Err(err)
-		return
-	}
-
-	reportingUser, err := app.getUserFromContext(c)
-	if err != nil {
-		app.log.Err(err)
-		return
-	}
-
-	messages := make([]*messaging.Message, 0)
-	for _, user := range users {
-		if user.FcmToken != nil && (reportingUser.FcmToken == nil || *reportingUser.FcmToken != *user.FcmToken) {
-			message := messaging.Message{
-				Notification: &messaging.Notification{
-					Title: "Location status changed",
-					Body:  "One of the locations has been " + locationStatus,
-				},
-				Data: map[string]string{
-					"view": "location",
-				},
-				Token: *user.FcmToken,
-			}
-
-			messages = append(messages, &message)
-		}
-	}
-
-	response, err := app.msg.SendAll(app.ctx, messages)
-	if err != nil {
-		app.log.Err(err)
-		return
-	}
-
-	app.log.Debug().Msgf("Successfully sent %v / %v new post messages", response.SuccessCount, len(response.Responses))
 }

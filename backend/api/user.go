@@ -65,6 +65,8 @@ func (app *Application) updateUserRootLocation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "user has been updated"})
 }
 
+// Deprecated
+// Deleting current user root location and posting and update should both happen in backend
 func (app *Application) deleteUserLocation(c *gin.Context) {
 	user, err := app.getUserFromContext(c)
 	if err != nil {
@@ -89,6 +91,51 @@ func (app *Application) deleteUserLocation(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"msg": "user location has been deleted"})
+}
+
+func (app *Application) deleteUserLocationV2(c *gin.Context) {
+	user, err := app.getUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if user.CurrentRootLocationID == nil {
+		c.JSON(http.StatusAlreadyReported, gin.H{"msg": "user location has already been deleted"})
+		return
+	}
+
+	err = app.deleteUserLocations(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		return
+	}
+
+	err = app.createPostForUser(user, *user.CurrentRootLocationID, "end", nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"msg": "user location has been deleted"})
+}
+
+func (app *Application) deleteUserLocations(user db.User) (err error) {
+	if err = app.q.UpdateUserRootLocation(app.ctx, db.UpdateUserRootLocationParams{
+		ID:                    user.ID,
+		CurrentRootLocationID: nil,
+	}); err != nil {
+		return
+	}
+
+	if err = app.q.UpdateUserLocation(app.ctx, db.UpdateUserLocationParams{
+		ID:                user.ID,
+		CurrentLocationID: nil,
+	}); err != nil {
+		return
+	}
+
+	return
 }
 
 func (app *Application) updateUsername(c *gin.Context) {
@@ -160,17 +207,10 @@ func (app *Application) deleteUser(c *gin.Context) {
 	}
 	defer tx.Rollback()
 
-	user, err := app.q.WithTx(tx).DeleteUser(app.ctx, &uid)
+	_, err = app.q.WithTx(tx).DeleteUser(app.ctx, &uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
-	}
-
-	if user.ImageID != nil {
-		if err := app.q.WithTx(tx).DeleteImage(c, *user.ImageID); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
-			return
-		}
 	}
 
 	isUserDeleted, err := app.n4cer.DeleteUser(uid)

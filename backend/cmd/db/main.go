@@ -106,7 +106,7 @@ func main() {
 
 		if imageID != nil {
 			err = queries.UpsertImage(context.Background(), db.UpsertImageParams{
-				ID:       *imageID,
+				ID:       imageID,
 				FileName: fileName,
 				Content:  file,
 			})
@@ -123,8 +123,8 @@ func main() {
 			}
 
 			err = queries.UpdateDialogSettingsImage(context.Background(), db.UpdateDialogSettingsImageParams{
-				ID:      &dialogSettingsID,
-				ImageID: &imageID,
+				ID:               imageID,
+				DialogSettingsID: &dialogSettingsID,
 			})
 			if err != nil {
 				logger.Fatal().Msgf("db/seeds/assets: %v", err)

@@ -179,3 +179,28 @@ sql:
               type: "int64"
               pointer: true
             nullable: true
+          - column: "image.user_id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "image.id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: false
+          - column: "image.dialog_settings_id"
+            go_type:
+              type: "int64"
+              pointer: true
+            nullable: true
+          - column: "dialog_settings.location_id"
+            go_type:
+              type: "int64"
+              pointer: false
+            nullable: false
+          - column: "location.enabled"
+            go_type:
+              type: "bool"
+              pointer: true
+            nullable: true

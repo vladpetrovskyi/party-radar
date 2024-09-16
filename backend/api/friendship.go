@@ -193,7 +193,7 @@ func (app *Application) createFriendshipRequest(c *gin.Context) {
 func (app *Application) sendFriendshipRequestNotification(userFrom db.User, userTo db.User) {
 	hasUserTopic, err := app.q.HasUserTopic(app.ctx, userTo.ID)
 	if err != nil {
-		app.log.Err(err)
+		app.log.Err(err).Msg("Failed to check if user has a friendship request notification topic")
 		return
 	}
 
@@ -209,7 +209,7 @@ func (app *Application) sendFriendshipRequestNotification(userFrom db.User, user
 			Token: *userTo.FcmToken,
 		})
 		if err != nil {
-			app.log.Err(err)
+			app.log.Err(err).Msg("Failed to write to friendshipRequestNotification topic")
 			return
 		}
 		app.log.Debug().Msgf("Successfully sent friendship request message: %s", response)

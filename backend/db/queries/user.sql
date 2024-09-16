@@ -32,11 +32,6 @@ WHERE u.current_location_id = $2
                WHERE fs2.user_1_id = $1
                  AND fs2.status_id = 2);
 
--- name: UpdateUserImageId :exec
-UPDATE "user"
-SET image_id = $1
-WHERE id = $2;
-
 -- name: CreateUser :exec
 INSERT INTO "user" (uid, fcm_token)
 VALUES ($1, $2);
