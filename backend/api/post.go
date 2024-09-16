@@ -376,6 +376,10 @@ func (app *Application) sendNewPostNotification(userID int64, username string, c
 		}
 	}
 
+	if len(messages) == 0 {
+		return
+	}
+
 	response, err := app.msg.SendAll(app.ctx, messages)
 	if err != nil {
 		app.log.Err(err).Msg("Could not send new post notification messages")
