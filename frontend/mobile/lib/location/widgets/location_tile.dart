@@ -16,54 +16,44 @@ class LocationTile extends StatefulWidget {
 
 class _LocationTileState extends State<LocationTile> {
   late Location _location;
-  late TextEditingController _textEditingController;
 
   @override
   void initState() {
     super.initState();
     _location = widget.location;
-    _textEditingController = TextEditingController(text: widget.location.name);
-  }
-
-  @override
-  void dispose() {
-    _textEditingController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget title = Consumer<UserProvider>(
-        builder: (BuildContext context, UserProvider provider, Widget? child) =>
-            _buildTitle(context, provider));
+    var locationProvider = Provider.of<LocationProvider>(context, listen: true);
+    var isEditMode = locationProvider.editMode;
 
-    return Consumer<LocationProvider>(
-      builder: (BuildContext context, LocationProvider locationProvider,
-          Widget? child) {
-        if (_location.elementType == ElementType.listTile) {
-          return LocationListTile(
-            location: _location,
-            textEditingController: _textEditingController,
-            isEditMode: locationProvider.editMode,
-            title: title,
-          );
-        }
-        if (_location.elementType == ElementType.expansionTile) {
-          return LocationExpansionTile(
-            location: _location,
-            title: title,
-            isEditMode: locationProvider.editMode,
-            textEditingController: _textEditingController,
-          );
-        }
-        return Container();
-      },
-    );
+    if (_location.elementType == ElementType.listTile ||
+        (_location.elementType == ElementType.expansionTile &&
+            !_location.enabled &&
+            !isEditMode)) {
+      return LocationListTile(
+        location: _location,
+        locationProvider: locationProvider,
+        isEditMode: isEditMode,
+        title: _buildTitle(locationProvider),
+      );
+    }
+    if (_location.elementType == ElementType.expansionTile) {
+      return LocationExpansionTile(
+        location: _location,
+        locationProvider: locationProvider,
+        title: _buildTitle(locationProvider),
+        isEditMode: isEditMode,
+      );
+    }
+    return Container();
   }
 
-  Text _buildTitle(BuildContext context, UserProvider userProvider) {
+  Text _buildTitle(LocationProvider provider) {
     var containsSelectedLocation =
-        userProvider.currentLocationTree.contains(_location.id);
+        provider.currentLocationTree.contains(_location.id);
+
     return Text(
       _location.emoji != null
           ? "${_location.emoji} ${_location.name}"

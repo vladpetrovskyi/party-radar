@@ -10,7 +10,8 @@ import 'package:party_radar/common/util/extensions.dart';
 class UserService {
   static Future<bool> userExists(String username) async {
     Response response = await head(
-      Uri.parse('${FlavorConfig.instance.values.apiV2}/user?username=$username'),
+      Uri.parse(
+          '${FlavorConfig.instance.values.apiV2}/user?username=$username'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -20,25 +21,28 @@ class UserService {
   }
 
   static Future<models.User?> getUser({String? username}) async {
+    if (FirebaseAuth.instance.currentUser == null) return null;
+
     Response response;
     if (username != null && username.isNotEmpty) {
       response = await get(
-        Uri.parse('${FlavorConfig.instance.values.apiV2}/user?username=$username'),
-        headers: {
-          HttpHeaders.authorizationHeader:
-              'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
-        },
-      );
-    } else {
-      response = await get(
         Uri.parse(
-            '${FlavorConfig.instance.values.apiV2}/user?userUID=${FirebaseAuth.instance.currentUser?.uid}'),
+            '${FlavorConfig.instance.values.apiV2}/user?username=$username'),
         headers: {
           HttpHeaders.authorizationHeader:
               'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
         },
       );
     }
+
+    response = await get(
+      Uri.parse(
+          '${FlavorConfig.instance.values.apiV2}/user?userUID=${FirebaseAuth.instance.currentUser?.uid}'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+      },
+    );
 
     return response.ok
         ? models.User.fromJson(jsonDecode(response.body))
@@ -114,7 +118,7 @@ class UserService {
 
   static Future<bool> deleteUserLocation() async {
     Response response = await delete(
-      Uri.parse('${FlavorConfig.instance.values.apiV1}/user/location'),
+      Uri.parse('${FlavorConfig.instance.values.apiV2}/user/location'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -149,7 +153,7 @@ class UserService {
       Uri.parse('${FlavorConfig.instance.values.apiV1}/user/topic'),
       headers: {
         HttpHeaders.authorizationHeader:
-        'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
         HttpHeaders.contentTypeHeader: 'application/json'
       },
     );
@@ -164,7 +168,7 @@ class UserService {
       Uri.parse('${FlavorConfig.instance.values.apiV1}/user/topic'),
       headers: {
         HttpHeaders.authorizationHeader:
-        'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
         HttpHeaders.contentTypeHeader: 'application/json'
       },
       body: jsonEncode({'topic_name': topicName}),
@@ -177,7 +181,7 @@ class UserService {
       Uri.parse('${FlavorConfig.instance.values.apiV1}/user/topic'),
       headers: {
         HttpHeaders.authorizationHeader:
-        'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
         HttpHeaders.contentTypeHeader: 'application/json'
       },
       body: jsonEncode({'topic_name': topicName}),

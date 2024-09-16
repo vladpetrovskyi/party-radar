@@ -157,9 +157,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Future<bool> _uploadImage() async {
     var user = await UserService.getUser();
     if (user?.imageId != null) {
-      return await ImageService.updateImage(user!.imageId!, File(imagePath!));
+      return await ImageService.update(user!.imageId!, File(imagePath!));
     }
-    return await ImageService.addImage(File(imagePath!), user?.id);
+    return await ImageService.addForUser(File(imagePath!), user?.id);
   }
 
   void _showErrorSnackBar(String? message) {

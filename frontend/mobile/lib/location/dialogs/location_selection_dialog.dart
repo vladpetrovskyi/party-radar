@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:party_radar/common/flavors/flavor_config.dart';
 import 'package:party_radar/common/models.dart';
 import 'package:party_radar/common/providers.dart';
-import 'package:party_radar/common/services/location_service.dart';
-import 'package:party_radar/location/widgets/dialog_radios.dart';
 import 'package:party_radar/common/services/image_service.dart';
 import 'package:party_radar/common/services/post_service.dart';
+import 'package:party_radar/location/widgets/dialog_radios.dart';
 import 'package:provider/provider.dart';
 import 'package:widget_zoom/widget_zoom.dart';
 
@@ -17,6 +16,7 @@ class LocationSelectionDialog extends StatefulWidget {
     this.dialogName,
     this.imageId,
     required this.parentLocationId,
+    required this.locationChildren,
     this.isCapacitySelectable,
   });
 
@@ -25,6 +25,7 @@ class LocationSelectionDialog extends StatefulWidget {
   final int? imageId;
   final int parentLocationId;
   final bool? isCapacitySelectable;
+  final List<Location> locationChildren;
 
   @override
   State<LocationSelectionDialog> createState() =>
@@ -48,7 +49,7 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
             children: [
               if (widget.imageId != null)
                 FutureBuilder(
-                  future: ImageService.getImage(widget.imageId),
+                  future: ImageService.get(widget.imageId),
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
                       return WidgetZoom(
@@ -58,22 +59,11 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
                   },
                 ),
               const SizedBox(height: 10),
-              FutureBuilder(
-                future: LocationService.getLocationChildren(widget.parentLocationId),
-                builder: (BuildContext context, AsyncSnapshot<List<Location>?> snapshot) {
-                  if (snapshot.hasError) {
-                    return Container();
-                  }
-                  if (snapshot.hasData) {
-                    return  DialogRadiosWidget(
-                      locations: snapshot.data!,
-                      onChangeSelectedRadio: (locationId) =>
-                          setState(() => selectedRadio = locationId),
-                      selectedRadio: selectedRadio,
-                    );
-                  }
-                  return const Center(child: CircularProgressIndicator());
-                },
+              DialogRadiosWidget(
+                locations: widget.locationChildren,
+                onChangeSelectedRadio: (locationId) =>
+                    setState(() => selectedRadio = locationId),
+                selectedRadio: selectedRadio,
               ),
               if (widget.isCapacitySelectable ?? false)
                 Slider(
@@ -127,13 +117,16 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
   void _postLocation(int locationId) {
     setState(() => _isLoading = true);
 
-    PostService.createPost(locationId, PostType.ongoing, _currentSliderValue?.round()).then((_) {
+    PostService.createPost(
+            locationId, PostType.ongoing, _currentSliderValue?.round())
+        .then((_) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Your current location has been posted'),
         ),
       );
       Provider.of<UserProvider>(context, listen: false).updateUser();
+      Provider.of<LocationProvider>(context, listen: false).loadCurrentLocationTree();
       Navigator.of(context).pop();
     }).onError((error, stackTrace) {
       ScaffoldMessenger.of(context).showSnackBar(

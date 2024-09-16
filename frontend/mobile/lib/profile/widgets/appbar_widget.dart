@@ -147,9 +147,9 @@ AppBar buildAppBar(BuildContext context) {
                     ElevatedButton(
                       child: const Icon(Icons.check),
                       onPressed: () {
-                        FirebaseAuth.instance.signOut();
                         FirebaseMessaging.instance.deleteToken();
                         Navigator.of(context).pop();
+                        FirebaseAuth.instance.signOut();
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder: (context) => const LoginPage(),

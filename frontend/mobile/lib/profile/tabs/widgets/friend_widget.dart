@@ -44,7 +44,7 @@ class FriendWidget extends StatelessWidget {
   }
 
   Widget? _getLeadingImage() => FutureBuilder(
-        future: ImageService.getImage(imageId, size: 50),
+        future: ImageService.get(imageId, size: 50),
         builder: (context, snapshot) {
           return snapshot.hasData
               ? ClipOval(

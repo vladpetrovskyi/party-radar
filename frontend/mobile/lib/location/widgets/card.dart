@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:party_radar/common/error_snack_bar.dart';
 import 'package:party_radar/common/models.dart';
 import 'package:party_radar/common/providers.dart';
 import 'package:party_radar/common/services/location_service.dart';
-import 'package:party_radar/location/dialogs/location_selection_dialog.dart';
 import 'package:party_radar/location/dialogs/builders/share_location_dialog_builder.dart';
+import 'package:party_radar/location/dialogs/location_selection_dialog.dart';
+import 'package:party_radar/location/widgets/edit_card.dart';
 import 'package:party_radar/location/widgets/elapsed_time.dart';
 import 'package:party_radar/location/widgets/user_dots_widget.dart';
 import 'package:provider/provider.dart';
@@ -20,7 +22,7 @@ class LocationCard extends StatefulWidget {
 }
 
 class _LocationCardState extends State<LocationCard>
-    with ShareLocationDialogBuilder {
+    with ShareLocationDialogBuilder, ErrorSnackBar {
   late Location _location;
 
   @override
@@ -31,11 +33,11 @@ class _LocationCardState extends State<LocationCard>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<UserProvider>(
-      builder: (BuildContext context, UserProvider provider, Widget? child) =>
-          Card(
+    return Consumer<LocationProvider>(
+      builder: (context, provider, child) => Card(
         clipBehavior: Clip.hardEdge,
         shape: getShape(provider),
+        surfaceTintColor: _location.enabled ? null : Colors.red,
         child: child,
       ),
       child: InkWell(
@@ -79,7 +81,7 @@ class _LocationCardState extends State<LocationCard>
     );
   }
 
-  ShapeBorder? getShape(UserProvider provider) {
+  ShapeBorder? getShape(LocationProvider provider) {
     if (widget.isEditMode) {
       return null;
     }
@@ -97,25 +99,33 @@ class _LocationCardState extends State<LocationCard>
   }
 
   Function()? _getOnTapFunction() {
+    if (widget.isEditMode) {
+      return () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => EditCardPage(
+                location: _location,
+                handle: (newLocation) =>
+                    setState(() => _location = newLocation),
+              ),
+            ),
+          );
+    }
+
     if (!_isActive()) {
-      return () => _showErrorSnackBar(
+      return () => showErrorSnackBar(
           'Please check in first by pressing play button', context);
     }
 
     if (_location.isCloseable && _location.closedAt != null) {
-      return () {
-        showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
+      return () => showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
               title: const Text('Mark as opened'),
               content: const Text(
-                  'This _location has been temporarily closed. Is it available again? The result of this action will be visible to everyone!'),
+                  'This location has been temporarily closed. Is it available again? The result of this action will be visible to everyone!'),
               actions: <Widget>[
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
+                  onPressed: () => Navigator.of(context).pop(),
                   child: const Icon(Icons.close),
                 ),
                 ElevatedButton(
@@ -126,10 +136,8 @@ class _LocationCardState extends State<LocationCard>
                   child: const Icon(Icons.check),
                 ),
               ],
-            );
-          },
-        );
-      };
+            ),
+          );
     }
 
     return () {
@@ -140,39 +148,46 @@ class _LocationCardState extends State<LocationCard>
         return;
       }
 
-      showDialog<void>(
-        context: context,
-        builder: (context) {
-          return LocationSelectionDialog(
-            context: context,
-            dialogName: _location.dialogName,
-            imageId: _location.imageId,
-            parentLocationId: _location.id!,
-            isCapacitySelectable: _location.isCapacitySelectable,
-          );
-        },
-      );
+      LocationService.getLocationChildren(_location.id!)
+          .then((locationChildren) {
+        if (locationChildren == null || locationChildren.isEmpty) {
+          buildShareLocationDialog(context, _location.id);
+          return;
+        }
+        showDialog<void>(
+          context: context,
+          builder: (context) {
+            return LocationSelectionDialog(
+              context: context,
+              dialogName: _location.dialogName,
+              imageId: _location.imageId,
+              parentLocationId: _location.id!,
+              isCapacitySelectable: _location.isCapacitySelectable,
+              locationChildren: locationChildren,
+            );
+          },
+        );
+      });
     };
   }
 
   Function()? _getLongPressFunction() {
-    if (!_isActive() || !_location.isCloseable || _location.closedAt != null) {
+    if (!_isActive() ||
+        !_location.isCloseable ||
+        _location.closedAt != null ||
+        widget.isEditMode) {
       return null;
     }
 
-    return () {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
+    return () => showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
             title: const Text('Mark as closed'),
             content: const Text(
-                'Would you like to mark this _location as temporarily closed? The result of this action will be visible to everyone!'),
+                'Would you like to mark this location as temporarily closed? The result of this action will be visible to everyone!'),
             actions: <Widget>[
               ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+                onPressed: () => Navigator.of(context).pop(),
                 child: const Icon(Icons.close),
               ),
               ElevatedButton(
@@ -183,24 +198,22 @@ class _LocationCardState extends State<LocationCard>
                 child: const Icon(Icons.check),
               ),
             ],
-          );
-        },
-      );
-    };
+          ),
+        );
   }
 
   void _closeLocation(int? locationId) {
     if (locationId == null) return;
 
     LocationService.updateLocationAvailability(locationId, DateTime.now())
-        .then((value) => reloadLocation());
+        .then((_) => reloadLocation());
   }
 
   void _openLocation(int? locationId) {
     if (locationId == null) return;
 
     LocationService.updateLocationAvailability(locationId, null)
-        .then((value) => reloadLocation());
+        .then((_) => reloadLocation());
   }
 
   void reloadLocation() async =>
@@ -210,19 +223,10 @@ class _LocationCardState extends State<LocationCard>
             _location = l;
           });
         } else {
-          _showErrorSnackBar(
+          showErrorSnackBar(
               "Could not update the view - service unavailable", context);
         }
       });
-
-  void _showErrorSnackBar(String message, BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
 
   Widget _buildCardName() => Padding(
         padding: const EdgeInsets.only(left: 5, right: 5, top: 2, bottom: 5),

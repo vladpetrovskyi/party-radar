@@ -8,11 +8,54 @@ import 'package:party_radar/common/models.dart';
 import 'package:party_radar/common/util/extensions.dart';
 
 class LocationService {
-  static void createLocation() {}
+  static Future<Location?> createLocation(Location location) async {
+    final response = await post(
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/location'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
+        HttpHeaders.contentTypeHeader: 'application/json'
+      },
+      body: jsonEncode(location.toJson()),
+    );
 
-  static void updateLocation() {}
+    if (response.ok) {
+      return Location.fromJson(jsonDecode(response.body));
+    }
 
-  static void deleteLocation() {}
+    return null;
+  }
+
+  static Future<Location?> updateLocation(Location location) async {
+    final response = await put(
+      Uri.parse(
+          '${FlavorConfig.instance.values.apiV1}/location/${location.id}'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}',
+        HttpHeaders.contentTypeHeader: 'application/json'
+      },
+      body: jsonEncode(location.toJson()),
+    );
+
+    if (response.ok) {
+      return Location.fromJson(jsonDecode(response.body));
+    }
+
+    return null;
+  }
+
+  static Future<bool> deleteLocation(int? locationId) async {
+    final response = await delete(
+      Uri.parse('${FlavorConfig.instance.values.apiV1}/location/$locationId'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+      },
+    );
+
+    return response.ok;
+  }
 
   static Future<List<int>> getSelectedLocationIds() async {
     final response = await get(
@@ -23,6 +66,10 @@ class LocationService {
       },
     );
 
+    if (response.statusCode == 204) {
+      return List.empty();
+    }
+
     if (response.ok) {
       return List<int>.from(
           jsonDecode(response.body).map((model) => model as int)).toList();
@@ -31,10 +78,10 @@ class LocationService {
   }
 
   static Future<List<Location>?> getLocations(ElementType elementType,
-      {bool checkEnabled = false}) async {
+      {bool? checkEnabled}) async {
     final response = await get(
       Uri.parse(
-          '${FlavorConfig.instance.values.apiV1}/location?type=${elementType.name}'),
+          '${FlavorConfig.instance.values.apiV1}/location?type=${elementType.name}${checkEnabled != null ? '&enabled=$checkEnabled' : ''}'),
       headers: {
         HttpHeaders.authorizationHeader:
             'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
@@ -44,7 +91,6 @@ class LocationService {
     if (response.ok) {
       return List<Location>.from(jsonDecode(response.body)
               .map((model) => Location.fromJson(model)))
-          .where((location) => checkEnabled ? location.enabled : true)
           .toList();
     }
     throw Exception('Request failed: ${response.body}');

@@ -127,7 +127,7 @@ class _UserProfilePageState extends State<UserProfilePage>
 
   Future<Image?> _getProfilePicture() async {
     var user = await UserService.getUser();
-    return ImageService.getImage(user?.imageId, size: 128);
+    return ImageService.get(user?.imageId, size: 128);
   }
 
   _openEditPage(Image image) {

@@ -7,8 +7,8 @@ class LocationListTile extends EditableLocationListTile
   const LocationListTile({
     super.key,
     required super.location,
+    required super.locationProvider,
     super.isEditMode,
-    super.textEditingController,
     required super.title,
   });
 

@@ -8,33 +8,47 @@ import 'package:party_radar/location/widgets/location_tile.dart';
 import 'package:provider/provider.dart';
 
 class LocationWidget extends StatelessWidget {
-  const LocationWidget(this.rootLocation, {super.key});
-
-  final Location? rootLocation;
+  const LocationWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () => Future.delayed(
-        const Duration(milliseconds: 500),
-        () => Provider.of<LocationProvider>(context, listen: false)
-            .updateLocation(rootLocation?.id),
-      ),
-      child: FutureBuilder(
-        future: LocationService.getLocationChildren(rootLocation?.id),
-        builder:
-            (BuildContext context, AsyncSnapshot<List<Location>?> snapshot) {
-          if (snapshot.hasError) {
-            return const Text("Could not load locations");
-          }
-          if (snapshot.hasData) {
-            return ListView(
-              children: _getChildrenOfLocation(snapshot.data),
-            );
-          }
-          return const Center(child: CircularProgressIndicator());
-        },
-      ),
+    return Consumer<LocationProvider>(
+      builder: (_, provider, __) {
+        if (provider.rootLocation != null) {
+          return RefreshIndicator(
+            onRefresh: () => Future.delayed(
+              const Duration(milliseconds: 500),
+              () {
+                provider.loadCurrentLocationTree();
+                provider.loadRootLocation(reloadCurrent: true);
+              },
+            ),
+            child: FutureBuilder(
+              future: LocationService.getLocationChildren(
+                  provider.rootLocation?.id),
+              builder: (_, snapshot) {
+                if (snapshot.hasError) {
+                  return const Text("Could not load locations");
+                }
+                if (snapshot.hasData) {
+                  return ListView(
+                    children: _getChildrenOfLocation(snapshot.data),
+                  );
+                }
+                return const Center(child: CircularProgressIndicator());
+              },
+            ),
+          );
+        }
+
+        return const Center(
+          child: Text(
+            'Please select a location in the upper left menu',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 28),
+          ),
+        );
+      },
     );
   }
 
@@ -48,7 +62,7 @@ class LocationWidget extends StatelessWidget {
       if (rootChild.elementType == ElementType.listTile ||
           rootChild.elementType == ElementType.expansionTile) {
         resultList.add(
-          LocationTile(location: rootChild),
+          LocationTile(key: UniqueKey(), location: rootChild),
         );
       }
     }

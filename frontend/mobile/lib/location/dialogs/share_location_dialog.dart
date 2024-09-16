@@ -57,6 +57,7 @@ class _ShareLocationDialogState extends State<ShareLocationDialog> {
         ),
       );
       Provider.of<UserProvider>(context, listen: false).updateUser();
+      Provider.of<LocationProvider>(context, listen: false).loadCurrentLocationTree();
       Navigator.of(context).pop();
     }).onError((error, stackTrace) {
       ScaffoldMessenger.of(context).showSnackBar(

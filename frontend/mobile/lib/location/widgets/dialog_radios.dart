@@ -16,21 +16,23 @@ class DialogRadiosWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    locations.sort((a, b) => a.columnIndex.compareTo(b.columnIndex));
+    locations.sort((a, b) => (a.columnIndex ?? 0).compareTo(b.columnIndex ?? 0));
 
     List<List<RadioListTileWidget>> columnList =
-        List.generate(locations.last.columnIndex + 1, (index) => []);
+        List.generate((locations.last.columnIndex ?? 0) + 1, (index) => []);
     for (int i = 0; i < locations.length; i++) {
-      columnList.elementAt(locations[i].columnIndex).add(
+      columnList.elementAt(locations[i].columnIndex ?? 0).add(
             RadioListTileWidget(
               locationId: locations[i].id!,
               locationName: locations[i].name,
               selectedValue: selectedRadio,
               onChanged: onChangeSelectedRadio,
-              locationRowIndex: locations[i].rowIndex,
+              locationRowIndex: locations[i].rowIndex ?? 0,
             ),
           );
     }
+
+    columnList.removeWhere((col) => col.isEmpty);
 
     List<Column> columns = [];
 

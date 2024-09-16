@@ -20,7 +20,7 @@ class PostHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: showImage ? _getLeadingImage(post.imageId, 40) : null,
+      leading: showImage ? leadingImage : null,
       title: Text(
         title,
         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -31,12 +31,12 @@ class PostHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            _getLocationHeader(post),
+            headerText,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             textAlign: TextAlign.end,
           ),
           Text(
-            _getLocationSubheader(post),
+            subheaderText,
             style: const TextStyle(fontSize: 18),
             textAlign: TextAlign.end,
           ),
@@ -45,12 +45,13 @@ class PostHeader extends StatelessWidget {
     );
   }
 
-  String _getLocationHeader(Post post) {
+  String get headerText {
     if (post.type == PostType.start) {
       return 'ARRIVED';
     }
     if (post.type == PostType.ongoing) {
-      return '${post.location.children[0].name} ${post.location.children[0].emoji}';
+      return '${post.location.children[0].name} ${post.location.children[0].emoji ?? ''}'
+          .trim();
     }
     if (post.type == PostType.end) {
       return 'LEFT';
@@ -58,13 +59,14 @@ class PostHeader extends StatelessWidget {
     return '';
   }
 
-  String _getLocationSubheader(Post post) {
+  String get subheaderText {
     if (post.type == PostType.start) {
       return '- - - -';
     }
     if (post.type == PostType.ongoing &&
         post.location.children[0].children.isNotEmpty) {
-      return '${post.location.children[0].children[0].name} ${post.location.children[0].children[0].emoji}';
+      return '${post.location.children[0].children[0].name} ${post.location.children[0].children[0].emoji ?? ''}'
+          .trim();
     }
     if (post.type == PostType.end) {
       return '- - - -';
@@ -72,14 +74,14 @@ class PostHeader extends StatelessWidget {
     return '';
   }
 
-  Widget? _getLeadingImage(int? imageId, double size) => FutureBuilder(
-        future: ImageService.getImage(imageId, size: size),
+  Widget get leadingImage => FutureBuilder(
+        future: ImageService.get(post.imageId, size: 40),
         builder: (context, snapshot) {
           return snapshot.hasData
               ? ClipOval(
                   child: SizedBox(
                     child: WidgetZoom(
-                        heroAnimationTag: 'tag-$imageId-${DateTime.now()}',
+                        heroAnimationTag: 'tag-${post.imageId}-${DateTime.now()}',
                         zoomWidget: snapshot.data!),
                   ),
                 )

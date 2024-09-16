@@ -12,12 +12,11 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   List<String> _enabled = [];
 
-
   @override
   void initState() {
     UserService.getUserTopics().then((topics) => setState(() {
-      _enabled = topics;
-    }));
+          _enabled = topics;
+        }));
     super.initState();
   }
 
@@ -36,17 +35,20 @@ class _SettingsPageState extends State<SettingsPage> {
             const Divider(),
             ListTile(
               title: const Text("Friendship requests"),
-              subtitle: const Text("Get notifications about new friendship requests"),
+              subtitle:
+                  const Text("Get notifications about new friendship requests"),
               trailing: getSwitch('friendship-requests', true),
             ),
             ListTile(
               title: const Text("Location availability updates"),
-              subtitle: const Text("Get notifications when locations are marked as closed / opened"),
+              subtitle: const Text(
+                  "Get notifications when locations are marked as closed / opened"),
               trailing: getSwitch('location-availability', true),
             ),
             ListTile(
               title: const Text("New posts"),
-              subtitle: const Text("Get notifications about new posts at the club you're currently at"),
+              subtitle: const Text(
+                  "Get notifications about new posts at the club you're currently at"),
               trailing: getSwitch('new-posts', true),
             ),
             // TODO: activate after this function is available
@@ -57,7 +59,7 @@ class _SettingsPageState extends State<SettingsPage> {
             //   trailing: getSwitch('post-tags', false),
             // ),
             const SizedBox(height: 24),
-            OutlinedButton(
+            FilledButton.tonal(
               onPressed: () {
                 showDialog(
                     context: context,
@@ -65,10 +67,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       return const DeleteAccountDialog();
                     });
               },
-              child: const Text(
-                'Delete account',
-                style: TextStyle(color: Colors.redAccent),
-              ),
+              child: const Text('Delete account'),
             )
           ],
         ),
@@ -77,21 +76,23 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget getSwitch(String notificationType, bool isActive) => Switch(
-    onChanged: isActive ? (bool? value) {
-      if (value != null) {
-        if (value) {
-          UserService.subscribeToTopic(notificationType);
-          setState(() {
-            _enabled.add(notificationType);
-          });
-        } else {
-          UserService.unsubscribeFromTopic(notificationType);
-          setState(() {
-            _enabled.remove(notificationType);
-          });
-        }
-      }
-    } : null,
-    value: _enabled.contains(notificationType),
-  );
+        onChanged: isActive
+            ? (bool? value) {
+                if (value != null) {
+                  if (value) {
+                    UserService.subscribeToTopic(notificationType);
+                    setState(() {
+                      _enabled.add(notificationType);
+                    });
+                  } else {
+                    UserService.unsubscribeFromTopic(notificationType);
+                    setState(() {
+                      _enabled.remove(notificationType);
+                    });
+                  }
+                }
+              }
+            : null,
+        value: _enabled.contains(notificationType),
+      );
 }

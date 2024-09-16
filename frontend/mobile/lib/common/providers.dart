@@ -5,27 +5,39 @@ import 'package:party_radar/common/services/user_service.dart';
 import 'models.dart';
 
 class LocationProvider extends ChangeNotifier {
-  Location? rootLocation;
+  Location? _rootLocation;
   bool editMode;
+  List<int> currentLocationTree = <int>[];
+  List<int?> lastOpenedExpansions = <int?>[];
 
-  LocationProvider({this.rootLocation, this.editMode = false});
+  LocationProvider({this.editMode = false}) {
+    loadRootLocation();
+  }
 
-  void updateLocation(int? locationId) async {
-    int? userRootLocationId;
-    if (locationId != null ||
-        (userRootLocationId = (await UserService.getUser())?.rootLocationId) !=
-            null) {
-      var userLocation =
-          await LocationService.getLocation(locationId ?? userRootLocationId);
-      rootLocation = userLocation;
+  Location? get rootLocation => _rootLocation;
+
+  Future<void> loadRootLocation({int? locationId, bool reloadCurrent = false}) async {
+    if (reloadCurrent) {
+      _rootLocation = await LocationService.getLocation(_rootLocation?.id);
+    } else if (locationId != null) {
+      _rootLocation = await LocationService.getLocation(locationId);
     } else {
-      rootLocation = null;
+      _rootLocation = await _loadRootLocationForUser();
     }
     notifyListeners();
   }
 
+  void loadCurrentLocationTree() async {
+    currentLocationTree = await LocationService.getSelectedLocationIds();
+    notifyListeners();
+  }
+
+  Future<Location?> _loadRootLocationForUser() async =>
+      await LocationService.getLocation(
+          (await UserService.getUser())!.rootLocationId);
+
   void updateRootLocation(Location? rootLocation) {
-    this.rootLocation = rootLocation;
+    _rootLocation = rootLocation;
     notifyListeners();
   }
 
@@ -36,16 +48,15 @@ class LocationProvider extends ChangeNotifier {
 }
 
 class UserProvider extends ChangeNotifier {
-  User? user;
-  List<int> currentLocationTree = <int>[];
+  User? _user;
 
-  UserProvider({this.user}) {
+  UserProvider() {
     updateUser();
   }
 
+  User? get user => _user;
+
   void updateUser() async {
-    user = await UserService.getUser();
-    currentLocationTree = await LocationService.getSelectedLocationIds();
-    notifyListeners();
+    _user = await UserService.getUser();
   }
 }

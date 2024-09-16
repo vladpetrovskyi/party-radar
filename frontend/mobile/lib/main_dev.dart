@@ -7,9 +7,6 @@ import 'package:party_radar/app.dart';
 import 'package:party_radar/common/flavors/flavor_config.dart';
 import 'package:party_radar/common/services/user_service.dart';
 import 'package:party_radar/firebase_options_dev.dart';
-import 'package:provider/provider.dart';
-
-import 'common/providers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,15 +37,7 @@ void main() async {
     ),
   );
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => LocationProvider()),
-        ChangeNotifierProvider(create: (context) => UserProvider()),
-      ],
-      child: const PartyRadarApp(),
-    ),
-  );
+  runApp(const PartyRadarApp());
 }
 
 Future<void> _initFCM() async {

@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:party_radar/common/models.dart';
+import 'package:party_radar/common/providers.dart';
 import 'package:party_radar/common/services/location_service.dart';
 import 'package:party_radar/location/location_page.dart';
+import 'package:party_radar/location/widgets/card.dart';
 import 'package:party_radar/location/widgets/editable_location_list_tile.dart';
-import 'package:party_radar/location/widgets/location_card.dart';
+import 'package:provider/provider.dart';
 
 class LocationExpansionTile extends EditableLocationListTile {
   const LocationExpansionTile({
     super.key,
     required super.location,
+    required super.locationProvider,
     required super.title,
     super.isEditMode = false,
-    super.textEditingController,
   });
 
   @override
@@ -20,6 +22,11 @@ class LocationExpansionTile extends EditableLocationListTile {
         TextEditingController();
 
     return ExpansionTile(
+      onExpansionChanged: (expanded) => expanded
+          ? locationProvider.lastOpenedExpansions.add(location.id)
+          : locationProvider.lastOpenedExpansions.remove(location.id),
+      initiallyExpanded:
+          locationProvider.lastOpenedExpansions.contains(location.id),
       title: getTitle(),
       subtitle: getSubtitle(),
       trailing: getTrailing(),
@@ -59,16 +66,21 @@ class LocationExpansionTile extends EditableLocationListTile {
         itemBuilder: (context, index) {
           if (isEditMode && index == locationChildren.length) {
             return EditableLocationCard(
-                newLocationNameFieldController: newLocationNameFieldController);
+                newLocationNameFieldController: newLocationNameFieldController,
+                rootLocationId: location.rootLocationId!,
+                parentId: location.id!);
           }
 
-          if (locationChildren[index].deletedAt == null) {
+          var locationChild = locationChildren[index];
+
+          if (locationChild.deletedAt == null &&
+              ((!isEditMode && locationChild.enabled) || isEditMode)) {
             return LocationCard(
               location: locationChildren[index],
               isEditMode: isEditMode,
             );
           }
-          return Container();
+          return null;
         },
       );
 
@@ -83,9 +95,14 @@ class LocationExpansionTile extends EditableLocationListTile {
 
 class EditableLocationCard extends StatelessWidget {
   const EditableLocationCard(
-      {super.key, required this.newLocationNameFieldController});
+      {super.key,
+      required this.newLocationNameFieldController,
+      required this.rootLocationId,
+      required this.parentId});
 
   final TextEditingController newLocationNameFieldController;
+  final int rootLocationId;
+  final int parentId;
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +112,18 @@ class EditableLocationCard extends StatelessWidget {
         onTap: () => showDialog(
           context: context,
           builder: (context) => PartyStateDialog(
-            onAccept: () {},
+            onAccept: () {
+              LocationService.createLocation(
+                Location(
+                  name: newLocationNameFieldController.text,
+                  elementType: ElementType.card,
+                  rootLocationId: rootLocationId,
+                  parentId: parentId,
+                ),
+              ).then((_) =>
+                  Provider.of<LocationProvider>(context, listen: false)
+                      .loadRootLocation(reloadCurrent: true));
+            },
             title: "Add location card",
             content: _createNewLocationDialogContent(),
           ),

@@ -20,25 +20,39 @@ class PartyRadarApp extends StatefulWidget {
 class _PartyRadarAppState extends State<PartyRadarApp> {
   @override
   Widget build(BuildContext context) {
+    firebase_auth_pkg.FirebaseAuth.instance
+        .authStateChanges()
+        .listen((firebase_auth_pkg.User? user) {
+      if (user == null) _rebuildWidget();
+    });
+
     firebase_auth_pkg.User? getUserData() =>
         firebase_auth_pkg.FirebaseAuth.instance.currentUser;
 
-    return MaterialApp(
-      title: 'Party Radar',
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        dividerColor: Colors.black12,
-        colorSchemeSeed: Colors.cyanAccent,
-        useMaterial3: true,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        textTheme: GoogleFonts.openSansTextTheme()
-            .apply(displayColor: Colors.white, bodyColor: Colors.white),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Party Radar',
+        darkTheme: ThemeData(
+          brightness: Brightness.dark,
+          dividerColor: Colors.black12,
+          colorSchemeSeed: Colors.cyanAccent,
+          useMaterial3: true,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+          textTheme: GoogleFonts.openSansTextTheme()
+              .apply(displayColor: Colors.white, bodyColor: Colors.white),
+        ),
+        themeMode: ThemeMode.dark,
+        home: getUserData() != null ? const MainPage() : const LoginPage(),
+        debugShowCheckedModeBanner: false,
       ),
-      themeMode: ThemeMode.dark,
-      home: getUserData() != null ? const MainPage() : const LoginPage(),
-      debugShowCheckedModeBanner: false,
     );
   }
+
+  void _rebuildWidget() => setState(() {});
 }
 
 class MainPage extends StatefulWidget {
@@ -54,53 +68,57 @@ class _MainPageState extends State<MainPage> {
 
   @override
   void initState() {
-    Provider.of<LocationProvider>(context, listen: false).updateLocation(null);
-
     setupInteractedMessage();
-
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return FlavorBanner(
-      child: Consumer<LocationProvider>(
-        builder: (BuildContext context, LocationProvider provider, Widget? child) => Scaffold(
-          body: [
-            provider.rootLocation != null
-                ? FeedPage(locationId: provider.rootLocation!.id!)
-                : Container(),
-            LocationPage(provider.rootLocation),
-            UserProfilePage(
-              initialTabIndex: _initialTabIndex,
-              onTabChanged: (index) => _initialTabIndex = index,
-            ),
-          ][_currentPageIndex],
-          bottomNavigationBar: NavigationBar(
-            height: 65,
-            onDestinationSelected: (int index) {
-              setState(() {
-                _currentPageIndex = index;
-              });
+      child: Scaffold(
+        body: [
+          Consumer<LocationProvider>(
+            builder: (BuildContext context, LocationProvider provider,
+                Widget? child) {
+              return provider.rootLocation != null
+                  ? FeedPage(locationId: provider.rootLocation!.id!)
+                  : Container();
             },
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: <Widget>[
-              NavigationDestination(
-                icon: const Icon(Icons.history),
-                label: 'Feed',
-                enabled: provider.rootLocation != null,
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.share_location_outlined),
-                label: 'Location',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                label: 'Profile',
-              )
-            ],
-            selectedIndex: _currentPageIndex,
           ),
+          const LocationScreen(),
+          UserProfilePage(
+            initialTabIndex: _initialTabIndex,
+            onTabChanged: (index) => _initialTabIndex = index,
+          ),
+        ][_currentPageIndex],
+        bottomNavigationBar: NavigationBar(
+          height: 65,
+          onDestinationSelected: (int index) {
+            setState(() {
+              _currentPageIndex = index;
+            });
+          },
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: <Widget>[
+            Consumer<LocationProvider>(
+              builder: (_, provider, __) {
+                return NavigationDestination(
+                  icon: const Icon(Icons.history),
+                  label: 'Feed',
+                  enabled: provider.rootLocation != null,
+                );
+              },
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.share_location_outlined),
+              label: 'Location',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              label: 'Profile',
+            )
+          ],
+          selectedIndex: _currentPageIndex,
         ),
       ),
     );
@@ -119,7 +137,8 @@ class _MainPageState extends State<MainPage> {
 
   void _handleMessage(RemoteMessage? message) {
     if (message != null) {
-      var rootLocation = Provider.of<LocationProvider>(context, listen: false).rootLocation;
+      var rootLocation =
+          Provider.of<LocationProvider>(context, listen: false).rootLocation;
       if (message.data['view'] == 'friendship-requests') {
         setState(() {
           _currentPageIndex = 2;

@@ -34,8 +34,7 @@ class _LocationDrawerState extends State<LocationDrawer> {
           ),
           Expanded(
             child: FutureBuilder(
-              future: LocationService.getLocations(ElementType.root,
-                  checkEnabled: true),
+              future: LocationService.getLocations(ElementType.root),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const NotFoundWidget(
@@ -58,9 +57,21 @@ class _LocationDrawerState extends State<LocationDrawer> {
                   onPressed: () => _openDialog(
                     PartyStateDialog(
                       onAccept: () {
-                        Navigator.of(context).pop();
-                        Provider.of<LocationProvider>(context, listen: false)
-                            .setEditMode(true);
+                        LocationService.createLocation(
+                          Location(
+                            name: _newLocationNameFieldController.value.text,
+                            elementType: ElementType.root,
+                            enabled: false,
+                          ),
+                        ).then((val) {
+                          var locationProvider = Provider.of<LocationProvider>(
+                              context,
+                              listen: false);
+                          locationProvider
+                              .loadRootLocation(locationId: val?.id)
+                              .then((_) => locationProvider.setEditMode(true));
+                          Navigator.of(context).pop();
+                        });
                       },
                       title: "Create new location",
                       content: _createNewLocationDialogContent(),
@@ -113,7 +124,19 @@ class _LocationDrawerState extends State<LocationDrawer> {
             subtitle: _listTileSubtitle(location),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16),
             onTap: () => _selectLocation(location.id),
-            enabled: location.enabled,
+            trailing: location.createdBy ==
+                    Provider.of<UserProvider>(context, listen: false)
+                        .user
+                        ?.username
+                ? Switch(
+                    value: location.enabled,
+                    onChanged: (value) {
+                      location.enabled = value;
+                      LocationService.updateLocation(location)
+                          .then((_) => setState(() {}));
+                    },
+                  )
+                : null,
           );
         },
       );
@@ -124,16 +147,14 @@ class _LocationDrawerState extends State<LocationDrawer> {
             location.name,
             style: const TextStyle(fontSize: 18),
           ),
-          if (location.enabled && location.isOfficial) const SizedBox(width: 5),
-          if (location.enabled && location.isOfficial)
+          if (location.isOfficial) const SizedBox(width: 5),
+          if (location.isOfficial)
             const Icon(IconData(0xe699, fontFamily: 'MaterialIcons'))
         ],
       );
 
   Widget? _listTileSubtitle(Location location) =>
-      location.enabled && location.createdBy != null
-          ? Text("By ${location.createdBy}")
-          : null;
+      location.createdBy != null ? Text("by ${location.createdBy}") : null;
 
   void _openDialog(Widget dialogWidget) {
     showDialog(
@@ -151,8 +172,11 @@ class _LocationDrawerState extends State<LocationDrawer> {
       _showErrorSnackBar('Please select username first');
     }
 
-    Provider.of<LocationProvider>(context, listen: false)
-        .updateLocation(locationId);
+    var locationProvider =
+        Provider.of<LocationProvider>(context, listen: false);
+    locationProvider.editMode = false;
+    locationProvider.loadRootLocation(locationId: locationId);
+
     Navigator.of(context).pop();
   }
 

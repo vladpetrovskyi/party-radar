@@ -21,20 +21,50 @@ class SimpleLocationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SimpleDialog(title: _buildDialogTitle(context), children: [
-      FutureBuilder(
-        future: PostService.getPostViewsCount(postId),
-        builder: (context, snapshot) =>
-            _buildDescription(capacity, snapshot.data),
-      ),
-      _getDivider(),
-      if (imageId != null) _buildImage(),
-      _getDivider(),
-      _buildBackButton(context),
-    ]);
+    return SimpleDialog(
+      title: title,
+      children: [
+        description,
+        divider,
+        if (imageId != null) image,
+        divider,
+        _getBackButton(context),
+      ],
+    );
   }
 
-  Widget _getDivider() => const Divider(
+  Widget get title => Text(
+        'Location: $locationName',
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontWeight: FontWeight.normal, fontSize: 28),
+      );
+
+  Widget get description => FutureBuilder(
+        future: PostService.getPostViewsCount(postId),
+        builder: (context, snapshot) => Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (capacity != null)
+              Text(
+                'Free spots: $capacity',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            if (snapshot.hasData && snapshot.data != null && capacity != null)
+              const Text(
+                ' | ',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            if (snapshot.hasData && snapshot.data != null)
+              Text(
+                'Views: ${snapshot.data!}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+          ],
+        ),
+      );
+
+  Widget get divider => const Divider(
         indent: 32,
         endIndent: 32,
         height: 32,
@@ -42,18 +72,8 @@ class SimpleLocationDialog extends StatelessWidget {
         thickness: 0.5,
       );
 
-  Widget _buildBackButton(BuildContext context) => Center(
-        child: SimpleDialogOption(
-          child: const Text(
-            'BACK',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      );
-
-  Widget _buildImage() => FutureBuilder(
-        future: ImageService.getImage(imageId),
+  Widget get image => FutureBuilder(
+        future: ImageService.get(imageId),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             return Padding(
@@ -67,31 +87,13 @@ class SimpleLocationDialog extends StatelessWidget {
         },
       );
 
-  Widget _buildDescription(int? capacity, int? views) => Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (capacity != null)
-            Text(
-              'Free spots: $capacity',
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          if (views != null && capacity != null)
-            const Text(
-              ' | ',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          if (views != null)
-            Text(
-              'Views: $views',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-        ],
-      );
-
-  Widget _buildDialogTitle(BuildContext context) => Text(
-        'Location: $locationName',
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontWeight: FontWeight.normal, fontSize: 28),
+  Widget _getBackButton(BuildContext context) => Center(
+        child: SimpleDialogOption(
+          child: const Text(
+            'BACK',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       );
 }

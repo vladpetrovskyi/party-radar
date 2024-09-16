@@ -19,7 +19,7 @@ class PostActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var openDialogLocation = _getOpenDialogLocation(post.location);
+    var openDialogLocation = _getLocationWithOpenDialogClickAction(post.location);
     return Container(
       margin: const EdgeInsets.only(right: 20, left: 20, bottom: 5),
       child: Row(
@@ -52,7 +52,7 @@ class PostActions extends StatelessWidget {
     );
   }
 
-  Location? _getOpenDialogLocation(Location location) {
+  Location? _getLocationWithOpenDialogClickAction(Location location) {
     if (post.location.onClickAction == OnClickAction.openDialog) {
       return location;
     }
@@ -60,7 +60,7 @@ class PostActions extends StatelessWidget {
       if (child.onClickAction == OnClickAction.openDialog) {
         return child;
       }
-      var c = _getOpenDialogLocation(child);
+      var c = _getLocationWithOpenDialogClickAction(child);
       if (c?.onClickAction == OnClickAction.openDialog) {
         return c;
       }
