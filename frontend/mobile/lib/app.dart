@@ -1,13 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth_pkg;
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:party_radar/common/flavors/flavor_banner.dart';
-import 'package:party_radar/common/providers.dart';
-import 'package:party_radar/feed/feed_page.dart';
-import 'package:party_radar/location/location_page.dart';
-import 'package:party_radar/login/login_widget.dart';
-import 'package:party_radar/profile/user_profile_page.dart';
+import 'package:party_radar/providers/location_provider.dart';
+import 'package:party_radar/providers/user_provider.dart';
+import 'package:party_radar/screens/login_screen.dart';
+import 'package:party_radar/screens/main_screen.dart';
 import 'package:provider/provider.dart';
 
 class PartyRadarApp extends StatefulWidget {
@@ -46,118 +43,11 @@ class _PartyRadarAppState extends State<PartyRadarApp> {
               .apply(displayColor: Colors.white, bodyColor: Colors.white),
         ),
         themeMode: ThemeMode.dark,
-        home: getUserData() != null ? const MainPage() : const LoginPage(),
+        home: getUserData() != null ? const MainScreen() : const LoginScreen(),
         debugShowCheckedModeBanner: false,
       ),
     );
   }
 
   void _rebuildWidget() => setState(() {});
-}
-
-class MainPage extends StatefulWidget {
-  const MainPage({super.key});
-
-  @override
-  State<MainPage> createState() => _MainPageState();
-}
-
-class _MainPageState extends State<MainPage> {
-  int _currentPageIndex = 1;
-  int _initialTabIndex = 0;
-
-  @override
-  void initState() {
-    setupInteractedMessage();
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FlavorBanner(
-      child: Scaffold(
-        body: [
-          Consumer<LocationProvider>(
-            builder: (BuildContext context, LocationProvider provider,
-                Widget? child) {
-              return provider.rootLocation != null
-                  ? FeedPage(locationId: provider.rootLocation!.id!)
-                  : Container();
-            },
-          ),
-          const LocationScreen(),
-          UserProfilePage(
-            initialTabIndex: _initialTabIndex,
-            onTabChanged: (index) => _initialTabIndex = index,
-          ),
-        ][_currentPageIndex],
-        bottomNavigationBar: NavigationBar(
-          height: 65,
-          onDestinationSelected: (int index) {
-            setState(() {
-              _currentPageIndex = index;
-            });
-          },
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: <Widget>[
-            Consumer<LocationProvider>(
-              builder: (_, provider, __) {
-                return NavigationDestination(
-                  icon: const Icon(Icons.history),
-                  label: 'Feed',
-                  enabled: provider.rootLocation != null,
-                );
-              },
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.share_location_outlined),
-              label: 'Location',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              label: 'Profile',
-            )
-          ],
-          selectedIndex: _currentPageIndex,
-        ),
-      ),
-    );
-  }
-
-  Future<void> setupInteractedMessage() async {
-    RemoteMessage? initialMessage =
-        await FirebaseMessaging.instance.getInitialMessage();
-
-    if (initialMessage != null) {
-      _handleMessage(initialMessage);
-    }
-
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
-  }
-
-  void _handleMessage(RemoteMessage? message) {
-    if (message != null) {
-      var rootLocation =
-          Provider.of<LocationProvider>(context, listen: false).rootLocation;
-      if (message.data['view'] == 'friendship-requests') {
-        setState(() {
-          _currentPageIndex = 2;
-          _initialTabIndex = 2;
-        });
-      } else if (message.data['view'] == 'posts' && rootLocation != null) {
-        setState(() {
-          _currentPageIndex = 0;
-        });
-      } else if (message.data['view'] == 'post-tag' && rootLocation != null) {
-        setState(() {
-          _currentPageIndex = 0;
-          // TODO open dialog window with exact location
-        });
-      } else if (message.data['view'] == 'location') {
-        setState(() {
-          _currentPageIndex = 1;
-        });
-      }
-    }
-  }
 }
