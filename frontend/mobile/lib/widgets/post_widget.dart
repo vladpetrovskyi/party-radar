@@ -71,7 +71,8 @@ class _PostActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var openDialogLocation = _getLocationWithOpenDialogClickAction(post.location);
+    var openDialogLocation =
+        _getLocationWithOpenDialogClickAction(post.location);
     return Container(
       margin: const EdgeInsets.only(right: 20, left: 20, bottom: 5),
       child: Row(
@@ -82,7 +83,7 @@ class _PostActions extends StatelessWidget {
               side: const BorderSide(width: 0, color: Colors.transparent),
             ),
             onPressed: openDialogLocation != null &&
-                openDialogLocation.children.isNotEmpty
+                    openDialogLocation.children.isNotEmpty
                 ? () => _openPositionDialog(openDialogLocation, context)
                 : null,
             child: const Icon(FontAwesomeIcons.locationArrow),
@@ -173,11 +174,12 @@ class _PostHeader extends StatelessWidget {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             textAlign: TextAlign.end,
           ),
-          Text(
-            subheaderText,
-            style: const TextStyle(fontSize: 18),
-            textAlign: TextAlign.end,
-          ),
+          if (subheaderText.isNotEmpty)
+            Text(
+              subheaderText,
+              style: const TextStyle(fontSize: 18),
+              textAlign: TextAlign.end,
+            ),
         ],
       ),
     );
@@ -213,17 +215,18 @@ class _PostHeader extends StatelessWidget {
   }
 
   Widget get leadingImage => FutureBuilder(
-    future: ImageService.get(post.imageId, size: 40),
-    builder: (context, snapshot) {
-      return snapshot.hasData
-          ? ClipOval(
-        child: SizedBox(
-          child: WidgetZoom(
-              heroAnimationTag: 'tag-${post.imageId}-${DateTime.now()}',
-              zoomWidget: snapshot.data!),
-        ),
-      )
-          : const SizedBox();
-    },
-  );
+        future: ImageService.get(post.imageId, size: 40),
+        builder: (context, snapshot) {
+          return snapshot.hasData
+              ? ClipOval(
+                  child: SizedBox(
+                    child: WidgetZoom(
+                        heroAnimationTag:
+                            'tag-${post.imageId}-${DateTime.now()}',
+                        zoomWidget: snapshot.data!),
+                  ),
+                )
+              : const SizedBox();
+        },
+      );
 }

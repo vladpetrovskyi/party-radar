@@ -36,6 +36,10 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
   late final TextEditingController titleController;
   late final TextEditingController dialogNameController;
 
+  late final FocusNode emojiFocusNode;
+  late final FocusNode titleFocusNode;
+  late final FocusNode dialogNameFocusNode;
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +48,22 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
     titleController = TextEditingController(text: widget.location.name);
     dialogNameController =
         TextEditingController(text: widget.location.dialogName);
+
+    emojiFocusNode.addListener(() {
+      if (!emojiFocusNode.hasFocus) {
+        _updateEmoji();
+      }
+    });
+    titleFocusNode.addListener(() {
+      if (!titleFocusNode.hasFocus) {
+        _updateTitle();
+      }
+    });
+    dialogNameFocusNode.addListener(() {
+      if (!dialogNameFocusNode.hasFocus) {
+        _updateDialogName();
+      }
+    });
   }
 
   @override
@@ -51,6 +71,9 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
     emojiController.dispose();
     titleController.dispose();
     dialogNameController.dispose();
+    emojiFocusNode.dispose();
+    titleFocusNode.dispose();
+    dialogNameFocusNode.dispose();
     super.dispose();
   }
 
@@ -102,6 +125,7 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4),
           child: TextFormField(
+            focusNode: emojiFocusNode,
             controller: emojiController,
             decoration: const InputDecoration(
               label: Text('Card emoji (top)'),
@@ -118,6 +142,7 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4),
           child: TextFormField(
+            focusNode: titleFocusNode,
             controller: titleController,
             decoration: const InputDecoration(
               label: Text('Card title (bottom)'),
@@ -174,6 +199,7 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
   Widget get _dialogNameEditField => Padding(
         padding: const EdgeInsets.only(top: 14, bottom: 10),
         child: TextFormField(
+          focusNode: dialogNameFocusNode,
           controller: dialogNameController,
           decoration: const InputDecoration(
             label: Text('Dialog name'),

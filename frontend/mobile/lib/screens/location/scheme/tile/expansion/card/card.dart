@@ -154,6 +154,11 @@ class _LocationCardState extends State<LocationCard>
           );
     }
 
+    if (!_isActive()) {
+      return () => showErrorSnackBar(
+          'Please check in first by pressing play button', context);
+    }
+
     if (_location.isCloseable && _location.closedAt != null) {
       return () => showDialog(
             context: context,
