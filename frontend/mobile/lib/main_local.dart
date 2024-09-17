@@ -20,7 +20,7 @@ void main() async {
     color: Colors.deepPurpleAccent,
     values: FlavorValues(
       baseUrl:
-          "http://${Platform.isAndroid ? '10.0.2.2' : '192.168.0.99'}:8080/api",
+          "http://${Platform.isAndroid ? '10.0.2.2' : 'localhost'}:8080/api",
     ),
   );
 
