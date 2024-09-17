@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:party_radar/flavors/flavor_config.dart';
-import 'package:party_radar/screens/user_profile/dialogs/friendship_request.dart';
+import 'package:party_radar/screens/user_profile/dialogs/friendship_request_dialog.dart';
 import 'package:party_radar/screens/user_profile/edit_profile_screen.dart';
 import 'package:party_radar/screens/user_profile/tabs/tabs_widget.dart';
 import 'package:party_radar/screens/user_profile/widgets/appbar_widget.dart';

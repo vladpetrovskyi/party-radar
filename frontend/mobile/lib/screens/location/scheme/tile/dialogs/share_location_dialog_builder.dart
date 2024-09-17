@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:party_radar/flavors/flavor_config.dart';
-import 'package:party_radar/screens/location/scheme/share_location_dialog.dart';
+import 'package:party_radar/screens/location/scheme/tile/dialogs/share_location_dialog.dart';
 
 mixin ShareLocationDialogBuilder {
   Future<void>? buildShareLocationDialog(BuildContext context, int? locationId) {

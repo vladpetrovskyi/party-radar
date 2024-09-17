@@ -23,9 +23,7 @@ class PartyStateDialog extends StatelessWidget {
         actions: <Widget>[
           ElevatedButton(
             child: const Icon(Icons.close),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
+            onPressed: () => Navigator.of(context).pop(),
           ),
           ElevatedButton(
             child: const Icon(Icons.check),

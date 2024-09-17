@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:party_radar/screens/location/scheme/share_location_dialog_builder.dart';
-import 'package:party_radar/screens/location/scheme/tiles/editable_location_list_tile.dart';
+import 'package:party_radar/screens/location/scheme/tile/dialogs/share_location_dialog_builder.dart';
+import 'package:party_radar/screens/location/scheme/tile/widgets/abstract_location_tile.dart';
 
-class LocationListTile extends EditableLocationListTile
+class DefaultListTile extends AbstractLocationListTile
     with ShareLocationDialogBuilder {
-  const LocationListTile({
+  const DefaultListTile({
     super.key,
     required super.location,
     required super.locationProvider,

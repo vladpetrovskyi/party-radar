@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:party_radar/models/location.dart';
-import 'package:party_radar/providers/location_provider.dart';
-import 'package:party_radar/screens/location/widgets/party_state_dialog.dart';
-import 'package:party_radar/screens/location/scheme/tiles/editable_location_list_tile.dart';
-import 'package:party_radar/screens/location/scheme/card/card.dart';
+import 'package:party_radar/screens/location/scheme/tile/expansion/card/card.dart';
+import 'package:party_radar/screens/location/scheme/tile/expansion/card/editable_card.dart';
+import 'package:party_radar/screens/location/scheme/tile/widgets/abstract_location_tile.dart';
 import 'package:party_radar/services/location_service.dart';
-import 'package:provider/provider.dart';
 
-class LocationExpansionTile extends EditableLocationListTile {
+class LocationExpansionTile extends AbstractLocationListTile {
   const LocationExpansionTile({
     super.key,
     required super.location,
@@ -91,68 +89,4 @@ class LocationExpansionTile extends EditableLocationListTile {
           children: [const Icon(Icons.arrow_drop_down), popupMenu],
         )
       : null;
-}
-
-class EditableLocationCard extends StatelessWidget {
-  const EditableLocationCard(
-      {super.key,
-      required this.newLocationNameFieldController,
-      required this.rootLocationId,
-      required this.parentId});
-
-  final TextEditingController newLocationNameFieldController;
-  final int rootLocationId;
-  final int parentId;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.hardEdge,
-      child: InkWell(
-        onTap: () => showDialog(
-          context: context,
-          builder: (context) => PartyStateDialog(
-            onAccept: () {
-              LocationService.createLocation(
-                Location(
-                  name: newLocationNameFieldController.text,
-                  elementType: ElementType.card,
-                  rootLocationId: rootLocationId,
-                  parentId: parentId,
-                ),
-              ).then((_) =>
-                  Provider.of<LocationProvider>(context, listen: false)
-                      .loadRootLocation(reloadCurrent: true));
-            },
-            title: "Add location card",
-            content: _createNewLocationDialogContent(),
-          ),
-        ),
-        child: _buildCardName(),
-      ),
-    );
-  }
-
-  Widget _buildCardName() => const Padding(
-        padding: EdgeInsets.only(left: 5, right: 5, top: 2, bottom: 5),
-        child: Icon(Icons.add),
-      );
-
-  Widget _createNewLocationDialogContent() => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text("Please provide a name for your new location card"),
-          const SizedBox(height: 12),
-          Form(
-            child: TextFormField(
-              controller: newLocationNameFieldController,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              decoration: const InputDecoration(
-                label: Text('Name'),
-                border: OutlineInputBorder(),
-              ),
-            ),
-          )
-        ],
-      );
 }

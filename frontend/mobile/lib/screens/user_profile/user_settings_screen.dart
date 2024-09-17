@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:party_radar/screens/user_profile/dialogs/delete_account.dart';
+import 'package:party_radar/screens/user_profile/dialogs/delete_account_dialog.dart';
 import 'package:party_radar/services/user_service.dart';
 
 class UserSettingsScreen extends StatefulWidget {

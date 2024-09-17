@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:party_radar/models/location.dart';
 import 'package:party_radar/providers/location_provider.dart';
-import 'package:party_radar/screens/location/scheme/tiles/location_expansion_tile.dart';
-import 'package:party_radar/screens/location/scheme/tiles/location_list_tile.dart';
+import 'package:party_radar/screens/location/scheme/tile/default/default_list_tile.dart';
+import 'package:party_radar/screens/location/scheme/tile/expansion/expansion_tile.dart';
 import 'package:provider/provider.dart';
 
 class LocationTile extends StatefulWidget {
@@ -32,7 +32,7 @@ class _LocationTileState extends State<LocationTile> {
         (_location.elementType == ElementType.expansionTile &&
             !_location.enabled &&
             !isEditMode)) {
-      return LocationListTile(
+      return DefaultListTile(
         location: _location,
         locationProvider: locationProvider,
         isEditMode: isEditMode,

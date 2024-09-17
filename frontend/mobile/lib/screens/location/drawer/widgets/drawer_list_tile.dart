@@ -8,8 +8,11 @@ import 'package:party_radar/widgets/error_snack_bar.dart';
 import 'package:provider/provider.dart';
 
 class DrawerListTile extends StatelessWidget with ErrorSnackBar {
-  const DrawerListTile(
-      {super.key, required this.location, required this.onUpdate});
+  const DrawerListTile({
+    super.key,
+    required this.location,
+    required this.onUpdate,
+  });
 
   final Location location;
   final Function onUpdate;
@@ -18,37 +21,37 @@ class DrawerListTile extends StatelessWidget with ErrorSnackBar {
   Widget build(BuildContext context) {
     return ListTile(
       dense: true,
-      title: _listTileTitle(location),
-      subtitle: _listTileSubtitle(location),
+      title: title,
+      subtitle: subtitle,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       onTap: () => _selectLocation(location.id, context),
       trailing: location.createdBy ==
-              Provider.of<UserProvider>(context, listen: false).user?.username
+          Provider.of<UserProvider>(context, listen: false).user?.username
           ? Switch(
-              value: location.enabled,
-              onChanged: (value) {
-                location.enabled = value;
-                LocationService.updateLocation(location)
-                    .then((_) => onUpdate());
-              },
-            )
+        value: location.enabled,
+        onChanged: (value) {
+          location.enabled = value;
+          LocationService.updateLocation(location)
+              .then((_) => onUpdate());
+        },
+      )
           : null,
     );
   }
 
-  Widget _listTileTitle(Location location) => Row(
-        children: [
-          Text(
-            location.name,
-            style: const TextStyle(fontSize: 18),
-          ),
-          if (location.isOfficial) const SizedBox(width: 5),
-          if (location.isOfficial)
-            const Icon(IconData(0xe699, fontFamily: 'MaterialIcons'))
-        ],
-      );
+  Widget get title => Row(
+    children: [
+      Text(
+        location.name,
+        style: const TextStyle(fontSize: 18),
+      ),
+      if (location.isOfficial) const SizedBox(width: 5),
+      if (location.isOfficial)
+        const Icon(IconData(0xe699, fontFamily: 'MaterialIcons'))
+    ],
+  );
 
-  Widget? _listTileSubtitle(Location location) =>
+  Widget? get subtitle =>
       location.createdBy != null ? Text("by ${location.createdBy}") : null;
 
   void _selectLocation(int? locationId, BuildContext context) async {
@@ -60,7 +63,7 @@ class DrawerListTile extends StatelessWidget with ErrorSnackBar {
     }
 
     var locationProvider =
-        Provider.of<LocationProvider>(context, listen: false);
+    Provider.of<LocationProvider>(context, listen: false);
     locationProvider.editMode = false;
     locationProvider.loadRootLocation(locationId: locationId);
 

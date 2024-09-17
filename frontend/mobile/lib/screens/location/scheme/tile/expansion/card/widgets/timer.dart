@@ -2,26 +2,26 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-class ElapsedTime extends StatefulWidget {
+class TimerWidget extends StatefulWidget {
   final DateTime timestamp;
 
-  const ElapsedTime({
+  const TimerWidget({
     super.key,
     required this.timestamp,
   });
 
   @override
-  State<ElapsedTime> createState() => _ElapsedTimeState();
+  State<TimerWidget> createState() => _TimerWidgetState();
 }
 
-class _ElapsedTimeState extends State<ElapsedTime> {
+class _TimerWidgetState extends State<TimerWidget> {
   late Timer _timer;
 
   late DateTime _initialTime;
   late String _currentDuration;
 
   @override
-  void didUpdateWidget(ElapsedTime oldWidget) {
+  void didUpdateWidget(TimerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     if (widget.timestamp != oldWidget.timestamp) {

@@ -5,7 +5,6 @@ import 'package:party_radar/models/location.dart';
 import 'package:party_radar/models/post.dart';
 import 'package:party_radar/providers/location_provider.dart';
 import 'package:party_radar/providers/user_provider.dart';
-import 'package:party_radar/screens/location/scheme/selection_dialog/dialog_radios.dart';
 import 'package:party_radar/services/image_service.dart';
 import 'package:party_radar/services/post_service.dart';
 import 'package:provider/provider.dart';
@@ -61,7 +60,7 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
                   },
                 ),
               const SizedBox(height: 10),
-              DialogRadiosWidget(
+              _DialogRadiosWidget(
                 locations: widget.locationChildren,
                 onChangeSelectedRadio: (locationId) =>
                     setState(() => selectedRadio = locationId),
@@ -128,7 +127,8 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
         ),
       );
       Provider.of<UserProvider>(context, listen: false).updateUser();
-      Provider.of<LocationProvider>(context, listen: false).loadCurrentLocationTree();
+      Provider.of<LocationProvider>(context, listen: false)
+          .loadCurrentLocationTree();
       Navigator.of(context).pop();
     }).onError((error, stackTrace) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -142,5 +142,88 @@ class _LocationSelectionDialogState extends State<LocationSelectionDialog> {
       );
       Navigator.of(context).pop();
     });
+  }
+}
+
+class _DialogRadiosWidget extends StatelessWidget {
+  const _DialogRadiosWidget({
+    required this.locations,
+    required this.onChangeSelectedRadio,
+    required this.selectedRadio,
+  });
+
+  final List<Location> locations;
+  final Function(int?) onChangeSelectedRadio;
+  final int? selectedRadio;
+
+  @override
+  Widget build(BuildContext context) {
+    locations
+        .sort((a, b) => (a.columnIndex ?? 0).compareTo(b.columnIndex ?? 0));
+
+    List<List<_RadioListTileWidget>> columnList =
+        List.generate((locations.last.columnIndex ?? 0) + 1, (index) => []);
+    for (int i = 0; i < locations.length; i++) {
+      columnList.elementAt(locations[i].columnIndex ?? 0).add(
+            _RadioListTileWidget(
+              locationId: locations[i].id!,
+              locationName: locations[i].name,
+              selectedValue: selectedRadio,
+              onChanged: onChangeSelectedRadio,
+              locationRowIndex: locations[i].rowIndex ?? 0,
+            ),
+          );
+    }
+
+    columnList.removeWhere((col) => col.isEmpty);
+
+    List<Column> columns = [];
+
+    for (List<_RadioListTileWidget> columnChildren in columnList) {
+      columnChildren
+          .sort((a, b) => a.locationRowIndex.compareTo(b.locationRowIndex));
+      columns.add(Column(children: [...columnChildren]));
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [...columns],
+    );
+  }
+}
+
+class _RadioListTileWidget extends StatelessWidget {
+  const _RadioListTileWidget({
+    required this.locationId,
+    required this.locationName,
+    required this.selectedValue,
+    required this.locationRowIndex,
+    this.onChanged,
+  });
+
+  final int locationId;
+  final String locationName;
+  final int? selectedValue;
+  final Function(int? id)? onChanged;
+  final int locationRowIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        Radio(
+          visualDensity: const VisualDensity(
+            horizontal: VisualDensity.minimumDensity,
+            vertical: VisualDensity.minimumDensity,
+          ),
+          value: locationId,
+          groupValue: selectedValue,
+          onChanged: onChanged,
+          toggleable: true,
+        ),
+        Text(locationName),
+      ],
+    );
   }
 }

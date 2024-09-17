@@ -20,17 +20,15 @@ class _UserDotsWidgetState extends State<UserDotsWidget> {
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: LocationService.getLocationUserCount(widget.locationId),
-      builder: (context, snapshot) {
-        return snapshot.hasData
-            ? UserDots(userCount: snapshot.data!, alignment: widget.alignment)
-            : Container();
-      },
+      builder: (context, snapshot) => snapshot.hasData
+          ? _UserDots(userCount: snapshot.data!, alignment: widget.alignment)
+          : Container(),
     );
   }
 }
 
-class UserDots extends StatelessWidget {
-  const UserDots({super.key, this.alignment, required this.userCount});
+class _UserDots extends StatelessWidget {
+  const _UserDots({this.alignment, required this.userCount});
 
   final WrapAlignment? alignment;
   final int userCount;

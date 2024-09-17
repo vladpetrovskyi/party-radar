@@ -22,19 +22,19 @@ class AddLocationFAB extends StatelessWidget {
   Widget build(BuildContext context) {
     return FloatingActionButton.extended(
       heroTag: heroTag,
-      onPressed: () {
-        LocationService.createLocation(
-          Location(
-            name: "",
-            elementType: elementType,
-            rootLocationId: rootLocationId,
-            parentId: rootLocationId,
-          ),
-        ).then((_) => Provider.of<LocationProvider>(context, listen: false)
-            .loadRootLocation(reloadCurrent: true));
-      },
+      onPressed: () => _addLocation(context),
       icon: const Icon(Icons.add),
       label: Text(label),
     );
   }
+
+  _addLocation(BuildContext context) => LocationService.createLocation(
+        Location(
+          name: "",
+          elementType: elementType,
+          rootLocationId: rootLocationId,
+          parentId: rootLocationId,
+        ),
+      ).then((_) => Provider.of<LocationProvider>(context, listen: false)
+          .loadRootLocation(reloadCurrent: true));
 }

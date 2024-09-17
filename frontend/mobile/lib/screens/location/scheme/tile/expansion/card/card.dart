@@ -1,19 +1,25 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:party_radar/models/location.dart';
 import 'package:party_radar/providers/location_provider.dart';
 import 'package:party_radar/providers/user_provider.dart';
-import 'package:party_radar/screens/location/scheme/share_location_dialog_builder.dart';
-import 'package:party_radar/screens/location/scheme/selection_dialog/location_selection_dialog.dart';
-import 'package:party_radar/screens/location/scheme/card/edit_card.dart';
-import 'package:party_radar/screens/location/scheme/card/elapsed_time.dart';
-import 'package:party_radar/screens/location/widgets/user_dots_widget.dart';
+import 'package:party_radar/screens/location/dialogs/party_state_dialog.dart';
+import 'package:party_radar/screens/location/scheme/tile/dialogs/share_location_dialog_builder.dart';
+import 'package:party_radar/screens/location/scheme/tile/expansion/card/dialogs/location_selection_dialog.dart';
+import 'package:party_radar/screens/location/scheme/tile/expansion/card/edit/edit_card_screen.dart';
+import 'package:party_radar/screens/location/scheme/tile/expansion/card/widgets/timer.dart';
+import 'package:party_radar/screens/location/scheme/tile/widgets/user_dots_widget.dart';
 import 'package:party_radar/services/location_service.dart';
 import 'package:party_radar/widgets/error_snack_bar.dart';
 import 'package:provider/provider.dart';
 
 class LocationCard extends StatefulWidget {
-  const LocationCard(
-      {super.key, required this.location, this.isEditMode = false});
+  const LocationCard({
+    super.key,
+    required this.location,
+    this.isEditMode = false,
+  });
 
   final Location location;
   final bool isEditMode;
@@ -51,36 +57,72 @@ class _LocationCardState extends State<LocationCard>
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                if (_location.emoji != null) _buildCardEmoji(),
-                _buildCardName(),
-                if (_location.closedAt == null)
-                  _buildOnlineStatusDots() ?? Container(),
+                if (_location.emoji != null) cardEmoji,
+                cardName,
+                if (_location.closedAt == null) onlineStatusDots,
+                if (_location.isCloseable && _location.closedAt != null)
+                  ...closedOverlay
               ],
             ),
-            if (_location.isCloseable && _location.closedAt != null)
-              Container(
-                decoration:
-                    BoxDecoration(color: Colors.red.shade900.withOpacity(0.8)),
-              ),
-            if (_location.isCloseable && _location.closedAt != null)
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Closed',
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black),
-                  ),
-                  ElapsedTime(timestamp: _location.closedAt!),
-                ],
-              ),
           ],
         ),
       ),
     );
   }
+
+  Widget get cardName => Padding(
+        padding: const EdgeInsets.only(left: 5, right: 5, top: 2, bottom: 5),
+        child: Text(
+          _location.name,
+          style: const TextStyle(
+            fontSize: 20,
+            height: 1.2,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+
+  Widget get cardEmoji => Padding(
+        padding: const EdgeInsets.only(left: 5, right: 5, bottom: 2),
+        child: Text(
+          _location.emoji ?? '',
+          style: const TextStyle(
+            fontSize: 20,
+            height: 1.2,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+
+  Widget get onlineStatusDots => _location.id != null
+      ? Padding(
+          padding: const EdgeInsets.only(left: 5, right: 5, top: 5),
+          child: UserDotsWidget(
+            locationId: _location.id!,
+            alignment: WrapAlignment.center,
+          ),
+        )
+      : Container();
+
+  List<Widget> get closedOverlay => [
+        Container(
+          decoration:
+              BoxDecoration(color: Colors.red.shade900.withOpacity(0.8)),
+        ),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Closed',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black),
+            ),
+            TimerWidget(timestamp: _location.closedAt!),
+          ],
+        ),
+      ];
 
   ShapeBorder? getShape(LocationProvider provider) {
     if (widget.isEditMode) {
@@ -103,7 +145,7 @@ class _LocationCardState extends State<LocationCard>
     if (widget.isEditMode) {
       return () => Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => EditCardPage(
+              builder: (_) => EditCardScreen(
                 location: _location,
                 handle: (newLocation) =>
                     setState(() => _location = newLocation),
@@ -120,23 +162,14 @@ class _LocationCardState extends State<LocationCard>
     if (_location.isCloseable && _location.closedAt != null) {
       return () => showDialog(
             context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Mark as opened'),
+            builder: (context) => PartyStateDialog(
+              title: 'Mark as opened',
               content: const Text(
                   'This location has been temporarily closed. Is it available again? The result of this action will be visible to everyone!'),
-              actions: <Widget>[
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Icon(Icons.close),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    _openLocation(_location.id);
-                    Navigator.of(context).pop();
-                  },
-                  child: const Icon(Icons.check),
-                ),
-              ],
+              onAccept: () {
+                _openLocation(_location.id);
+                Navigator.of(context).pop();
+              },
             ),
           );
     }
@@ -182,23 +215,14 @@ class _LocationCardState extends State<LocationCard>
 
     return () => showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Mark as closed'),
+          builder: (context) => PartyStateDialog(
+            title: 'Mark as closed',
             content: const Text(
                 'Would you like to mark this location as temporarily closed? The result of this action will be visible to everyone!'),
-            actions: <Widget>[
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Icon(Icons.close),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  _closeLocation(_location.id);
-                  Navigator.of(context).pop();
-                },
-                child: const Icon(Icons.check),
-              ),
-            ],
+            onAccept: () {
+              _closeLocation(_location.id);
+              Navigator.of(context).pop();
+            },
           ),
         );
   }
@@ -207,61 +231,25 @@ class _LocationCardState extends State<LocationCard>
     if (locationId == null) return;
 
     LocationService.updateLocationAvailability(locationId, DateTime.now())
-        .then((_) => reloadLocation());
+        .then((_) => _reloadLocation());
   }
 
   void _openLocation(int? locationId) {
     if (locationId == null) return;
 
     LocationService.updateLocationAvailability(locationId, null)
-        .then((_) => reloadLocation());
+        .then((_) => _reloadLocation());
   }
 
-  void reloadLocation() async =>
+  void _reloadLocation() async =>
       LocationService.getLocation(_location.id).then((l) {
         if (l != null) {
-          setState(() {
-            _location = l;
-          });
+          setState(() => _location = l);
         } else {
           showErrorSnackBar(
               "Could not update the view - service unavailable", context);
         }
       });
-
-  Widget _buildCardName() => Padding(
-        padding: const EdgeInsets.only(left: 5, right: 5, top: 2, bottom: 5),
-        child: Text(
-          _location.name,
-          style: const TextStyle(
-            fontSize: 20,
-            height: 1.2,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      );
-
-  Widget _buildCardEmoji() => Padding(
-        padding: const EdgeInsets.only(left: 5, right: 5, bottom: 2),
-        child: Text(
-          _location.emoji ?? '',
-          style: const TextStyle(
-            fontSize: 20,
-            height: 1.2,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      );
-
-  Widget? _buildOnlineStatusDots() => _location.id != null
-      ? Padding(
-          padding: const EdgeInsets.only(left: 5, right: 5, top: 5),
-          child: UserDotsWidget(
-            locationId: _location.id!,
-            alignment: WrapAlignment.center,
-          ),
-        )
-      : null;
 
   bool _isActive() {
     var rootLocation =

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:party_radar/models/location.dart';
 import 'package:party_radar/models/post.dart';
-import 'package:party_radar/screens/user_profile/dialogs/delete_post.dart';
+import 'package:party_radar/screens/user_profile/dialogs/delete_post_dialog.dart';
 import 'package:party_radar/services/image_service.dart';
 import 'package:party_radar/services/post_service.dart';
 import 'package:party_radar/widgets/simple_location_dialog.dart';

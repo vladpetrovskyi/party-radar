@@ -1,9 +1,7 @@
-import 'dart:core';
-
 import 'package:flutter/material.dart';
 import 'package:party_radar/models/location.dart';
 import 'package:party_radar/providers/location_provider.dart';
-import 'package:party_radar/screens/location/scheme/tiles/location_tile.dart';
+import 'package:party_radar/screens/location/scheme/tile/location_tile.dart';
 import 'package:party_radar/services/location_service.dart';
 import 'package:provider/provider.dart';
 
@@ -18,7 +16,7 @@ class LocationScheme extends StatelessWidget {
           return RefreshIndicator(
             onRefresh: () => Future.delayed(
               const Duration(milliseconds: 500),
-              () {
+                  () {
                 provider.loadCurrentLocationTree();
                 provider.loadRootLocation(reloadCurrent: true);
               },
@@ -32,7 +30,7 @@ class LocationScheme extends StatelessWidget {
                 }
                 if (snapshot.hasData) {
                   return ListView(
-                    children: _getChildrenOfLocation(snapshot.data),
+                    children: _buildLocationChildrenList(snapshot.data),
                   );
                 }
                 return const Center(child: CircularProgressIndicator());
@@ -52,7 +50,7 @@ class LocationScheme extends StatelessWidget {
     );
   }
 
-  List<Widget> _getChildrenOfLocation(List<Location>? rootChildren) {
+  List<Widget> _buildLocationChildrenList(List<Location>? rootChildren) {
     if (rootChildren == null || rootChildren.isEmpty) return List.empty();
 
     List<Widget> resultList = [];
