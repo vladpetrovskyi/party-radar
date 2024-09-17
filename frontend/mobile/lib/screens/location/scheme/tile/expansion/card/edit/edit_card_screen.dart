@@ -36,9 +36,9 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
   late final TextEditingController titleController;
   late final TextEditingController dialogNameController;
 
-  late final FocusNode emojiFocusNode;
-  late final FocusNode titleFocusNode;
-  late final FocusNode dialogNameFocusNode;
+  final FocusNode emojiFocusNode = FocusNode();
+  final FocusNode titleFocusNode = FocusNode();
+  final FocusNode dialogNameFocusNode = FocusNode();
 
   @override
   void initState() {
