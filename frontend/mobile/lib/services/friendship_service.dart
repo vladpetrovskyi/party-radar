@@ -23,6 +23,22 @@ class FriendshipService {
         : [];
   }
 
+  static Future<Friendship?> getFriendshipByUsername(String username) async {
+    Response response = await get(
+        Uri.parse(
+            '${FlavorConfig.instance.values.apiV1}/friendship?username=$username'),
+        headers: {
+          HttpHeaders.authorizationHeader:
+              'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+        });
+
+    if (response.statusCode == 204) return null;
+
+    return response.ok
+        ? Friendship.fromJson(jsonDecode(response.body))
+        : null;
+  }
+
   static Future<int?> getFriendshipsCount(
       FriendshipStatus friendshipStatus) async {
     Response response = await get(

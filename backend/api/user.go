@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"party-time/db"
+	"strconv"
 )
 
 func (app *Application) register(c *gin.Context) {
@@ -162,25 +163,8 @@ func (app *Application) updateUsername(c *gin.Context) {
 }
 
 func (app *Application) getUser(c *gin.Context) {
-	username := c.Query("username")
 	userUID := c.Query("userUID")
-	if len(username) != 0 {
-		app.log.Debug().Msgf("Get user by username: %s", username)
-
-		user, err := app.q.GetUserByUsername(app.ctx, &username)
-		if err != nil {
-			app.log.Debug().Msgf("User by username %s not found. Error: %v", username, err)
-			c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
-			return
-		}
-
-		if c.Request.Method == "HEAD" {
-			c.Status(http.StatusOK)
-		} else {
-			c.JSON(http.StatusOK, user)
-		}
-		return
-	} else if len(userUID) != 0 {
+	if len(userUID) != 0 {
 		app.log.Debug().Msgf("Get user by UID: %s", userUID)
 
 		user, err := app.q.GetUserByUID(app.ctx, &userUID)
@@ -194,7 +178,42 @@ func (app *Application) getUser(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusBadRequest)
+	username := c.Query("username")
+	app.log.Debug().Msgf("Get user by username: %s", username)
+	username = "%" + username + "%"
+
+	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	if err != nil {
+		app.log.Debug().Ctx(c).Msg("Offset is not parsable")
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil {
+		app.log.Debug().Ctx(c).Msg("Limit is not parsable")
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	contextUser, err := app.getUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	userList, err := app.q.GetUsersByUsername(app.ctx, db.GetUsersByUsernameParams{
+		Username: &username,
+		Limit:    int32(limit),
+		Offset:   int32(offset),
+		ID:       contextUser.ID,
+	})
+	if err != nil {
+		app.log.Debug().Msgf("User by username %s not found. Error: %v", username, err)
+		c.JSON(http.StatusNotFound, gin.H{"msg": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, userList)
 }
 
 func (app *Application) deleteUser(c *gin.Context) {

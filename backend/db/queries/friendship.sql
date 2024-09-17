@@ -66,9 +66,10 @@ FROM friendship
 WHERE id = $1;
 
 -- name: GetFriendshipByUserIds :one
-SELECT f.*, fs.name AS status
+SELECT f.id, fs.name AS status
 FROM friendship f
          INNER JOIN friendship_status fs on fs.id = f.status_id
+         LEFT JOIN public."user" u ON f.user_1_id = u.id AND f.user_2_id = u.id
 WHERE (user_1_id = $1
     AND user_2_id = $2)
    OR (user_1_id = $2 AND user_2_id = $1);

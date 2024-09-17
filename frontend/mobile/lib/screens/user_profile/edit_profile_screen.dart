@@ -153,7 +153,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       showErrorSnackBar(message, context);
 
   Future<bool> _uploadImage() async {
-    var user = await UserService.getUser();
+    var user = await UserService.getCurrentUser();
     if (user?.imageId != null) {
       return await ImageService.update(user!.imageId!, File(imagePath!));
     }

@@ -8,34 +8,10 @@ import 'package:party_radar/models/user.dart' as models;
 import 'package:party_radar/util/extensions.dart';
 
 class UserService {
-  static Future<bool> userExists(String username) async {
-    Response response = await head(
-      Uri.parse(
-          '${FlavorConfig.instance.values.apiV2}/user?username=$username'),
-      headers: {
-        HttpHeaders.authorizationHeader:
-            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
-      },
-    );
-    return response.ok;
-  }
-
-  static Future<models.User?> getUser({String? username}) async {
+  static Future<models.User?> getCurrentUser() async {
     if (FirebaseAuth.instance.currentUser == null) return null;
 
-    Response response;
-    if (username != null && username.isNotEmpty) {
-      response = await get(
-        Uri.parse(
-            '${FlavorConfig.instance.values.apiV2}/user?username=$username'),
-        headers: {
-          HttpHeaders.authorizationHeader:
-              'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
-        },
-      );
-    }
-
-    response = await get(
+    var response = await get(
       Uri.parse(
           '${FlavorConfig.instance.values.apiV2}/user?userUID=${FirebaseAuth.instance.currentUser?.uid}'),
       headers: {
@@ -47,6 +23,24 @@ class UserService {
     return response.ok
         ? models.User.fromJson(jsonDecode(response.body))
         : throw Exception("Couldn't get user: ${response.body}");
+  }
+
+  static Future<List<models.User>> getUsers(String username, int offset, int limit) async {
+    if (FirebaseAuth.instance.currentUser == null) return List.empty();
+
+    var response = await get(
+      Uri.parse(
+          '${FlavorConfig.instance.values.apiV2}/user?username=$username&offset=$offset&limit=$limit'),
+      headers: {
+        HttpHeaders.authorizationHeader:
+            'Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}'
+      },
+    );
+    return response.ok
+        ? List<models.User>.from(jsonDecode(response.body)
+            .map((model) => models.User.fromJson(model))
+            .toList())
+        : throw Exception("Couldn't decode users: ${response.body}");
   }
 
   static Future<bool> updateUsername(String username) async {

@@ -3,6 +3,14 @@ SELECT *
 FROM "user"
 WHERE username = $1;
 
+-- name: GetUsersByUsername :many
+SELECT *
+FROM "user"
+WHERE username LIKE $1
+  AND id != $4
+ORDER BY username
+LIMIT $2 OFFSET $3;
+
 -- name: GetUserByUID :one
 SELECT *
 FROM "user"
@@ -53,4 +61,6 @@ WHERE uid = $1
 RETURNING *;
 
 -- name: GetUsersByRootLocationID :many
-SELECT * FROM "user" WHERE current_root_location_id = $1;
+SELECT *
+FROM "user"
+WHERE current_root_location_id = $1;

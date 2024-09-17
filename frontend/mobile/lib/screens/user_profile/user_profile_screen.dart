@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:party_radar/flavors/flavor_config.dart';
-import 'package:party_radar/screens/user_profile/dialogs/friendship_request_dialog.dart';
+import 'package:party_radar/screens/user_profile/add_friends_screen.dart';
 import 'package:party_radar/screens/user_profile/edit_profile_screen.dart';
 import 'package:party_radar/screens/user_profile/tabs/tabs_widget.dart';
 import 'package:party_radar/screens/user_profile/widgets/appbar_widget.dart';
@@ -104,30 +104,15 @@ class _UserProfileScreenState extends State<UserProfileScreen>
 
   Widget _getFloatingActionButton() => FloatingActionButton(
         onPressed: FirebaseAuth.instance.currentUser?.displayName != null
-            ? () {
-                showDialog<bool>(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return const FriendshipRequestDialog();
-                  },
-                ).then((value) {
-                  if (value != null && value) setState(() {});
-                });
-              }
-            : () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    backgroundColor: Colors.red,
-                    content: Text(
-                      'Please select a username first!',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
+            ? () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AddFriendsScreen()))
+            : () =>
+                showErrorSnackBar('Please select a username first!', context),
         child: const Icon(Icons.person_add_alt_outlined),
       );
 
   Future<Image?> _getProfilePicture() async {
-    var user = await UserService.getUser();
+    var user = await UserService.getCurrentUser();
     return ImageService.get(user?.imageId, size: 128);
   }
 

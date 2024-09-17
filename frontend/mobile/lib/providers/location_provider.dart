@@ -33,7 +33,7 @@ class LocationProvider extends ChangeNotifier {
 
   Future<Location?> _loadRootLocationForUser() async =>
       await LocationService.getLocation(
-          (await UserService.getUser())!.rootLocationId);
+          (await UserService.getCurrentUser())!.rootLocationId);
 
   void updateRootLocation(Location? rootLocation) {
     _rootLocation = rootLocation;

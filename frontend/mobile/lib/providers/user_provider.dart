@@ -12,6 +12,6 @@ class UserProvider extends ChangeNotifier {
   User? get user => _user;
 
   void updateUser() async {
-    _user = await UserService.getUser();
+    _user = await UserService.getCurrentUser();
   }
 }

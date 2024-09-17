@@ -55,7 +55,7 @@ class _UserPostsTabState extends State<UserPostsTab> {
   void initState() {
     _postPagingController.addPageRequestListener((pageKey) async {
       try {
-        var user = await UserService.getUser();
+        var user = await UserService.getCurrentUser();
         final newItems =
             await PostService.getUserPosts(pageKey, widget.pageSize, user?.id);
         final isLastPage = newItems.length < widget.pageSize;
