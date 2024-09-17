@@ -14,19 +14,19 @@ AppBar getAppBar(BuildContext context) {
     centerTitle: true,
     title: const AppBarTitle(),
     actions: locationProvider.rootLocation == null
-        ? Container()
+        ? null
         : _getAppBarActions(locationProvider, userProvider),
   );
 }
 
-_getAppBarActions(
+List<Widget> _getAppBarActions(
         LocationProvider locationProvider, UserProvider userProvider) =>
     [
       _getPartyStateButton(locationProvider, userProvider),
       _getEditButton(locationProvider, userProvider)
     ];
 
-_getPartyStateButton(
+Widget _getPartyStateButton(
     LocationProvider locationProvider, UserProvider userProvider) {
   if (locationProvider.editMode) return Container();
 
@@ -40,7 +40,8 @@ _getPartyStateButton(
       userProvider: userProvider, locationProvider: locationProvider);
 }
 
-_getEditButton(LocationProvider locationProvider, UserProvider userProvider) =>
+Widget _getEditButton(
+        LocationProvider locationProvider, UserProvider userProvider) =>
     Padding(
       padding: const EdgeInsets.only(right: 6.60),
       child: userProvider.user?.username ==

@@ -38,11 +38,8 @@ class _ShareLocationDialogState extends State<ShareLocationDialog> {
               child: const Icon(Icons.close),
             ),
             ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      _postLocation(widget.locationId);
-                    },
+              onPressed:
+                  _isLoading ? null : () => _postLocation(widget.locationId),
               child: const Icon(Icons.check),
             ),
           ],

@@ -251,10 +251,11 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
           text: TextSpan(
             style: Theme.of(context).textTheme.headlineSmall,
             children: const <TextSpan>[
-              TextSpan(text: "Schema"),
+              TextSpan(text: "Scheme"),
               TextSpan(
-                  text: " (mandatory)",
-                  style: TextStyle(fontStyle: FontStyle.italic)),
+                text: " (mandatory)",
+                style: TextStyle(fontStyle: FontStyle.italic, fontSize: 18),
+              ),
             ],
           ),
         ),
