@@ -92,9 +92,7 @@ so that viewers can compare the number of people who've seen the post with the n
 
 User page consists of the user profile picture and username in the upper part of the screen. Lower part contains a
 menu with 3 tabs: history of user's posts, user's friends and user's friend requests. You can add friends by clicking
-a big radio button in the lower right corner. A dialog appears with the input field for username. Note that you cannot
-see which users exist, you can only add someone if you know exactly what their username is! If username is incorrect,
-a red error box appears.
+a big radio button in the lower right corner. A page appears where you can search users by username.
 You can either decline or accept friend request for someone. Requests can be resent.
 History of posts is editable - you can delete posts which you don't want to be present in the feed.
 
