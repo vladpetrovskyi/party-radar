@@ -55,8 +55,9 @@ FROM location l
          LEFT JOIN element_type et ON l.element_type_id = et.id
          LEFT JOIN "user" u ON l.owner_id = u.id
 WHERE parent_id IS NULL
-    AND (et.name = @element_type_name OR @element_type_name IS NULL)
-    AND (l.enabled = true OR (l.enabled = false AND u.id = sqlc.narg('user_id')))
+  AND (et.name = @element_type_name OR @element_type_name IS NULL)
+  AND (l.enabled = true OR (l.enabled = false AND u.id = sqlc.narg('user_id')))
+  AND l.deleted_at IS NULL
 ORDER BY l.name;
 
 -- name: GetLocationChildren :many
