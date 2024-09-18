@@ -88,12 +88,6 @@ to locations from the image (normally, if you have one).
 in the feed, so that viewers know, how many places are available in the stall. Next to it (in post) is the view counter,
 so that viewers can compare the number of people who've seen the post with the number of available places.
 
-There are some rules to how schema functions:
-1. You can add as many columns as you want, but you can only delete them from the end. Previous columns must have at least
-1 element left.
-2. Descriptions should be short, otherwise an overflow happens.
-3. 
-
 ### User page
 
 User page consists of the user profile picture and username in the upper part of the screen. Lower part contains a
