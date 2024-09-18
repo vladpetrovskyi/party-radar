@@ -86,7 +86,8 @@ class _DefaultListTileState extends State<DefaultListTile>
             child: TextFormField(
               focusNode: emojiFocusNode,
               controller: emojiController,
-              onTapOutside: (_) => _updateEmoji(emojiController.text),
+              onTapOutside: (_) =>
+                  FocusManager.instance.primaryFocus?.unfocus(),
               onFieldSubmitted: (val) => _updateEmoji(val),
               style: const TextStyle(
                 fontSize: 28,
@@ -108,7 +109,7 @@ class _DefaultListTileState extends State<DefaultListTile>
             child: TextFormField(
               focusNode: titleFocusNode,
               controller: titleController,
-              onTapOutside: (_) => _updateTitle(titleController.text),
+              onTapOutside: (_) =>  FocusManager.instance.primaryFocus?.unfocus(),
               onFieldSubmitted: (val) => _updateTitle(val),
               style: const TextStyle(
                 fontSize: 28,
@@ -127,10 +128,11 @@ class _DefaultListTileState extends State<DefaultListTile>
     );
   }
 
-  UserDotsWidget? getSubtitle() =>
-      widget.location.enabled && !widget.isEditMode && widget.location.id != null
-          ? UserDotsWidget(locationId: widget.location.id!)
-          : null;
+  UserDotsWidget? getSubtitle() => widget.location.enabled &&
+          !widget.isEditMode &&
+          widget.location.id != null
+      ? UserDotsWidget(locationId: widget.location.id!)
+      : null;
 
   Widget getTitle() => widget.isEditMode ? inputField : widget.title;
 
@@ -162,7 +164,6 @@ class _DefaultListTileState extends State<DefaultListTile>
       _location.emoji = text;
       LocationService.updateLocation(_location);
     }
-    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   _updateTitle(String text) {
@@ -170,6 +171,5 @@ class _DefaultListTileState extends State<DefaultListTile>
       _location.name = text;
       LocationService.updateLocation(_location);
     }
-    FocusManager.instance.primaryFocus?.unfocus();
   }
 }

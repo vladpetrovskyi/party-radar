@@ -145,7 +145,7 @@ class _LocationExpansionTileState extends State<LocationExpansionTile>
             child: TextFormField(
               focusNode: emojiFocusNode,
               controller: emojiController,
-              onTapOutside: (_) => _updateEmoji(emojiController.text),
+              onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               onFieldSubmitted: (val) => _updateEmoji(val),
               style: const TextStyle(
                 fontSize: 28,
@@ -167,7 +167,7 @@ class _LocationExpansionTileState extends State<LocationExpansionTile>
             child: TextFormField(
               focusNode: titleFocusNode,
               controller: titleController,
-              onTapOutside: (_) => _updateTitle(titleController.text),
+              onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               onFieldSubmitted: (val) => _updateTitle(val),
               style: const TextStyle(
                 fontSize: 28,
@@ -220,7 +220,6 @@ class _LocationExpansionTileState extends State<LocationExpansionTile>
       _location.emoji = text;
       LocationService.updateLocation(_location);
     }
-    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   _updateTitle(String text) {
@@ -228,6 +227,5 @@ class _LocationExpansionTileState extends State<LocationExpansionTile>
       _location.name = text;
       LocationService.updateLocation(_location);
     }
-    FocusManager.instance.primaryFocus?.unfocus();
   }
 }

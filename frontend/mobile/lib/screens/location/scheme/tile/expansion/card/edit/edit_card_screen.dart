@@ -132,7 +132,7 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
               border: OutlineInputBorder(),
             ),
             autovalidateMode: AutovalidateMode.onUserInteraction,
-            onTapOutside: (_) => _updateEmoji(),
+            onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
             onFieldSubmitted: (_) => _updateEmoji(),
           ),
         ),
@@ -152,7 +152,7 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
             validator: (val) =>
                 val == null || val.isEmpty ? "Title can't be empty" : null,
             onFieldSubmitted: (_) => _updateTitle(),
-            onTapOutside: (_) => _updateTitle(),
+            onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
           ),
         ),
       );
@@ -206,7 +206,7 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
             border: OutlineInputBorder(),
           ),
           autovalidateMode: AutovalidateMode.onUserInteraction,
-          onTapOutside: (_) => _updateDialogName(),
+          onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
           onFieldSubmitted: (_) => _updateDialogName(),
         ),
       );
@@ -321,7 +321,6 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
 
   _deleteLocation() =>
       LocationService.deleteLocation(_location.id).then((deleted) {
-        Navigator.of(context).pop();
         if (!deleted) {
           showErrorSnackBar("Error occurred, please try again", context);
           return;
@@ -341,7 +340,6 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
                     "Error occurred, please try again", context),
           );
     }
-    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   _updateEmoji() {
@@ -350,7 +348,6 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
           emojiController.text.isEmpty ? null : emojiController.text;
       _updateLocation();
     }
-    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   DialogSettings get _dialogSettings => DialogSettings(
@@ -365,7 +362,6 @@ class _EditCardScreenState extends State<EditCardScreen> with ErrorSnackBar {
       _location.name = titleController.text;
       _updateLocation();
     }
-    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   _setCloseable(bool closeable) {

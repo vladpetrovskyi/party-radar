@@ -35,7 +35,7 @@ class _EditableLocationCardState extends State<EditableLocationCard> {
       child: InkWell(
         onTap: () => showDialog(
           context: context,
-          builder: (context) => PartyStateDialog(
+          builder: (_) => PartyStateDialog(
             onAccept: () {
               LocationService.createLocation(
                 Location(
