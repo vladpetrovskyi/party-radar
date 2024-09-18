@@ -12,9 +12,10 @@ ORDER BY username
 LIMIT $2 OFFSET $3;
 
 -- name: GetUserByUID :one
-SELECT *
-FROM "user"
-WHERE uid = $1;
+SELECT u.*, i.id as image_id
+FROM "user" u
+         LEFT JOIN image i ON u.id = i.user_id
+WHERE u.uid = $1;
 
 -- name: UpdateUserRootLocation :exec
 UPDATE "user"

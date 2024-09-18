@@ -256,7 +256,7 @@ func (app *Application) createPost(c *gin.Context) {
 		post.LocationID = user.CurrentRootLocationID
 	}
 
-	err = app.createPostForUser(user, *post.LocationID, post.Type, post.Capacity)
+	err = app.createPostForUser(user.ID, *post.LocationID, post.Type, post.Capacity)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -274,7 +274,7 @@ func (app *Application) createPost(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (app *Application) createPostForUser(user db.User, locationID int64, postType string, capacity *int64) error {
+func (app *Application) createPostForUser(userID int64, locationID int64, postType string, capacity *int64) error {
 	postTypeId, err := app.q.GetPostTypeId(app.ctx, postType)
 	if err != nil {
 		app.log.Err(err)
@@ -289,7 +289,7 @@ func (app *Application) createPostForUser(user db.User, locationID int64, postTy
 	defer tx.Rollback()
 
 	if err = app.q.WithTx(tx).CreatePost(app.ctx, db.CreatePostParams{
-		UserID:     user.ID,
+		UserID:     userID,
 		LocationID: locationID,
 		PostTypeID: postTypeId,
 		Capacity:   capacity,
@@ -299,7 +299,7 @@ func (app *Application) createPostForUser(user db.User, locationID int64, postTy
 	}
 
 	if err = app.q.WithTx(tx).UpdateUserLocation(app.ctx, db.UpdateUserLocationParams{
-		ID:                user.ID,
+		ID:                userID,
 		CurrentLocationID: &locationID,
 	}); err != nil {
 		app.log.Err(err).Msg("Failed to update user location while creating a new post")

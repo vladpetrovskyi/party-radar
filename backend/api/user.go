@@ -106,13 +106,13 @@ func (app *Application) deleteUserLocationV2(c *gin.Context) {
 		return
 	}
 
-	err = app.deleteUserLocations(user)
+	err = app.deleteUserLocations(user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
 
-	err = app.createPostForUser(user, *user.CurrentRootLocationID, "end", nil)
+	err = app.createPostForUser(user.ID, *user.CurrentRootLocationID, "end", nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
@@ -121,16 +121,16 @@ func (app *Application) deleteUserLocationV2(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "user location has been deleted"})
 }
 
-func (app *Application) deleteUserLocations(user db.User) (err error) {
+func (app *Application) deleteUserLocations(userID int64) (err error) {
 	if err = app.q.UpdateUserRootLocation(app.ctx, db.UpdateUserRootLocationParams{
-		ID:                    user.ID,
+		ID:                    userID,
 		CurrentRootLocationID: nil,
 	}); err != nil {
 		return
 	}
 
 	if err = app.q.UpdateUserLocation(app.ctx, db.UpdateUserLocationParams{
-		ID:                user.ID,
+		ID:                userID,
 		CurrentLocationID: nil,
 	}); err != nil {
 		return

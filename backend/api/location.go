@@ -200,12 +200,12 @@ func (app *Application) updateLocation(c *gin.Context) {
 		}
 
 		for _, user := range usersByRootLocationID {
-			if err = app.deleteUserLocations(user); err != nil {
+			if err = app.deleteUserLocations(user.ID); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"message": "Could not check out user with ID=" + strconv.FormatInt(user.ID, 10), "err": err.Error()})
 				return
 			}
 
-			if err = app.createPostForUser(user, locationId, "end", nil); err != nil {
+			if err = app.createPostForUser(user.ID, locationId, "end", nil); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"message": "Could not post checkout for user with ID=" + strconv.FormatInt(user.ID, 10), "err": err.Error()})
 				return
 			}

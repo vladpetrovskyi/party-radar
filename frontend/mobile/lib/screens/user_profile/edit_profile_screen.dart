@@ -70,14 +70,16 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                     _usernameController,
                     (value) => UsernameValidator.isValid(value)
                         ? null
-                        : 'Allowed characters: a-z, 0-9, ._-'),
+                        : 'Allowed characters: a-z, 0-9, ._-',
+                    true),
                 const SizedBox(height: 24),
                 _getTextFormField(
                     'Email address',
                     _emailController,
                     (value) => EmailValidator.isValid(value)
                         ? null
-                        : 'Email address is invalid'),
+                        : 'Email address is invalid',
+                    false),
                 const SizedBox(height: 24),
                 _getUpdateButton(),
               ],
@@ -98,9 +100,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       );
 
   Widget _getTextFormField(String label, TextEditingController controller,
-          Function(String?) validate) =>
+          Function(String?) validate, bool enabled) =>
       TextFormField(
-        enabled: false,
+        enabled: enabled,
         decoration: InputDecoration(
           label: Text(label),
           border: const OutlineInputBorder(),
