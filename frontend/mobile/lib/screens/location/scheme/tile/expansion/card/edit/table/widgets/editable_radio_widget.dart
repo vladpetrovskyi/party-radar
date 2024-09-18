@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class EditableRadioWidget extends StatelessWidget {
-  const EditableRadioWidget({
+  const EditableRadioWidget({super.key, 
     this.locationId,
     required this.locationName,
     required this.rowIndex,
