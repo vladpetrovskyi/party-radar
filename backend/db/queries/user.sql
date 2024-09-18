@@ -4,11 +4,12 @@ FROM "user"
 WHERE username = $1;
 
 -- name: GetUsersByUsername :many
-SELECT *
-FROM "user"
-WHERE username LIKE $1
-  AND id != $4
-ORDER BY username
+SELECT u.*, i.id as image_id
+FROM "user" u
+         LEFT JOIN image i ON u.id = i.user_id
+WHERE u.username LIKE $1
+  AND u.id != $4
+ORDER BY u.username
 LIMIT $2 OFFSET $3;
 
 -- name: GetUserByUID :one
