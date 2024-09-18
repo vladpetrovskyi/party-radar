@@ -1,9 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:party_radar/providers/user_provider.dart';
 import 'package:party_radar/screens/login_screen.dart';
 import 'package:party_radar/screens/user_profile/dialogs/app_info_dialog.dart';
 import 'package:party_radar/screens/user_profile/user_settings_screen.dart';
+import 'package:provider/provider.dart';
 
 AppBar buildAppBar(BuildContext context) {
   return AppBar(
@@ -57,7 +59,8 @@ Widget _getLogoutButton(BuildContext context) => IconButton(
 void _logout(BuildContext context) {
   FirebaseMessaging.instance.deleteToken();
   Navigator.of(context).pop();
-  FirebaseAuth.instance.signOut();
+  FirebaseAuth.instance.signOut().then(
+      (_) => Provider.of<UserProvider>(context, listen: false).updateUser());
   Navigator.of(context).pushReplacement(
     MaterialPageRoute(
       builder: (context) => const LoginScreen(),

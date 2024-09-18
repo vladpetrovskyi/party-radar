@@ -3,11 +3,13 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:party_radar/providers/user_provider.dart';
 import 'package:party_radar/screens/user_profile/widgets/profile_widget.dart';
 import 'package:party_radar/services/image_service.dart';
 import 'package:party_radar/services/user_service.dart';
 import 'package:party_radar/util/validators.dart';
 import 'package:party_radar/widgets/error_snack_bar.dart';
+import 'package:provider/provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key, required this.image});
@@ -147,6 +149,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
           return;
         }
       }
+      Provider.of<UserProvider>(context, listen: false).updateUser();
       _returnToUserPage();
     }
   }

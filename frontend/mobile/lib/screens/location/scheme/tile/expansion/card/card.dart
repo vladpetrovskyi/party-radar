@@ -58,10 +58,10 @@ class _LocationCardState extends State<LocationCard>
                 if (_location.emoji != null) cardEmoji,
                 cardName,
                 if (_location.closedAt == null) onlineStatusDots,
-                if (_location.isCloseable && _location.closedAt != null)
-                  ...closedOverlay
               ],
             ),
+            if (_location.isCloseable && _location.closedAt != null)
+              ...closedOverlay
           ],
         ),
       ),
@@ -92,7 +92,7 @@ class _LocationCardState extends State<LocationCard>
         ),
       );
 
-  Widget get onlineStatusDots => _location.id != null
+  Widget get onlineStatusDots => _location.id != null && !widget.isEditMode
       ? Padding(
           padding: const EdgeInsets.only(left: 5, right: 5, top: 5),
           child: UserDotsWidget(
@@ -166,7 +166,6 @@ class _LocationCardState extends State<LocationCard>
                   'This location has been temporarily closed. Is it available again? The result of this action will be visible to everyone!'),
               onAccept: () {
                 _openLocation(_location.id);
-                Navigator.of(context).pop();
               },
             ),
           );
@@ -219,7 +218,6 @@ class _LocationCardState extends State<LocationCard>
                 'Would you like to mark this location as temporarily closed? The result of this action will be visible to everyone!'),
             onAccept: () {
               _closeLocation(_location.id);
-              Navigator.of(context).pop();
             },
           ),
         );

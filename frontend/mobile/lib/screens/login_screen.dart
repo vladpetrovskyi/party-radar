@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_login/flutter_login.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:party_radar/providers/user_provider.dart';
 import 'package:party_radar/screens/main_screen.dart';
 import 'package:party_radar/services/auth_service.dart';
 import 'package:party_radar/util/validators.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -53,7 +55,10 @@ class LoginScreen extends StatelessWidget {
           ),
           cardTheme: const CardTheme(color: Color.fromRGBO(26, 38, 38, 1)),
         ),
-        onLogin: (data) => AuthService.login(data.name, data.password),
+        onLogin: (data) => AuthService.login(data.name, data.password).then((result) {
+          Provider.of<UserProvider>(context, listen: false).updateUser();
+          return result;
+        }),
         onSignup: (data) => AuthService.register(data.name!, data.password!),
         loginAfterSignUp: false,
         onSubmitAnimationCompleted: () {

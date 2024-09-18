@@ -23,6 +23,7 @@ class LocationProvider extends ChangeNotifier {
     } else {
       _rootLocation = await _loadRootLocationForUser();
     }
+    currentLocationTree = await LocationService.getSelectedLocationIds();
     notifyListeners();
   }
 
