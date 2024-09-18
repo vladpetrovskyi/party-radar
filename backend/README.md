@@ -10,7 +10,8 @@ Backend part of Party Radar application, written in Go
 
 ### Startup
 
-To start the application run the [local docker-compose file](./docker-compose.local.yaml) 
+1. Add serviceAccountKey.json
+2. Run [local docker-compose file](./docker-compose.local.yaml) 
 
 ### Deployment
 

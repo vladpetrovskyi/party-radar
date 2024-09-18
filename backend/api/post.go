@@ -237,20 +237,13 @@ func (app *Application) createPost(c *gin.Context) {
 
 	err := c.BindJSON(&post)
 	if err != nil {
-		app.log.Err(err).Ctx(c)
+		app.log.Err(err).Msg("Failed to bind JSON while creating a post")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	user, err := app.getUserFromContext(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	postTypeId, err := app.q.GetPostTypeId(app.ctx, post.Type)
-	if err != nil {
-		app.log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -263,36 +256,8 @@ func (app *Application) createPost(c *gin.Context) {
 		post.LocationID = user.CurrentRootLocationID
 	}
 
-	tx, err := app.db.BeginTx(app.ctx, nil)
+	err = app.createPostForUser(user.ID, *post.LocationID, post.Type, post.Capacity)
 	if err != nil {
-		app.log.Err(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer tx.Rollback()
-
-	if err := app.q.WithTx(tx).CreatePost(app.ctx, db.CreatePostParams{
-		UserID:     user.ID,
-		LocationID: *post.LocationID,
-		PostTypeID: postTypeId,
-		Capacity:   post.Capacity,
-	}); err != nil {
-		app.log.Err(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	if err := app.q.WithTx(tx).UpdateUserLocation(app.ctx, db.UpdateUserLocationParams{
-		ID:                user.ID,
-		CurrentLocationID: post.LocationID,
-	}); err != nil {
-		app.log.Err(err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	if err = tx.Commit(); err != nil {
-		app.log.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -309,6 +274,46 @@ func (app *Application) createPost(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+func (app *Application) createPostForUser(userID int64, locationID int64, postType string, capacity *int64) error {
+	postTypeId, err := app.q.GetPostTypeId(app.ctx, postType)
+	if err != nil {
+		app.log.Err(err)
+		return err
+	}
+
+	tx, err := app.db.BeginTx(app.ctx, nil)
+	if err != nil {
+		app.log.Err(err).Msg("Failed to begin a transaction while creating a new post")
+		return err
+	}
+	defer tx.Rollback()
+
+	if err = app.q.WithTx(tx).CreatePost(app.ctx, db.CreatePostParams{
+		UserID:     userID,
+		LocationID: locationID,
+		PostTypeID: postTypeId,
+		Capacity:   capacity,
+	}); err != nil {
+		app.log.Err(err).Msg("Failed to create post")
+		return err
+	}
+
+	if err = app.q.WithTx(tx).UpdateUserLocation(app.ctx, db.UpdateUserLocationParams{
+		ID:                userID,
+		CurrentLocationID: &locationID,
+	}); err != nil {
+		app.log.Err(err).Msg("Failed to update user location while creating a new post")
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		app.log.Err(err).Msg("Failed to commit new post to DB")
+		return err
+	}
+
+	return nil
+}
+
 func (app *Application) sendNewPostNotification(userID int64, username string, currentRootLocationID *int64, post incomingPostDTO) {
 	userFriends, err := app.q.GetUserFriendsByRootLocationIDAndTopicName(app.ctx, db.GetUserFriendsByRootLocationIDAndTopicNameParams{
 		ID:                    userID,
@@ -316,7 +321,7 @@ func (app *Application) sendNewPostNotification(userID int64, username string, c
 		CurrentRootLocationID: currentRootLocationID,
 	})
 	if err != nil {
-		app.log.Err(err)
+		app.log.Err(err).Msg("Could not GetUserFriendsByRootLocationIDAndTopicName while trying to send new post notifications")
 		return
 	}
 
@@ -328,13 +333,13 @@ func (app *Application) sendNewPostNotification(userID int64, username string, c
 	} else {
 		location, err := app.getAndMapLocationFromDb(*post.LocationID)
 		if err != nil {
-			app.log.Err(err)
+			app.log.Err(err).Msg("Could not get and map location from db while trying to send new post notifications")
 			return
 		}
 
 		parentLocation, err := app.buildLocationFromChild(location)
 		if err != nil {
-			app.log.Err(err)
+			app.log.Err(err).Msg("Could not build location from child while trying to send new post notifications")
 			return
 		}
 
@@ -342,7 +347,16 @@ func (app *Application) sendNewPostNotification(userID int64, username string, c
 			parentLocation = parentLocation.Children[0]
 		}
 
-		body = parentLocation.Name + ": " + parentLocation.Children[0].Name + " " + *parentLocation.Children[0].Emoji
+		if len(parentLocation.Children) == 0 {
+			body = parentLocation.Name
+		} else {
+			emoji := ""
+			if parentLocation.Children[0].Emoji != nil {
+				emoji = " " + *parentLocation.Children[0].Emoji
+			}
+
+			body = parentLocation.Name + ": " + parentLocation.Children[0].Name + emoji
+		}
 	}
 
 	messages := make([]*messaging.Message, 0)
@@ -362,9 +376,13 @@ func (app *Application) sendNewPostNotification(userID int64, username string, c
 		}
 	}
 
+	if len(messages) == 0 {
+		return
+	}
+
 	response, err := app.msg.SendAll(app.ctx, messages)
 	if err != nil {
-		app.log.Err(err)
+		app.log.Err(err).Msg("Could not send new post notification messages")
 		return
 	}
 

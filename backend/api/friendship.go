@@ -1,6 +1,8 @@
 package api
 
 import (
+	"database/sql"
+	"errors"
 	"firebase.google.com/go/messaging"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -11,6 +13,27 @@ import (
 )
 
 func (app *Application) getFriendships(c *gin.Context) {
+	user, err := app.getUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	username := c.Query("username")
+	if len(username) > 0 {
+		friendship, err := app.getFriendshipByUsername(username, user)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+		if err == nil && friendship == nil {
+			c.Status(http.StatusNoContent)
+			return
+		}
+
+		c.JSON(http.StatusOK, friendship)
+		return
+	}
 	status := c.Query("status")
 	if len(status) == 0 {
 		app.log.Debug().Ctx(c).Msg("Empty friendship status")
@@ -27,12 +50,6 @@ func (app *Application) getFriendships(c *gin.Context) {
 	if err != nil {
 		app.log.Debug().Ctx(c).Msg("Limit is not parsable")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	user, err := app.getUserFromContext(c)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -122,6 +139,32 @@ func (app *Application) getFriendshipsCount(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"count": friendshipsCount})
 }
 
+func (app *Application) getFriendshipByUsername(username string, userFromContext db.GetUserByUIDRow) (*db.GetFriendshipByUserIdsRow, error) {
+	if len(username) == 0 {
+		return nil, errors.New("username cannot be empty")
+	}
+
+	user, err := app.q.GetUserByUsername(app.ctx, &username)
+	if err != nil {
+		app.log.Debug().Msg("can't get user by username=" + username)
+		return nil, errors.New("can't get user by username " + username)
+	}
+
+	friendship, err := app.q.GetFriendshipByUserIds(app.ctx, db.GetFriendshipByUserIdsParams{
+		User1ID: user.ID,
+		User2ID: userFromContext.ID,
+	})
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		app.log.Debug().Msg("Can't get friendship by 2 user IDs")
+		return nil, errors.New("can't get friendship by 2 user IDs")
+	}
+
+	return &friendship, nil
+}
+
 func (app *Application) createFriendshipRequest(c *gin.Context) {
 	userFrom, err := app.getUserFromContext(c)
 	if err != nil {
@@ -190,10 +233,10 @@ func (app *Application) createFriendshipRequest(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (app *Application) sendFriendshipRequestNotification(userFrom db.User, userTo db.User) {
+func (app *Application) sendFriendshipRequestNotification(userFrom db.GetUserByUIDRow, userTo db.User) {
 	hasUserTopic, err := app.q.HasUserTopic(app.ctx, userTo.ID)
 	if err != nil {
-		app.log.Err(err)
+		app.log.Err(err).Msg("Failed to check if user has a friendship request notification topic")
 		return
 	}
 
@@ -209,7 +252,7 @@ func (app *Application) sendFriendshipRequestNotification(userFrom db.User, user
 			Token: *userTo.FcmToken,
 		})
 		if err != nil {
-			app.log.Err(err)
+			app.log.Err(err).Msg("Failed to write to friendshipRequestNotification topic")
 			return
 		}
 		app.log.Debug().Msgf("Successfully sent friendship request message: %s", response)

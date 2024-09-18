@@ -27,3 +27,11 @@ WHERE id = $1;
 
 -- name: ResetImageSequence :exec
 SELECT setval('image_id_seq', max(id)) FROM image;
+
+-- name: GetDialogSettingsImageID :one
+SELECT id FROM image WHERE dialog_settings_id = $1;
+
+-- name: UpdateUserImageId :exec
+UPDATE image
+SET user_id = $1
+WHERE id = $2;

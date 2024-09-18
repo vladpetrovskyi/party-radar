@@ -84,6 +84,7 @@ func (app *Application) setupRoutes() {
 	imageGroup.GET("/:id", app.authorizeViaFirebase("data", "read"), app.getImage)
 	imageGroup.POST("", app.authorizeViaFirebase("data", "write"), app.createImage)
 	imageGroup.PUT("/:id", app.authorizeViaFirebase("data", "write"), app.updateImage)
+	imageGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), app.deleteImage)
 
 	userGroupV1 := v1.Group("/user")
 	userGroupV1.POST("/registration", app.register)
@@ -102,13 +103,29 @@ func (app *Application) setupRoutes() {
 	userGroupV2 := v2.Group("/user")
 	userGroupV2.HEAD("", app.authorizeViaFirebase("data", "read"), app.getUser)
 	userGroupV2.GET("", app.authorizeViaFirebase("data", "read"), app.getUser)
+	userGroupV2.DELETE("/location", app.authorizeViaFirebase("data", "write"), app.deleteUserLocationV2)
 
 	locationGroup := v1.Group("/location")
 	locationGroup.GET("", app.authorizeViaFirebase("data", "read"), app.getLocations)
-	locationGroup.GET("/:id", app.authorizeViaFirebase("data", "read"), app.getLocation)
+	locationGroup.GET("/:id", app.authorizeViaFirebase("data", "read"), app.getLocationByID)
+	locationGroup.GET("/:id/children", app.authorizeViaFirebase("data", "read"), app.getLocationChildren)
 	locationGroup.GET("/:id/user/count", app.authorizeViaFirebase("data", "read"), app.getLocationUserCount)
 	locationGroup.GET("/:id/availability", app.authorizeViaFirebase("data", "read"), app.getLocationAvailability)
 	locationGroup.PATCH("/:id/availability", app.authorizeViaFirebase("data", "read"), app.updateLocationAvailability)
+	locationGroup.GET("/selected-ids", app.authorizeViaFirebase("data", "read"), app.getSelectedLocationIDs)
+	locationGroup.POST("", app.authorizeViaFirebase("data", "write"), app.createLocation)
+	locationGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), app.deleteLocation)
+	locationGroup.PUT("/:id", app.authorizeViaFirebase("data", "write"), app.updateLocation)
+	locationGroup.POST("/:id/location-closing", app.authorizeViaFirebase("data", "write"), app.createLocationClosing)
+	locationGroup.DELETE("/:id/location-closing", app.authorizeViaFirebase("data", "write"), app.deleteLocationClosing)
+
+	locationGroupV2 := v2.Group("/location")
+	locationGroupV2.GET("/:id", app.getLocationByIDV2)
+
+	dialogSettingsGroup := v1.Group("/dialog-settings")
+	dialogSettingsGroup.POST("", app.authorizeViaFirebase("data", "write"), app.createDialogSettings)
+	dialogSettingsGroup.PUT("/:id", app.authorizeViaFirebase("data", "write"), app.updateDialogSettings)
+	dialogSettingsGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), app.deleteDialogSettings)
 
 	postGroup := v1.Group("/post")
 	postGroup.GET("", app.authorizeViaFirebase("data", "read"), app.getPosts)
@@ -181,7 +198,9 @@ func (app *Application) setupAutoLogout() {
 		app.log.Info().Msg("Starting scheduled auto logout task...")
 
 		rootLocationType := "root"
-		rootLocations, err := app.q.GetLocationsByElementType(app.ctx, &rootLocationType)
+		rootLocations, err := app.q.GetLocations(app.ctx, sqlc.GetLocationsParams{
+			ElementTypeName: &rootLocationType,
+		})
 		if err != nil {
 			app.log.Err(err).Msg("Could not get root locations by element type while executing scheduled auto logout task")
 			return

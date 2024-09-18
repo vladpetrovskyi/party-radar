@@ -31,7 +31,6 @@ func (app *Application) createImage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusBadRequest, gin.H{"error": "No dependent entity provided, image cannot be saved"})
-	return
 }
 
 func (app *Application) getImage(c *gin.Context) {
@@ -41,7 +40,7 @@ func (app *Application) getImage(c *gin.Context) {
 		return
 	}
 
-	image, err := app.q.GetImage(app.ctx, imageID)
+	image, err := app.q.GetImage(app.ctx, &imageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
@@ -58,7 +57,7 @@ func (app *Application) checkImageExists(c *gin.Context) {
 		return
 	}
 
-	image, err := app.q.GetImage(app.ctx, imageID)
+	image, err := app.q.GetImage(app.ctx, &imageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
@@ -72,50 +71,34 @@ func (app *Application) checkImageExists(c *gin.Context) {
 }
 
 func (app *Application) updateImage(c *gin.Context) {
-	app.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (err error) {
+	app.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (*int64, error) {
 		imageID, err := app.readIDParam(c)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		err = q.UpdateImage(app.ctx, db.UpdateImageParams{
-			ID:       imageID,
+			ID:       &imageID,
 			FileName: fileName,
 			Content:  content,
 		})
-		return err
-	})
-}
-
-func (app *Application) addDialogSettingsImage(c *gin.Context, dialogSettingsId int64) {
-	app.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (err error) {
-		var imageId *int64
-		if imageId, err = app.createImageInDB(fileName, content, q); err == nil {
-			err = q.UpdateDialogSettingsImage(app.ctx, db.UpdateDialogSettingsImageParams{
-				ID:      dialogSettingsId,
-				ImageID: imageId,
-			})
-		}
-
-		return err
+		return &imageID, err
 	})
 }
 
 func (app *Application) addUserImage(c *gin.Context, userId int64) {
-	app.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (err error) {
-		var imageId *int64
-		if imageId, err = app.createImageInDB(fileName, content, q); err == nil {
+	app.extractAndSaveImage(c, func(q *db.Queries, fileName string, content []byte) (imageID *int64, err error) {
+		if imageID, err = app.createImageInDB(fileName, content, q); err == nil {
 			err = q.UpdateUserImageId(app.ctx, db.UpdateUserImageIdParams{
-				ID:      userId,
-				ImageID: imageId,
+				ID:     imageID,
+				UserID: &userId,
 			})
 		}
-
-		return err
+		return
 	})
 }
 
-func (app *Application) extractAndSaveImage(c *gin.Context, saveImage func(q *db.Queries, fileName string, content []byte) error) {
+func (app *Application) extractAndSaveImage(c *gin.Context, saveImage func(q *db.Queries, fileName string, content []byte) (*int64, error)) {
 	tx, err := app.db.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, fmt.Sprintf("createImageInDB, could not begin the transaction: %v", err))
@@ -149,7 +132,7 @@ func (app *Application) extractAndSaveImage(c *gin.Context, saveImage func(q *db
 
 	q := app.q.WithTx(tx)
 
-	err = saveImage(q, img.Filename, fileBytes)
+	imageID, err := saveImage(q, img.Filename, fileBytes)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, fmt.Sprintf("createImageInDB, could not save image and dependant entity: %v", err))
 		return
@@ -160,7 +143,7 @@ func (app *Application) extractAndSaveImage(c *gin.Context, saveImage func(q *db
 		return
 	}
 
-	c.JSON(http.StatusOK, nil)
+	c.JSON(http.StatusOK, gin.H{"id": imageID})
 }
 
 func (app *Application) createImageInDB(fileName string, content []byte, q *db.Queries) (*int64, error) {
@@ -176,5 +159,22 @@ func (app *Application) createImageInDB(fileName string, content []byte, q *db.Q
 		return nil, err
 	}
 
-	return &imageId, nil
+	return imageId, nil
+}
+
+func (app *Application) deleteImage(c *gin.Context) {
+	imageID, err := app.readIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
+		return
+	}
+
+	err = app.q.DeleteImage(c, &imageID)
+	if err != nil {
+		app.log.Error().Err(err).Msg("Could not delete image by ID")
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "deleteImage, could not delete image"})
+		return
+	}
+
+	c.Status(http.StatusOK)
 }

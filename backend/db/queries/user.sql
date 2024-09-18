@@ -3,10 +3,19 @@ SELECT *
 FROM "user"
 WHERE username = $1;
 
--- name: GetUserByUID :one
+-- name: GetUsersByUsername :many
 SELECT *
 FROM "user"
-WHERE uid = $1;
+WHERE username LIKE $1
+  AND id != $4
+ORDER BY username
+LIMIT $2 OFFSET $3;
+
+-- name: GetUserByUID :one
+SELECT u.*, i.id as image_id
+FROM "user" u
+         LEFT JOIN image i ON u.id = i.user_id
+WHERE u.uid = $1;
 
 -- name: UpdateUserRootLocation :exec
 UPDATE "user"
@@ -32,11 +41,6 @@ WHERE u.current_location_id = $2
                WHERE fs2.user_1_id = $1
                  AND fs2.status_id = 2);
 
--- name: UpdateUserImageId :exec
-UPDATE "user"
-SET image_id = $1
-WHERE id = $2;
-
 -- name: CreateUser :exec
 INSERT INTO "user" (uid, fcm_token)
 VALUES ($1, $2);
@@ -58,4 +62,6 @@ WHERE uid = $1
 RETURNING *;
 
 -- name: GetUsersByRootLocationID :many
-SELECT * FROM "user" WHERE current_root_location_id = $1;
+SELECT *
+FROM "user"
+WHERE current_root_location_id = $1;

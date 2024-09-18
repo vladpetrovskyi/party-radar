@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.3.1+9
+version: 1.4.0+5
 
 environment:
   sdk: '>=3.2.1 <4.0.0'
@@ -33,20 +33,20 @@ dependencies:
   cupertino_icons: ^1.0.2
   widget_zoom: ^0.0.3
   http: any
-  provider: ^6.1.1
+  provider: ^6.1.2
   flutter_login: ^5.0.0
   google_fonts: ^6.1.0
   intl: ^0.19.0
-  firebase_core: ^2.25.4
-  firebase_auth: ^4.17.5
-  image_picker: ^0.8.7
+  firebase_core: ^3.5.0
+  firebase_auth: ^5.3.0
+  image_picker: ^1.1.2
   infinite_scroll_pagination: ^4.0.0
   flutter_native_splash: ^2.3.10
-  device_info_plus: ^9.1.2
+  device_info_plus: ^10.1.2
   url_launcher: ^6.2.4
   freerasp: ^6.4.0
   font_awesome_flutter: ^10.7.0
-  firebase_messaging: ^14.7.16
+  firebase_messaging: ^15.1.2
 
 dev_dependencies:
   flutter_test:
@@ -57,7 +57,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^3.0.1
+  flutter_lints: ^4.0.0
   form_builder_image_picker: ^4.0.0
   flutter_launcher_icons: ^0.13.1
   flutter_secure_storage: ^9.0.0

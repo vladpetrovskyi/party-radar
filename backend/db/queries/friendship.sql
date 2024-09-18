@@ -16,14 +16,16 @@ FROM (SELECT f.id,
                  WHEN f.user_1_id != @userId::bigint then u1.username
                  else u2.username END                                           AS username,
              CASE
-                 WHEN f.user_1_id != @userId::bigint then u1.image_id
-                 else u2.image_id END                                           AS image_id,
+                 WHEN f.user_1_id != @userId::bigint then i1.id
+                 else i2.id END                                                 AS image_id,
              CASE
                  WHEN f.user_1_id != @userId::bigint then u1.current_root_location_id
                  else u2.current_root_location_id END                           AS current_root_location_id
       FROM friendship f
                LEFT JOIN "user" u1 ON f.user_1_id = u1.id
                LEFT JOIN "user" u2 ON f.user_2_id = u2.id
+               LEFT JOIN image i1 ON u1.id = i1.user_id
+               LEFT JOIN image i2 ON u2.id = i2.user_id
       WHERE (f.user_1_id = @userId::bigint
           OR f.user_2_id = @userId::bigint)
         AND f.status_id = 2) t
@@ -31,10 +33,11 @@ FROM (SELECT f.id,
 LIMIT $1 OFFSET $2;
 
 -- name: GetFriendshipRequestsByUser :many
-SELECT f.id, u.id AS user_id, u.username, u.image_id, fs.name AS friendship_status, f.created_at, f.updated_at
+SELECT f.id, u.id AS user_id, u.username, i.id AS image_id, fs.name AS friendship_status, f.created_at, f.updated_at
 FROM friendship f
          INNER JOIN friendship_status fs ON f.status_id = fs.id
          LEFT JOIN "user" u ON f.user_1_id = u.id
+         LEFT JOIN image i ON i.user_id = u.id
 WHERE status_id = 1
   AND user_2_id = $1
 LIMIT $2 OFFSET $3;
@@ -63,9 +66,10 @@ FROM friendship
 WHERE id = $1;
 
 -- name: GetFriendshipByUserIds :one
-SELECT f.*, fs.name AS status
+SELECT f.id, fs.name AS status
 FROM friendship f
          INNER JOIN friendship_status fs on fs.id = f.status_id
+         LEFT JOIN public."user" u ON f.user_1_id = u.id AND f.user_2_id = u.id
 WHERE (user_1_id = $1
     AND user_2_id = $2)
    OR (user_1_id = $2 AND user_2_id = $1);
