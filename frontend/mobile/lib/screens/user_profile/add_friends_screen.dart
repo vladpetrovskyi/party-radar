@@ -96,6 +96,7 @@ class _AddFriendsScreenState extends State<AddFriendsScreen> {
             _usernameQuery = value;
             _friendsPagingController.refresh();
           },
+          onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
           decoration: const InputDecoration(
             hintText: 'Search friends by username...',
             fillColor: Colors.white,
