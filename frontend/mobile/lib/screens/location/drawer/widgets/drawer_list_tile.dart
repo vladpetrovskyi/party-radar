@@ -41,7 +41,7 @@ class DrawerListTile extends StatelessWidget with ErrorSnackBar {
               onChanged: (value) {
                 location.enabled = value;
                 var snackBarText =
-                    "Location is now ${value ? 'visible' : 'invisible'} to everyone on the app";
+                    "Location is now ${value ? 'visible' : 'invisible'} for all users";
                 LocationService.updateLocation(location).then((_) {
                   onUpdate();
                   ScaffoldMessenger.of(context)
