@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:party_radar/models/location.dart';
 import 'package:party_radar/providers/location_provider.dart';
@@ -41,8 +40,13 @@ class DrawerListTile extends StatelessWidget with ErrorSnackBar {
               value: location.enabled,
               onChanged: (value) {
                 location.enabled = value;
-                LocationService.updateLocation(location)
-                    .then((_) => onUpdate());
+                var snackBarText =
+                    "Location is now ${value ? 'visible' : 'invisible'} to everyone on the app";
+                LocationService.updateLocation(location).then((_) {
+                  onUpdate();
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(snackBarText)));
+                });
               },
             )
           : null,
@@ -66,11 +70,6 @@ class DrawerListTile extends StatelessWidget with ErrorSnackBar {
 
   void _selectLocation(int? locationId, BuildContext context) async {
     if (locationId == null) return;
-
-    if (FirebaseAuth.instance.currentUser?.displayName == null ||
-        FirebaseAuth.instance.currentUser!.displayName!.isEmpty) {
-      showErrorSnackBar('Please select username first', context);
-    }
 
     var locationProvider =
         Provider.of<LocationProvider>(context, listen: false);

@@ -1,11 +1,13 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:party_radar/models/location.dart';
 import 'package:party_radar/providers/location_provider.dart';
 import 'package:party_radar/screens/location/dialogs/party_state_dialog.dart';
 import 'package:party_radar/services/location_service.dart';
+import 'package:party_radar/widgets/error_snack_bar.dart';
 import 'package:provider/provider.dart';
 
-class AddLocationButton extends StatelessWidget {
+class AddLocationButton extends StatelessWidget with ErrorSnackBar {
   const AddLocationButton({
     super.key,
     required this.controller,
@@ -16,17 +18,26 @@ class AddLocationButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FilledButton.tonal(
-      onPressed: () => showDialog(
-        context: context,
-        builder: (context) => PartyStateDialog(
-          onAccept: () => _createNewRootLocation(context),
-          title: "Create new location",
-          content: _getContentOfCreateNewLocationDialog(),
-        ),
-      ),
+      onPressed: () => _showCreateNewLocationDialog(context),
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [Icon(Icons.add), SizedBox(width: 3), Text("Add new")],
+      ),
+    );
+  }
+
+  void _showCreateNewLocationDialog(BuildContext context) {
+    if (FirebaseAuth.instance.currentUser?.displayName == null ||
+        FirebaseAuth.instance.currentUser!.displayName!.isEmpty) {
+      showErrorSnackBar('Please select username first', context);
+      return;
+    }
+    showDialog(
+      context: context,
+      builder: (context) => PartyStateDialog(
+        onAccept: () => _createNewRootLocation(context),
+        title: "Create new location",
+        content: _getContentOfCreateNewLocationDialog(),
       ),
     );
   }
