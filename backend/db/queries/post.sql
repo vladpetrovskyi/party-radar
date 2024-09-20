@@ -66,4 +66,5 @@ WHERE id = $1;
 -- name: GetLocationPostsCount :one
 SELECT COUNT(*)
 FROM post
-WHERE location_id = $1;
+WHERE location_id = $1
+   OR location_id IN (SELECT l.id FROM location l WHERE l.parent_id = $1);
