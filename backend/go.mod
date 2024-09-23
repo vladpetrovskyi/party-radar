@@ -14,7 +14,7 @@ require (
 	github.com/pressly/goose/v3 v3.22.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/zerolog v1.33.0
-	google.golang.org/api v0.197.0
+	google.golang.org/api v0.198.0
 )
 
 require (
