@@ -1,12 +1,22 @@
-package api
+package location
 
 import (
+	"database/sql"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog"
 	"net/http"
+	"party-time/api/common"
+	"party-time/api/user"
 	"party-time/db"
 	"strconv"
 	"time"
 )
+
+type Controller struct {
+	log *zerolog.Logger
+	q   *db.Queries
+	db  *sql.DB
+}
 
 type Location struct {
 	ID            *int64  `json:"id"`
@@ -36,19 +46,35 @@ type Location struct {
 	IsOfficial           bool       `json:"is_official"`
 }
 
-func (app *Application) createLocation(c *gin.Context) {
+func NewController(log *zerolog.Logger, q *db.Queries, db *sql.DB) *Controller {
+	return &Controller{log: log, q: q, db: db}
+}
+
+func (ctl *Controller) GetQ() *db.Queries {
+	return ctl.q
+}
+
+func (ctl *Controller) GetLog() *zerolog.Logger {
+	return ctl.log
+}
+
+func (ctl *Controller) GetDB() *sql.DB {
+	return ctl.db
+}
+
+func (ctl *Controller) CreateLocation(c *gin.Context) {
 	var location Location
 	err := c.BindJSON(&location)
 	if err != nil {
-		app.log.Debug().Err(err).Msg("Could not bind JSON to create location")
+		ctl.log.Debug().Err(err).Msg("Could not bind JSON to create location")
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse location", "err": err.Error()})
 		return
 	}
 
-	user, err := app.getUserFromContext(c)
+	u, err := common.GetUserFromContext(ctl, c)
 	if err != nil {
-		app.log.Debug().Err(err).Msg("Could not get user from context to create location")
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not get context user", "err": err.Error()})
+		ctl.log.Debug().Err(err).Msg("Could not get u from context to create location")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not get context u", "err": err.Error()})
 		return
 	}
 
@@ -57,7 +83,7 @@ func (app *Application) createLocation(c *gin.Context) {
 		enabled = *location.Enabled
 	}
 
-	createdLocation, err := app.q.CreateLocation(c, db.CreateLocationParams{
+	createdLocation, err := ctl.q.CreateLocation(c, db.CreateLocationParams{
 		Name:              &location.Name,
 		Emoji:             location.Emoji,
 		Enabled:           &enabled,
@@ -68,10 +94,10 @@ func (app *Application) createLocation(c *gin.Context) {
 		ParentID:          location.ParentID,
 		RootLocationID:    location.RootLocationID,
 		IsOfficial:        &location.IsOfficial,
-		OwnerID:           &user.ID,
+		OwnerID:           &u.ID,
 	})
 	if err != nil {
-		app.log.Error().Err(err).Msg("Could not create location")
+		ctl.log.Error().Err(err).Msg("Could not create location")
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create location", "err": err.Error()})
 		return
 	}
@@ -79,26 +105,26 @@ func (app *Application) createLocation(c *gin.Context) {
 	c.JSON(http.StatusCreated, createdLocation)
 }
 
-func (app *Application) getLocations(c *gin.Context) {
+func (ctl *Controller) GetLocations(c *gin.Context) {
 	query := &struct {
 		Type    *string `json:"type"`
 		Enabled *bool   `json:"enabled"`
 	}{}
 	if err := c.BindQuery(query); err != nil {
-		app.log.Error().Err(err).Msg("Could not bind query")
+		ctl.log.Error().Err(err).Msg("Could not bind query")
 		return
 	}
 
-	user, err := app.getUserFromContext(c)
+	u, err := common.GetUserFromContext(ctl, c)
 	if err != nil {
-		app.log.Error().Err(err).Msg("Could not get user from context")
+		ctl.log.Error().Err(err).Msg("Could not get u from context")
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 
-	locations, err := app.q.GetLocations(c, db.GetLocationsParams{
+	locations, err := ctl.q.GetLocations(c, db.GetLocationsParams{
 		ElementTypeName: query.Type,
-		UserID:          user.ID,
+		UserID:          u.ID,
 	})
 	if err != nil {
 		c.JSON(http.StatusNotFound, nil)
@@ -108,25 +134,25 @@ func (app *Application) getLocations(c *gin.Context) {
 	c.JSON(200, locations)
 }
 
-// Deprecated
+// GetLocationByID Deprecated
 // No children should be returned with location, there is another endpoint for it
-func (app *Application) getLocationByID(c *gin.Context) {
-	locationId, err := app.readIDParam(c)
+func (ctl *Controller) GetLocationByID(c *gin.Context) {
+	locationId, err := common.ReadIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
-	rootLocationRow, err := app.getAndMapLocationFromDb(locationId)
+	rootLocationRow, err := GetAndMapLocationFromDb(ctl.q, c, locationId)
 	if err != nil {
-		app.log.Debug().AnErr("[ERROR] getLocationByID -> getAndMapLocationFromDb", err)
+		ctl.log.Debug().AnErr("[ERROR] GetLocationByID -> getAndMapLocationFromDb", err)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
-	rootLocation, err := app.buildLocationFromParent(rootLocationRow)
+	rootLocation, err := buildLocationFromParent(ctl.q, c, rootLocationRow)
 	if err != nil {
-		app.log.Debug().AnErr("[ERROR] getLocationByID -> buildLocationFromParent", err)
+		ctl.log.Debug().AnErr("[ERROR] GetLocationByID -> buildLocationFromParent", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
@@ -134,25 +160,25 @@ func (app *Application) getLocationByID(c *gin.Context) {
 	c.JSON(http.StatusOK, rootLocation)
 }
 
-func (app *Application) getSelectedLocationIDs(c *gin.Context) {
-	user, err := app.getUserFromContext(c)
+func (ctl *Controller) GetSelectedLocationIDs(c *gin.Context) {
+	u, err := common.GetUserFromContext(ctl, c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
-	if user.CurrentLocationID == nil {
-		c.JSON(http.StatusNoContent, gin.H{"msg": "user is not at any location currently"})
+	if u.CurrentLocationID == nil {
+		c.JSON(http.StatusNoContent, gin.H{"msg": "u is not at any location currently"})
 		return
 	}
 
-	location, err := app.q.GetLocation(c, *user.CurrentLocationID)
+	location, err := ctl.q.GetLocation(c, *u.CurrentLocationID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
 
-	idArr, err := app.buildUpstreamIDListFromLocation(location, []int64{location.ID})
+	idArr, err := buildUpstreamIDListFromLocation(ctl.q, c, location, []int64{location.ID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
@@ -161,16 +187,16 @@ func (app *Application) getSelectedLocationIDs(c *gin.Context) {
 	c.JSON(http.StatusOK, idArr)
 }
 
-func (app *Application) getLocationByIDV2(c *gin.Context) {
-	locationId, err := app.readIDParam(c)
+func (ctl *Controller) GetLocationByIDV2(c *gin.Context) {
+	locationId, err := common.ReadIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
-	rootLocation, err := app.q.GetLocation(app.ctx, locationId)
+	rootLocation, err := ctl.q.GetLocation(c, locationId)
 	if err != nil {
-		app.log.Debug().AnErr("[ERROR] getLocationByID -> getAndMapLocationFromDb", err)
+		ctl.log.Debug().AnErr("[ERROR] GetLocationByID -> getAndMapLocationFromDb", err)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
@@ -178,8 +204,8 @@ func (app *Application) getLocationByIDV2(c *gin.Context) {
 	c.JSON(http.StatusOK, rootLocation)
 }
 
-func (app *Application) updateLocation(c *gin.Context) {
-	locationId, err := app.readIDParam(c)
+func (ctl *Controller) UpdateLocation(c *gin.Context) {
+	locationId, err := common.ReadIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
@@ -187,32 +213,29 @@ func (app *Application) updateLocation(c *gin.Context) {
 
 	var location Location
 	if err = c.BindJSON(&location); err != nil {
-		app.log.Debug().Err(err).Msg("Could not bind JSON to update location")
+		ctl.log.Debug().Err(err).Msg("Could not bind JSON to update location")
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse location", "err": err.Error()})
 		return
 	}
 
-	if location.Enabled != nil && !*location.Enabled {
-		usersByRootLocationID, err := app.q.GetUsersByRootLocationID(c, &locationId)
+	var isLocationDisabled = location.Enabled != nil && !*location.Enabled
+
+	if isLocationDisabled {
+		usersByRootLocationID, err := ctl.q.GetUsersByRootLocationID(c, &locationId)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "Could not get users at root location with ID=" + strconv.FormatInt(locationId, 10), "err": err.Error()})
 			return
 		}
 
-		for _, user := range usersByRootLocationID {
-			if err = app.deleteUserLocations(user.ID); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"message": "Could not check out user with ID=" + strconv.FormatInt(user.ID, 10), "err": err.Error()})
-				return
-			}
-
-			if err = app.createPostForUser(user.ID, locationId, "end", nil); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"message": "Could not post checkout for user with ID=" + strconv.FormatInt(user.ID, 10), "err": err.Error()})
+		for _, u := range usersByRootLocationID {
+			if err = user.DeleteUserLocation(ctl, u.ID, u.CurrentRootLocationID, c); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"message": "Could not check out u with ID=" + strconv.FormatInt(u.ID, 10), "err": err.Error()})
 				return
 			}
 		}
 	}
 
-	updatedLocation, err := app.q.UpdateLocation(c, db.UpdateLocationParams{
+	updatedLocation, err := ctl.q.UpdateLocation(c, db.UpdateLocationParams{
 		Name:              &location.Name,
 		ID:                locationId,
 		Emoji:             location.Emoji,
@@ -225,7 +248,7 @@ func (app *Application) updateLocation(c *gin.Context) {
 		RootLocationID:    location.RootLocationID,
 	})
 	if err != nil {
-		app.log.Error().Err(err).Msg("Could not update location")
+		ctl.log.Error().Err(err).Msg("Could not update location")
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create location", "err": err.Error()})
 		return
 	}
@@ -233,25 +256,25 @@ func (app *Application) updateLocation(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedLocation)
 }
 
-func (app *Application) deleteLocation(c *gin.Context) {
-	locationId, err := app.readIDParam(c)
+func (ctl *Controller) DeleteLocation(c *gin.Context) {
+	locationId, err := common.ReadIDParam(c)
 	if err != nil {
-		app.log.Debug().Err(err).Msg("Could not read ID param to delete a location")
+		ctl.log.Debug().Err(err).Msg("Could not read ID param to delete a location")
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
-	postsCount, err := app.q.GetLocationPostsCount(c, locationId)
+	postsCount, err := ctl.q.GetLocationPostsCount(c, locationId)
 	if err != nil {
-		app.log.Debug().AnErr("[ERROR] deleteLocation -> GetLocationPostsCount", err)
+		ctl.log.Debug().AnErr("[ERROR] deleteLocation -> GetLocationPostsCount", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
 
 	if postsCount == 0 {
-		err = app.q.DeleteLocation(app.ctx, locationId)
+		err = ctl.q.DeleteLocation(c, locationId)
 		if err != nil {
-			app.log.Debug().Err(err).Msg("[ERROR] deleteLocation -> DeleteLocation")
+			ctl.log.Debug().Err(err).Msg("[ERROR] deleteLocation -> DeleteLocation")
 			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 			return
 		}
@@ -259,9 +282,9 @@ func (app *Application) deleteLocation(c *gin.Context) {
 		return
 	}
 
-	err = app.q.SetLocationDeletedAt(app.ctx, locationId)
+	err = ctl.q.SetLocationDeletedAt(c, locationId)
 	if err != nil {
-		app.log.Debug().AnErr("[ERROR] deleteLocation -> SetLocationDeletedAt", err)
+		ctl.log.Debug().AnErr("[ERROR] deleteLocation -> SetLocationDeletedAt", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error()})
 		return
 	}
@@ -269,16 +292,16 @@ func (app *Application) deleteLocation(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (app *Application) getLocationChildren(c *gin.Context) {
-	locationId, err := app.readIDParam(c)
+func (ctl *Controller) GetLocationChildren(c *gin.Context) {
+	locationId, err := common.ReadIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
-	locationChildren, err := app.q.GetLocationChildren(c, &locationId)
+	locationChildren, err := ctl.q.GetLocationChildren(c, &locationId)
 	if err != nil {
-		app.log.Debug().AnErr("[ERROR] getLocationChildren", err)
+		ctl.log.Debug().AnErr("[ERROR] getLocationChildren", err)
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
@@ -286,20 +309,20 @@ func (app *Application) getLocationChildren(c *gin.Context) {
 	c.JSON(http.StatusOK, locationChildren)
 }
 
-func (app *Application) getLocationUserCount(c *gin.Context) {
-	locationId, err := app.readIDParam(c)
+func (ctl *Controller) GetLocationUserCount(c *gin.Context) {
+	locationId, err := common.ReadIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
-	user, err := app.getUserFromContext(c)
+	u, err := common.GetUserFromContext(ctl, c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	usersAtLocation, err := app.countUsersAtLocationTree(c, locationId, user.ID)
+	usersAtLocation, err := countUsersAtLocationTree(ctl.q, c, locationId, u.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -308,8 +331,8 @@ func (app *Application) getLocationUserCount(c *gin.Context) {
 	c.JSON(200, gin.H{"count": usersAtLocation})
 }
 
-func (app *Application) countUsersAtLocationTree(c *gin.Context, locationId, userId int64) (int64, error) {
-	usersAtLocation, err := app.q.CountUsersAtLocation(app.ctx, db.CountUsersAtLocationParams{
+func countUsersAtLocationTree(q *db.Queries, c *gin.Context, locationId, userId int64) (int64, error) {
+	usersAtLocation, err := q.CountUsersAtLocation(c, db.CountUsersAtLocationParams{
 		User2ID:           userId,
 		CurrentLocationID: &locationId,
 	})
@@ -317,13 +340,13 @@ func (app *Application) countUsersAtLocationTree(c *gin.Context, locationId, use
 		return 0, err
 	}
 
-	locationChildren, err := app.q.GetLocationChildren(c, &locationId)
+	locationChildren, err := q.GetLocationChildren(c, &locationId)
 	if err != nil {
 		return 0, err
 	}
 
 	for _, child := range locationChildren {
-		usersAtChildLocation, err := app.countUsersAtLocationTree(c, child.ID, userId)
+		usersAtChildLocation, err := countUsersAtLocationTree(q, c, child.ID, userId)
 		if err != nil {
 			return 0, err
 		}
@@ -332,21 +355,21 @@ func (app *Application) countUsersAtLocationTree(c *gin.Context, locationId, use
 	return usersAtLocation, nil
 }
 
-func (app *Application) getAndMapLocationFromDb(locationId int64) (Location, error) {
-	rootLocationRow, err := app.q.GetLocation(app.ctx, locationId)
+func GetAndMapLocationFromDb(q *db.Queries, c *gin.Context, locationId int64) (Location, error) {
+	rootLocationRow, err := q.GetLocation(c, locationId)
 	if err != nil {
 		return Location{}, err
 	}
-	return app.mapLocation(rootLocationRow), nil
+	return mapLocation(rootLocationRow), nil
 }
 
-func (app *Application) buildLocationFromParent(location Location) (Location, error) {
-	locations, err := app.q.GetLocationChildren(app.ctx, location.ID)
+func buildLocationFromParent(q *db.Queries, c *gin.Context, location Location) (Location, error) {
+	locations, err := q.GetLocationChildren(c, location.ID)
 	if err != nil {
 		return location, err
 	} else if len(locations) > 0 {
 		for _, l := range locations {
-			childLocation, err := app.buildLocationFromParent(app.mapLocationChild(l))
+			childLocation, err := buildLocationFromParent(q, c, mapLocationChild(l))
 			if err != nil {
 				return location, err
 			}
@@ -356,36 +379,36 @@ func (app *Application) buildLocationFromParent(location Location) (Location, er
 	return location, nil
 }
 
-func (app *Application) buildLocationFromChild(location Location) (Location, error) {
+func BuildLocationFromChild(q *db.Queries, c *gin.Context, location Location) (Location, error) {
 	if location.ParentID == nil {
 		return location, nil
 	}
-	parentLocationRow, err := app.q.GetLocation(app.ctx, *location.ParentID)
+	parentLocationRow, err := q.GetLocation(c, *location.ParentID)
 	if err != nil {
 		return location, err
 	}
 
-	parentLocation := app.mapLocation(parentLocationRow)
+	parentLocation := mapLocation(parentLocationRow)
 	parentLocation.Children = append(parentLocation.Children, location)
-	parentLocation, err = app.buildLocationFromChild(parentLocation)
+	parentLocation, err = BuildLocationFromChild(q, c, parentLocation)
 	return parentLocation, err
 }
 
-func (app *Application) buildUpstreamIDListFromLocation(location db.GetLocationRow, idArr []int64) ([]int64, error) {
+func buildUpstreamIDListFromLocation(q *db.Queries, c *gin.Context, location db.GetLocationRow, idArr []int64) ([]int64, error) {
 	if location.ParentID == nil {
 		return idArr, nil
 	}
-	parentLocationRow, err := app.q.GetLocation(app.ctx, *location.ParentID)
+	parentLocationRow, err := q.GetLocation(c, *location.ParentID)
 	if err != nil {
 		return idArr, err
 	}
 
 	idArr = append(idArr, parentLocationRow.ID)
-	idArr, err = app.buildUpstreamIDListFromLocation(parentLocationRow, idArr)
+	idArr, err = buildUpstreamIDListFromLocation(q, c, parentLocationRow, idArr)
 	return idArr, err
 }
 
-func (app *Application) mapLocationChild(dbLocation db.GetLocationChildrenRow) Location {
+func mapLocationChild(dbLocation db.GetLocationChildrenRow) Location {
 	return Location{
 		ID:                   &dbLocation.ID,
 		Name:                 *dbLocation.Name,
@@ -407,7 +430,7 @@ func (app *Application) mapLocationChild(dbLocation db.GetLocationChildrenRow) L
 	}
 }
 
-func (app *Application) mapLocation(dbLocation db.GetLocationRow) Location {
+func mapLocation(dbLocation db.GetLocationRow) Location {
 	return Location{
 		ID:                   &dbLocation.ID,
 		Name:                 *dbLocation.Name,

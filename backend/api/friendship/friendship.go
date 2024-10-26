@@ -1,4 +1,4 @@
-package api
+package friendship
 
 import (
 	"database/sql"
@@ -6,14 +6,39 @@ import (
 	"firebase.google.com/go/messaging"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"net/http"
+	"party-time/api/common"
 	"party-time/db"
 	"strconv"
 	"strings"
 )
 
-func (app *Application) getFriendships(c *gin.Context) {
-	user, err := app.getUserFromContext(c)
+type Controller struct {
+	q   *db.Queries
+	log *zerolog.Logger
+	msg *messaging.Client
+}
+
+func NewController(q *db.Queries, log *zerolog.Logger, msg *messaging.Client) *Controller {
+	return &Controller{q: q, log: log, msg: msg}
+}
+
+func (ctl *Controller) GetQ() *db.Queries {
+	return ctl.q
+}
+
+func (ctl *Controller) GetLog() *zerolog.Logger {
+	return ctl.log
+}
+
+func (ctl *Controller) GetMsg() *messaging.Client {
+	return ctl.msg
+}
+
+func (ctl *Controller) GetFriendships(c *gin.Context) {
+	user, err := common.GetUserFromContext(ctl, c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -21,7 +46,7 @@ func (app *Application) getFriendships(c *gin.Context) {
 
 	username := c.Query("username")
 	if len(username) > 0 {
-		friendship, err := app.getFriendshipByUsername(username, user)
+		friendship, err := getFriendshipByUsername(ctl, username, user, c)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			return
@@ -36,44 +61,44 @@ func (app *Application) getFriendships(c *gin.Context) {
 	}
 	status := c.Query("status")
 	if len(status) == 0 {
-		app.log.Debug().Ctx(c).Msg("Empty friendship status")
+		ctl.log.Debug().Ctx(c).Msg("Empty friendship status")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Status cannot be empty"})
 		return
 	}
 	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
 	if err != nil {
-		app.log.Debug().Ctx(c).Msg("Offset is not parsable")
+		ctl.log.Debug().Ctx(c).Msg("Offset is not parsable")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	if err != nil {
-		app.log.Debug().Ctx(c).Msg("Limit is not parsable")
+		ctl.log.Debug().Ctx(c).Msg("Limit is not parsable")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if status == "requested" {
-		friendshipRequests, err := app.q.GetFriendshipRequestsByUser(app.ctx, db.GetFriendshipRequestsByUserParams{
+		friendshipRequests, err := ctl.q.GetFriendshipRequestsByUser(c, db.GetFriendshipRequestsByUserParams{
 			User2ID: user.ID,
 			Offset:  int32(offset),
 			Limit:   int32(limit),
 		})
 		if err != nil {
-			app.log.Debug().Ctx(c).Err(err).Msg("Could not get friendship requests")
+			ctl.log.Debug().Ctx(c).Err(err).Msg("Could not get friendship requests")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, friendshipRequests)
 		return
 	} else if status == "accepted" {
-		friends, err := app.q.GetFriendshipsByUser(app.ctx, db.GetFriendshipsByUserParams{
+		friends, err := ctl.q.GetFriendshipsByUser(c, db.GetFriendshipsByUserParams{
 			Userid: user.ID,
 			Offset: int32(offset),
 			Limit:  int32(limit),
 		})
 		if err != nil {
-			app.log.Debug().Ctx(c).Err(err).Msg("Could not get friendships")
+			ctl.log.Debug().Ctx(c).Err(err).Msg("Could not get friendships")
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -96,11 +121,11 @@ func (app *Application) getFriendships(c *gin.Context) {
 		return
 	}
 
-	app.log.Debug().Ctx(c).Msg("Unknown friendship status")
+	ctl.log.Debug().Ctx(c).Msg("Unknown friendship status")
 	c.JSON(http.StatusBadRequest, gin.H{"message": "Friendship status unrecognized"})
 }
 
-func (app *Application) getFriendshipsCount(c *gin.Context) {
+func (ctl *Controller) GetFriendshipsCount(c *gin.Context) {
 	friendshipStatus := c.Query("status")
 	if len(friendshipStatus) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "FriendshipStatus cannot be empty"})
@@ -113,7 +138,7 @@ func (app *Application) getFriendshipsCount(c *gin.Context) {
 		return
 	}
 
-	user, err := app.q.GetUserByUID(app.ctx, &uid)
+	user, err := ctl.q.GetUserByUID(c, &uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -123,13 +148,13 @@ func (app *Application) getFriendshipsCount(c *gin.Context) {
 		friendshipsCount int64
 	)
 	if friendshipStatus == "requested" {
-		friendshipsCount, err = app.q.GetFriendshipRequestsCountByUser(app.ctx, user.ID)
+		friendshipsCount, err = ctl.q.GetFriendshipRequestsCountByUser(c, user.ID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 	} else if friendshipStatus == "accepted" {
-		friendshipsCount, err = app.q.GetFriendshipsCountByUser(app.ctx, user.ID)
+		friendshipsCount, err = ctl.q.GetFriendshipsCountByUser(c, user.ID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
@@ -139,34 +164,8 @@ func (app *Application) getFriendshipsCount(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"count": friendshipsCount})
 }
 
-func (app *Application) getFriendshipByUsername(username string, userFromContext db.GetUserByUIDRow) (*db.GetFriendshipByUserIdsRow, error) {
-	if len(username) == 0 {
-		return nil, errors.New("username cannot be empty")
-	}
-
-	user, err := app.q.GetUserByUsername(app.ctx, &username)
-	if err != nil {
-		app.log.Debug().Msg("can't get user by username=" + username)
-		return nil, errors.New("can't get user by username " + username)
-	}
-
-	friendship, err := app.q.GetFriendshipByUserIds(app.ctx, db.GetFriendshipByUserIdsParams{
-		User1ID: user.ID,
-		User2ID: userFromContext.ID,
-	})
-	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		app.log.Debug().Msg("Can't get friendship by 2 user IDs")
-		return nil, errors.New("can't get friendship by 2 user IDs")
-	}
-
-	return &friendship, nil
-}
-
-func (app *Application) createFriendshipRequest(c *gin.Context) {
-	userFrom, err := app.getUserFromContext(c)
+func (ctl *Controller) CreateFriendshipRequest(c *gin.Context) {
+	userFrom, err := common.GetUserFromContext(ctl, c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -181,7 +180,7 @@ func (app *Application) createFriendshipRequest(c *gin.Context) {
 		return
 	}
 
-	userTo, err := app.q.GetUserByUsername(app.ctx, requestUser.Username)
+	userTo, err := ctl.q.GetUserByUsername(c, requestUser.Username)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
 		return
@@ -192,12 +191,12 @@ func (app *Application) createFriendshipRequest(c *gin.Context) {
 		return
 	}
 
-	friendship, err := app.q.GetFriendshipByUserIds(c, db.GetFriendshipByUserIdsParams{
+	friendship, err := ctl.q.GetFriendshipByUserIds(c, db.GetFriendshipByUserIdsParams{
 		User1ID: userFrom.ID,
 		User2ID: userTo.ID,
 	})
 	if err != nil {
-		err = app.q.CreateFriendshipRequest(app.ctx, db.CreateFriendshipRequestParams{
+		err = ctl.q.CreateFriendshipRequest(c, db.CreateFriendshipRequestParams{
 			User1ID: userFrom.ID,
 			User2ID: userTo.ID,
 		})
@@ -206,7 +205,7 @@ func (app *Application) createFriendshipRequest(c *gin.Context) {
 			return
 		}
 
-		go app.sendFriendshipRequestNotification(userFrom, userTo)
+		go sendFriendshipRequestNotification(ctl, c, userFrom, userTo)
 
 		c.Status(http.StatusOK)
 		return
@@ -217,7 +216,7 @@ func (app *Application) createFriendshipRequest(c *gin.Context) {
 		return
 	}
 
-	err = app.q.UpdateFriendship(app.ctx, db.UpdateFriendshipParams{
+	err = ctl.q.UpdateFriendship(c, db.UpdateFriendshipParams{
 		ID:       friendship.ID,
 		User1ID:  userFrom.ID,
 		User2ID:  userTo.ID,
@@ -228,39 +227,12 @@ func (app *Application) createFriendshipRequest(c *gin.Context) {
 		return
 	}
 
-	go app.sendFriendshipRequestNotification(userFrom, userTo)
+	go sendFriendshipRequestNotification(ctl, c, userFrom, userTo)
 
 	c.Status(http.StatusOK)
 }
 
-func (app *Application) sendFriendshipRequestNotification(userFrom db.GetUserByUIDRow, userTo db.User) {
-	hasUserTopic, err := app.q.HasUserTopic(app.ctx, userTo.ID)
-	if err != nil {
-		app.log.Err(err).Msg("Failed to check if user has a friendship request notification topic")
-		return
-	}
-
-	if userTo.FcmToken != nil && hasUserTopic {
-		response, err := app.msg.Send(app.ctx, &messaging.Message{
-			Notification: &messaging.Notification{
-				Title: "New friend request",
-				Body:  *userFrom.Username + " sent you a friend request",
-			},
-			Data: map[string]string{
-				"view": "friendship-requests",
-			},
-			Token: *userTo.FcmToken,
-		})
-		if err != nil {
-			app.log.Err(err).Msg("Failed to write to friendshipRequestNotification topic")
-			return
-		}
-		app.log.Debug().Msgf("Successfully sent friendship request message: %s", response)
-	}
-
-}
-
-func (app *Application) updateFriendship(c *gin.Context) {
+func (ctl *Controller) UpdateFriendship(c *gin.Context) {
 	friendship := struct {
 		Status string `json:"status"`
 	}{}
@@ -270,26 +242,26 @@ func (app *Application) updateFriendship(c *gin.Context) {
 		return
 	}
 
-	friendshipID, err := app.readIDParam(c)
+	friendshipID, err := common.ReadIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	friendshipFromDB, err := app.q.GetFriendshipById(c, friendshipID)
+	friendshipFromDB, err := ctl.q.GetFriendshipById(c, friendshipID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No friendship found"})
 		return
 	}
 
-	friendshipStatusId, err := app.q.GetFriendshipStatusId(app.ctx, friendship.Status)
+	friendshipStatusId, err := ctl.q.GetFriendshipStatusId(c, friendship.Status)
 	if err != nil {
 		fmt.Print(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	updateSender, err := app.getUserFromContext(c)
+	updateSender, err := common.GetUserFromContext(ctl, c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -302,7 +274,7 @@ func (app *Application) updateFriendship(c *gin.Context) {
 		updateReceiverID = friendshipFromDB.User1ID
 	}
 
-	err = app.q.UpdateFriendship(app.ctx, db.UpdateFriendshipParams{
+	err = ctl.q.UpdateFriendship(c, db.UpdateFriendshipParams{
 		ID:       friendshipID,
 		StatusID: friendshipStatusId,
 		User1ID:  updateSender.ID,
@@ -316,18 +288,75 @@ func (app *Application) updateFriendship(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (app *Application) deleteFriendship(c *gin.Context) {
-	friendshipID, err := app.readIDParam(c)
+func (ctl *Controller) DeleteFriendship(c *gin.Context) {
+	friendshipID, err := common.ReadIDParam(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
 	}
 
-	err = app.q.DeleteFriendshipById(app.ctx, friendshipID)
+	err = ctl.q.DeleteFriendshipById(c, friendshipID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.Status(http.StatusOK)
+}
+
+func sendFriendshipRequestNotification(
+	ctl common.MessagingController, c *gin.Context, userFrom db.GetUserByUIDRow, userTo db.User,
+) {
+	hasUserTopic, err := ctl.GetQ().HasUserTopic(c, userTo.ID)
+	if err != nil {
+		log.Err(err).Msg("Failed to check if user has a friendship request notification topic")
+		return
+	}
+
+	if userTo.FcmToken != nil && hasUserTopic {
+		response, err := ctl.GetMsg().Send(c, &messaging.Message{
+			Notification: &messaging.Notification{
+				Title: "New friend request",
+				Body:  *userFrom.Username + " sent you a friend request",
+			},
+			Data: map[string]string{
+				"view": "friendship-requests",
+			},
+			Token: *userTo.FcmToken,
+		})
+		if err != nil {
+			log.Err(err).Msg("Failed to write to friendshipRequestNotification topic")
+			return
+		}
+		log.Debug().Msgf("Successfully sent friendship request message: %s", response)
+	}
+
+}
+
+func getFriendshipByUsername(
+	ctl common.Controller, username string, userFromContext db.GetUserByUIDRow, c *gin.Context,
+) (*db.GetFriendshipByUserIdsRow, error) {
+	if len(username) == 0 {
+		return nil, errors.New("username cannot be empty")
+	}
+
+	user, err := ctl.GetQ().GetUserByUsername(c, &username)
+	if err != nil {
+		log.Debug().Msg("can't get user by username=" + username)
+		return nil, errors.New("can't get user by username " + username)
+	}
+
+	friendship, err := ctl.GetQ().GetFriendshipByUserIds(c, db.GetFriendshipByUserIdsParams{
+		User1ID: user.ID,
+		User2ID: userFromContext.ID,
+	})
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		log.Debug().Msg("Can't get friendship by 2 user IDs")
+		return nil, errors.New("can't get friendship by 2 user IDs")
+	}
+
+	return &friendship, nil
 }

@@ -1,12 +1,31 @@
-package api
+package user
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog"
 	"net/http"
+	"party-time/api/common"
 	"party-time/db"
 )
 
-func (app *Application) subscribeToTopic(c *gin.Context) {
+type TopicController struct {
+	q   *db.Queries
+	log *zerolog.Logger
+}
+
+func NewTopicController(log *zerolog.Logger, q *db.Queries) *TopicController {
+	return &TopicController{q: q, log: log}
+}
+
+func (ctl *TopicController) GetQ() *db.Queries {
+	return ctl.q
+}
+
+func (ctl *TopicController) GetLog() *zerolog.Logger {
+	return ctl.log
+}
+
+func (ctl *TopicController) SubscribeToTopic(c *gin.Context) {
 	topic := struct {
 		Name *string `json:"topic_name"`
 	}{}
@@ -16,7 +35,7 @@ func (app *Application) subscribeToTopic(c *gin.Context) {
 		return
 	}
 
-	user, err := app.getUserFromContext(c)
+	user, err := common.GetUserFromContext(ctl, c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -27,7 +46,7 @@ func (app *Application) subscribeToTopic(c *gin.Context) {
 		return
 	}
 
-	if err := app.q.SubscribeToTopic(c, db.SubscribeToTopicParams{
+	if err := ctl.q.SubscribeToTopic(c, db.SubscribeToTopicParams{
 		UserID: user.ID,
 		Name:   *topic.Name,
 	}); err != nil {
@@ -38,7 +57,7 @@ func (app *Application) subscribeToTopic(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (app *Application) unsubscribeFromTopic(c *gin.Context) {
+func (ctl *TopicController) UnsubscribeFromTopic(c *gin.Context) {
 	topic := struct {
 		Name *string `json:"topic_name"`
 	}{}
@@ -48,7 +67,7 @@ func (app *Application) unsubscribeFromTopic(c *gin.Context) {
 		return
 	}
 
-	user, err := app.getUserFromContext(c)
+	user, err := common.GetUserFromContext(ctl, c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -59,7 +78,7 @@ func (app *Application) unsubscribeFromTopic(c *gin.Context) {
 		return
 	}
 
-	if err := app.q.UnsubscribeFromTopic(c, db.UnsubscribeFromTopicParams{
+	if err := ctl.q.UnsubscribeFromTopic(c, db.UnsubscribeFromTopicParams{
 		UserID: user.ID,
 		Name:   *topic.Name,
 	}); err != nil {
@@ -70,14 +89,14 @@ func (app *Application) unsubscribeFromTopic(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func (app *Application) getUserTopics(c *gin.Context) {
-	user, err := app.getUserFromContext(c)
+func (ctl *TopicController) GetUserTopics(c *gin.Context) {
+	user, err := common.GetUserFromContext(ctl, c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	userTopics, err := app.q.GetTopicsByUserID(c, user.ID)
+	userTopics, err := ctl.q.GetTopicsByUserID(c, user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

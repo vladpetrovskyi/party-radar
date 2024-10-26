@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
+	"net/http"
 	"party-time/config"
 	sqlc "party-time/db"
 )
@@ -43,9 +44,9 @@ func New(c *config.Conf,
 		q:   sqlc.New(db),
 	}
 
-	app.setupRBAC()
-	app.setupRoutes()
-	app.setupAutoLogout()
+	setupRBAC(&app)
+	setupRoutes(&app)
+	setupAutoLogout(&app)
 
 	msg, err := fb.Messaging(ctx)
 	if err != nil {
@@ -60,7 +61,7 @@ func (app *Application) GetRouter() *gin.Engine {
 	return app.router
 }
 
-func (app *Application) setupRoutes() {
+func setupRoutes(app *Application) {
 	app.log.Info().Msg("Setting up router...")
 
 	if app.c.Server.Environment == "prod" {
@@ -77,78 +78,88 @@ func (app *Application) setupRoutes() {
 	v1 := api.Group("/v1")
 	v2 := api.Group("/v2")
 
-	v1.GET("/healthcheck", app.healthcheckHandler)
+	v1.GET("/healthcheck", healthcheckHandler(app.c.Server.Environment))
 
+	imageController := app.newImageController()
 	imageGroup := v1.Group("/image")
-	imageGroup.HEAD("/:id", app.authorizeViaFirebase("data", "read"), app.checkImageExists)
-	imageGroup.GET("/:id", app.authorizeViaFirebase("data", "read"), app.getImage)
-	imageGroup.POST("", app.authorizeViaFirebase("data", "write"), app.createImage)
-	imageGroup.PUT("/:id", app.authorizeViaFirebase("data", "write"), app.updateImage)
-	imageGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), app.deleteImage)
+	imageGroup.HEAD("/:id", app.authorizeViaFirebase("data", "read"), imageController.CheckImageExists)
+	imageGroup.GET("/:id", app.authorizeViaFirebase("data", "read"), imageController.GetImage)
+	imageGroup.POST("", app.authorizeViaFirebase("data", "write"), imageController.CreateImage)
+	imageGroup.PUT("/:id", app.authorizeViaFirebase("data", "write"), imageController.UpdateImage)
+	imageGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), imageController.DeleteImage)
 
+	userController := app.newUserController()
 	userGroupV1 := v1.Group("/user")
-	userGroupV1.POST("/registration", app.register)
-	userGroupV1.HEAD("/:username", app.authorizeViaFirebase("data", "read"), app.getUserByUsername)
-	userGroupV1.GET("/:username", app.authorizeViaFirebase("data", "read"), app.getUserByUsername)
-	userGroupV1.GET("", app.authorizeViaFirebase("data", "read"), app.getUserByUID)
-	userGroupV1.DELETE("", app.authorizeViaFirebase("data", "write"), app.deleteUser)
-	userGroupV1.PUT("/username", app.authorizeViaFirebase("data", "write"), app.updateUsername)
-	userGroupV1.PUT("/root-location/:id", app.authorizeViaFirebase("data", "write"), app.updateUserRootLocation)
-	userGroupV1.DELETE("/location", app.authorizeViaFirebase("data", "write"), app.deleteUserLocation)
-	userGroupV1.PATCH("/fcm-token", app.authorizeViaFirebase("data", "write"), app.updateUserFCMToken)
-	userGroupV1.GET("/topic", app.authorizeViaFirebase("data", "write"), app.getUserTopics)
-	userGroupV1.POST("/topic", app.authorizeViaFirebase("data", "write"), app.subscribeToTopic)
-	userGroupV1.DELETE("/topic", app.authorizeViaFirebase("data", "write"), app.unsubscribeFromTopic)
+	userGroupV1.POST("/registration", userController.Register)
+	userGroupV1.HEAD("/:username", app.authorizeViaFirebase("data", "read"), userController.GetUserByUsername)
+	userGroupV1.GET("/:username", app.authorizeViaFirebase("data", "read"), userController.GetUserByUsername)
+	userGroupV1.GET("", app.authorizeViaFirebase("data", "read"), userController.GetUserByUID)
+	userGroupV1.DELETE("", app.authorizeViaFirebase("data", "write"), userController.DeleteUser)
+	userGroupV1.PUT("/username", app.authorizeViaFirebase("data", "write"), userController.UpdateUsername)
+	userGroupV1.PUT("/root-location/:id", app.authorizeViaFirebase("data", "write"), userController.UpdateUserRootLocation)
+	userGroupV1.DELETE("/location", app.authorizeViaFirebase("data", "write"), userController.DeleteUserLocation)
+	userGroupV1.PATCH("/fcm-token", app.authorizeViaFirebase("data", "write"), userController.UpdateUserFCMToken)
+
+	topicController := app.newTopicController()
+	userGroupV1.GET("/topic", app.authorizeViaFirebase("data", "write"), topicController.GetUserTopics)
+	userGroupV1.POST("/topic", app.authorizeViaFirebase("data", "write"), topicController.SubscribeToTopic)
+	userGroupV1.DELETE("/topic", app.authorizeViaFirebase("data", "write"), topicController.UnsubscribeFromTopic)
 
 	userGroupV2 := v2.Group("/user")
-	userGroupV2.HEAD("", app.authorizeViaFirebase("data", "read"), app.getUser)
-	userGroupV2.GET("", app.authorizeViaFirebase("data", "read"), app.getUser)
-	userGroupV2.DELETE("/location", app.authorizeViaFirebase("data", "write"), app.deleteUserLocationV2)
+	userGroupV2.HEAD("", app.authorizeViaFirebase("data", "read"), userController.GetUser)
+	userGroupV2.GET("", app.authorizeViaFirebase("data", "read"), userController.GetUser)
+	userGroupV2.DELETE("/location", app.authorizeViaFirebase("data", "write"), userController.DeleteUserLocationV2)
 
+	locationController := app.newLocationController()
 	locationGroup := v1.Group("/location")
-	locationGroup.GET("", app.authorizeViaFirebase("data", "read"), app.getLocations)
-	locationGroup.GET("/:id", app.authorizeViaFirebase("data", "read"), app.getLocationByID)
-	locationGroup.GET("/:id/children", app.authorizeViaFirebase("data", "read"), app.getLocationChildren)
-	locationGroup.GET("/:id/user/count", app.authorizeViaFirebase("data", "read"), app.getLocationUserCount)
-	locationGroup.GET("/:id/availability", app.authorizeViaFirebase("data", "read"), app.getLocationAvailability)
-	locationGroup.PATCH("/:id/availability", app.authorizeViaFirebase("data", "read"), app.updateLocationAvailability)
-	locationGroup.GET("/selected-ids", app.authorizeViaFirebase("data", "read"), app.getSelectedLocationIDs)
-	locationGroup.POST("", app.authorizeViaFirebase("data", "write"), app.createLocation)
-	locationGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), app.deleteLocation)
-	locationGroup.PUT("/:id", app.authorizeViaFirebase("data", "write"), app.updateLocation)
-	locationGroup.POST("/:id/location-closing", app.authorizeViaFirebase("data", "write"), app.createLocationClosing)
-	locationGroup.DELETE("/:id/location-closing", app.authorizeViaFirebase("data", "write"), app.deleteLocationClosing)
+	locationGroup.GET("", app.authorizeViaFirebase("data", "read"), locationController.GetLocations)
+	locationGroup.GET("/:id", app.authorizeViaFirebase("data", "read"), locationController.GetLocationByID)
+	locationGroup.GET("/:id/children", app.authorizeViaFirebase("data", "read"), locationController.GetLocationChildren)
+	locationGroup.GET("/:id/user/count", app.authorizeViaFirebase("data", "read"), locationController.GetLocationUserCount)
+	locationGroup.GET("/selected-ids", app.authorizeViaFirebase("data", "read"), locationController.GetSelectedLocationIDs)
+	locationGroup.POST("", app.authorizeViaFirebase("data", "write"), locationController.CreateLocation)
+	locationGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), locationController.DeleteLocation)
+	locationGroup.PUT("/:id", app.authorizeViaFirebase("data", "write"), locationController.UpdateLocation)
+
+	locationClosingController := app.newLocationClosingController()
+	locationGroup.GET("/:id/availability", app.authorizeViaFirebase("data", "read"), locationClosingController.GetLocationAvailability)
+	locationGroup.PATCH("/:id/availability", app.authorizeViaFirebase("data", "read"), locationClosingController.UpdateLocationAvailability)
+	locationGroup.POST("/:id/location-closing", app.authorizeViaFirebase("data", "write"), locationClosingController.CreateLocationClosing)
+	locationGroup.DELETE("/:id/location-closing", app.authorizeViaFirebase("data", "write"), locationClosingController.DeleteLocationClosing)
 
 	locationGroupV2 := v2.Group("/location")
-	locationGroupV2.GET("/:id", app.getLocationByIDV2)
+	locationGroupV2.GET("/:id", locationController.GetLocationByIDV2)
 
+	dialogSettingsController := app.newDialogSettingsController()
 	dialogSettingsGroup := v1.Group("/dialog-settings")
-	dialogSettingsGroup.POST("", app.authorizeViaFirebase("data", "write"), app.createDialogSettings)
-	dialogSettingsGroup.PUT("/:id", app.authorizeViaFirebase("data", "write"), app.updateDialogSettings)
-	dialogSettingsGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), app.deleteDialogSettings)
+	dialogSettingsGroup.POST("", app.authorizeViaFirebase("data", "write"), dialogSettingsController.CreateDialogSettings)
+	dialogSettingsGroup.PUT("/:id", app.authorizeViaFirebase("data", "write"), dialogSettingsController.UpdateDialogSettings)
+	dialogSettingsGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), dialogSettingsController.DeleteDialogSettings)
 
+	postController := app.newPostController()
 	postGroup := v1.Group("/post")
-	postGroup.GET("", app.authorizeViaFirebase("data", "read"), app.getPosts)
-	postGroup.GET("/feed", app.authorizeViaFirebase("data", "read"), app.getFeed)
-	postGroup.GET("/count", app.authorizeViaFirebase("data", "read"), app.getUserPostsCount)
-	postGroup.POST("", app.authorizeViaFirebase("data", "write"), app.createPost)
-	postGroup.PUT("/:id/view", app.authorizeViaFirebase("data", "write"), app.increaseViewsByOne)
-	postGroup.GET("/:id/view", app.authorizeViaFirebase("data", "read"), app.getPostViewsCount)
-	postGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), app.deletePost)
+	postGroup.GET("", app.authorizeViaFirebase("data", "read"), postController.GetPosts)
+	postGroup.GET("/feed", app.authorizeViaFirebase("data", "read"), postController.GetFeed)
+	postGroup.GET("/count", app.authorizeViaFirebase("data", "read"), postController.GetUserPostsCount)
+	postGroup.POST("", app.authorizeViaFirebase("data", "write"), postController.CreatePost)
+	postGroup.PUT("/:id/view", app.authorizeViaFirebase("data", "write"), postController.IncreaseViewsByOne)
+	postGroup.GET("/:id/view", app.authorizeViaFirebase("data", "read"), postController.GetPostViewsCount)
+	postGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), postController.DeletePost)
 
+	friendshipController := app.newFriendshipController()
 	friendshipGroup := v1.Group("/friendship")
-	friendshipGroup.GET("", app.authorizeViaFirebase("data", "read"), app.getFriendships)
-	friendshipGroup.GET("/count", app.authorizeViaFirebase("data", "read"), app.getFriendshipsCount)
-	friendshipGroup.POST("", app.authorizeViaFirebase("data", "write"), app.createFriendshipRequest)
-	friendshipGroup.PUT("/:id", app.authorizeViaFirebase("data", "write"), app.updateFriendship)
-	friendshipGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), app.deleteFriendship)
+	friendshipGroup.GET("", app.authorizeViaFirebase("data", "read"), friendshipController.GetFriendships)
+	friendshipGroup.GET("/count", app.authorizeViaFirebase("data", "read"), friendshipController.GetFriendshipsCount)
+	friendshipGroup.POST("", app.authorizeViaFirebase("data", "write"), friendshipController.CreateFriendshipRequest)
+	friendshipGroup.PUT("/:id", app.authorizeViaFirebase("data", "write"), friendshipController.UpdateFriendship)
+	friendshipGroup.DELETE("/:id", app.authorizeViaFirebase("data", "write"), friendshipController.DeleteFriendship)
 
 	app.log.Info().Msg("Router setup finished!")
 
 	app.router = router
 }
 
-func (app *Application) setupRBAC() {
+func setupRBAC(app *Application) {
 	app.log.Info().Msg("Setting up RBAC...")
 
 	if app.db == nil {
@@ -190,7 +201,7 @@ func (app *Application) setupRBAC() {
 	app.n4cer = enforcer
 }
 
-func (app *Application) setupAutoLogout() {
+func setupAutoLogout(app *Application) {
 	app.log.Info().Msg("Creating a scheduled auto logout task...")
 
 	c := cron.New()
@@ -270,4 +281,10 @@ func (app *Application) setupAutoLogout() {
 	c.Start()
 
 	app.log.Info().Msg("Auto logout task successfully created!")
+}
+
+func healthcheckHandler(environment string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "available", "environment": environment})
+	}
 }
